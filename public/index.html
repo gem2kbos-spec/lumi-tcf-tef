@@ -28,11 +28,13 @@
         <label>目标等级<select id="level"><option>B1</option><option>A2</option></select></label>
         <label>本组题数<select id="count"><option>5</option><option>3</option><option>10</option></select></label>
         <button id="start" class="primary">开始新训练 <span>→</span></button>
+        <button id="review" class="secondary">复习错题 <span id="review-count">0</span></button>
         <div class="stats">
           <div><strong id="accuracy">0%</strong><span>正确率</span></div>
           <div><strong id="total">0</strong><span>已答题</span></div>
-          <div><strong id="wrong">0</strong><span>待攻克</span></div>
+          <div><strong id="streak">0</strong><span>连续天数</span></div>
         </div>
+        <div id="weak-card" class="weak-card" hidden><p class="label">当前薄弱点</p><div id="weak-skills"></div></div>
       </aside>
       <section id="practice" class="practice empty">
         <div id="welcome">
@@ -41,16 +43,18 @@
           <p>选择训练类型，然后开始第一组。</p>
         </div>
         <div id="quiz" hidden>
+          <div id="notice" class="notice" hidden></div>
           <div class="progress-row"><span id="counter"></span><span id="source"></span></div>
           <div class="progress-bar"><i id="progress"></i></div>
           <p id="topic" class="eyebrow"></p>
           <h2 id="prompt"></h2>
-          <div id="options" class="options"></div>
-          <div id="feedback" hidden></div>
+          <div id="options" class="options" aria-live="polite"></div>
+          <div id="feedback" aria-live="polite" hidden></div>
           <button id="next" class="primary" hidden>下一题 <span>→</span></button>
         </div>
         <div id="finished" hidden>
           <div class="orb">✓</div><h2>这一组完成了</h2><p id="result"></p>
+          <div id="session-summary" class="session-summary"></div>
           <button id="again" class="primary">再练一组 <span>→</span></button>
         </div>
       </section>

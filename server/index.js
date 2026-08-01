@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
-import { addAttempt, readProgress, summarize } from "./store.js";
+import { addAttempt, readProgress, reviewQuestions, summarize } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 
 const port = Number(process.env.PORT || 3000);
@@ -42,31 +42,43 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
-      const type = ["vocabulary", "grammar"].includes(input.type) ? input.type : "grammar";
+      const type = ["vocabulary", "grammar", "review"].includes(input.type) ? input.type : "grammar";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const progress = await readProgress();
       const weakSkills = summarize(progress.attempts).weakSkills.slice(0, 3).map((item) => item.skill);
       let questions;
       let mode = "bank";
-      if (input.useAI !== false && process.env.OPENAI_API_KEY) {
-        questions = await generateQuestions({ type, level, count, weakSkills });
-        mode = "ai";
+      let notice = "";
+      if (type === "review") {
+        questions = reviewQuestions(progress.attempts, count);
+        mode = "review";
+      } else if (input.useAI !== false && process.env.OPENAI_API_KEY) {
+        try {
+          questions = await generateQuestions({ type, level, count, weakSkills });
+          mode = "ai";
+        } catch (error) {
+          console.error("AI generation failed, using question bank:", error.message);
+          const matching = questionBank.filter((item) => item.type === type && [level, "A2"].includes(item.level));
+          questions = sample(matching, count);
+          notice = "AI 暂时不可用，已自动切换到精选题库。";
+        }
       } else {
         const matching = questionBank.filter((item) => item.type === type && [level, "A2"].includes(item.level));
         questions = sample(matching, count);
       }
       for (const question of questions) sessions.set(question.id, question);
-      return sendJson(res, 200, { mode, questions: questions.map(publicQuestion) });
+      return sendJson(res, 200, { mode, notice, questions: questions.map(publicQuestion) });
     }
     if (req.method === "POST" && url.pathname === "/api/attempts") {
       const input = await body(req);
       const question = sessions.get(input.questionId) || questionBank.find((item) => item.id === input.questionId);
-      if (!question || !Number.isInteger(input.selected)) return sendJson(res, 400, { error: "Invalid attempt" });
+      if (!question || !Number.isInteger(input.selected) || input.selected < 0 || input.selected > 3) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
-        skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString()
+        skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
+        question
       };
       await addAttempt(attempt);
       return sendJson(res, 201, { correct, answer: question.answer, explanation: question.explanation });

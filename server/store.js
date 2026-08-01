@@ -29,13 +29,44 @@ export function summarize(attempts) {
   for (const item of attempts.filter((entry) => !entry.correct)) {
     wrongBySkill[item.skill] = (wrongBySkill[item.skill] || 0) + 1;
   }
+  const byType = Object.fromEntries(["grammar", "vocabulary"].map((type) => {
+    const entries = attempts.filter((item) => item.type === type);
+    const right = entries.filter((item) => item.correct).length;
+    return [type, { total: entries.length, accuracy: entries.length ? Math.round(right / entries.length * 100) : 0 }];
+  }));
+  const days = [...new Set(attempts.map((item) => item.createdAt?.slice(0, 10)).filter(Boolean))].sort().reverse();
+  let streak = 0;
+  const cursor = new Date();
+  for (let index = 0; index < days.length; index++) {
+    const expected = new Date(cursor);
+    expected.setDate(cursor.getDate() - index);
+    const expectedDay = expected.toISOString().slice(0, 10);
+    if (days[index] === expectedDay) streak++;
+    else if (index === 0) {
+      cursor.setDate(cursor.getDate() - 1);
+      index--;
+    } else break;
+  }
   return {
     total,
     correct,
     accuracy: total ? Math.round((correct / total) * 100) : 0,
     wrongCount: total - correct,
+    pendingReview: reviewQuestions(attempts, Number.MAX_SAFE_INTEGER).length,
+    streak,
+    byType,
     weakSkills: Object.entries(wrongBySkill)
       .sort((a, b) => b[1] - a[1])
       .map(([skill, count]) => ({ skill, count }))
   };
+}
+
+export function reviewQuestions(attempts, count = 10) {
+  const latestByQuestion = new Map();
+  for (const attempt of attempts) latestByQuestion.set(attempt.questionId, attempt);
+  return [...latestByQuestion.values()]
+    .filter((attempt) => !attempt.correct && attempt.question)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, count)
+    .map((attempt) => attempt.question);
 }
