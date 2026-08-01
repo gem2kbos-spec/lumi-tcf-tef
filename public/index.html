@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="AI 驱动的 TCF 法语训练器" />
+  <title>Lumi TCF AI Trainer</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand"><span>lu</span> Lumi TCF</div>
+      <div id="ai-status" class="status">正在连接…</div>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">A2 → B1 · 每日强化训练</p>
+      <h1>把每一次错误，<br><em>变成下一道对的题。</em></h1>
+      <p class="intro">词汇与语法训练会根据你的薄弱点调整。先完成一组练习，Lumi 会开始认识你。</p>
+    </section>
+    <section class="dashboard">
+      <aside>
+        <p class="label">训练设置</p>
+        <div class="toggle" role="group" aria-label="题目类型">
+          <button class="active" data-type="grammar">语法</button>
+          <button data-type="vocabulary">词汇</button>
+        </div>
+        <label>目标等级<select id="level"><option>B1</option><option>A2</option></select></label>
+        <label>本组题数<select id="count"><option>5</option><option>3</option><option>10</option></select></label>
+        <button id="start" class="primary">开始新训练 <span>→</span></button>
+        <div class="stats">
+          <div><strong id="accuracy">0%</strong><span>正确率</span></div>
+          <div><strong id="total">0</strong><span>已答题</span></div>
+          <div><strong id="wrong">0</strong><span>待攻克</span></div>
+        </div>
+      </aside>
+      <section id="practice" class="practice empty">
+        <div id="welcome">
+          <div class="orb">L</div>
+          <h2>Prêt à commencer ?</h2>
+          <p>选择训练类型，然后开始第一组。</p>
+        </div>
+        <div id="quiz" hidden>
+          <div class="progress-row"><span id="counter"></span><span id="source"></span></div>
+          <div class="progress-bar"><i id="progress"></i></div>
+          <p id="topic" class="eyebrow"></p>
+          <h2 id="prompt"></h2>
+          <div id="options" class="options"></div>
+          <div id="feedback" hidden></div>
+          <button id="next" class="primary" hidden>下一题 <span>→</span></button>
+        </div>
+        <div id="finished" hidden>
+          <div class="orb">✓</div><h2>这一组完成了</h2><p id="result"></p>
+          <button id="again" class="primary">再练一组 <span>→</span></button>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "lumi-tcf-ai-trainer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-driven TCF vocabulary and grammar trainer",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "test": "node --test"
+  },
+  "engines": { "node": ">=20" }
+}
