@@ -1,6 +1,6 @@
 # Lumi TCF AI Trainer
 
-面向 TCF Tout Public A2–B1 阶段的自适应训练应用。当前版本提供词汇、语法选择题，AI 动态出题，自动批改，以及本地错题和薄弱点统计。
+面向 TCF Tout Public A2–B1 阶段的自适应训练应用。当前版本提供词汇、语法、阅读理解选择题，AI 动态出题，自动批改，以及本地错题和薄弱点统计。
 
 ## 启动
 
@@ -22,6 +22,8 @@ API 密钥仅由服务端读取，不能提交到 Git。默认模型可通过 `O
 ## 第一版范围
 
 - TCF 风格的词汇与语法四选一练习
+- 日常通知、邮件、行政信息、叙述、说明和观点文本阅读
+- 独立考试蓝图约束 A2/B1 范围、篇幅、技能与材料类型
 - A2 / B1 难度和每组题数选择
 - OpenAI Responses API + JSON Schema 结构化生成
 - 无密钥自动降级为精选本地题库
@@ -39,6 +41,7 @@ public/                 网页界面
 server/index.js         HTTP 服务和 API
 server/ai-generator.js  AI 出题与输出约束
 server/question-bank.js 内置题库
+server/tcf-blueprint.js TCF 范围与出题约束
 server/store.js         学习记录和统计
 test/                   自动测试
 ```

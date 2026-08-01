@@ -59,6 +59,8 @@ function render() {
   $("#source").textContent = state.mode === "ai" ? "AI 动态生成" : state.mode === "review" ? "错题复习" : "精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`;
   $("#topic").textContent = `${question.level} · ${question.topic}`;
+  $("#passage").hidden = !question.passage;
+  $("#passage").textContent = question.passage || "";
   $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#next").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => {

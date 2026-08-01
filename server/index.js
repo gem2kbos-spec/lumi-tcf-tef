@@ -27,7 +27,8 @@ function publicQuestion(question) {
 }
 
 function sample(items, count) {
-  return [...items].sort(() => Math.random() - 0.5).slice(0, count);
+  return [...items].sort(() => Math.random() - 0.5).slice(0, count)
+    .sort((a, b) => ({ A2: 0, B1: 1 }[a.level] - ({ A2: 0, B1: 1 }[b.level])));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -42,7 +43,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
-      const type = ["vocabulary", "grammar", "review"].includes(input.type) ? input.type : "grammar";
+      const type = ["vocabulary", "grammar", "reading", "review"].includes(input.type) ? input.type : "grammar";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const progress = await readProgress();

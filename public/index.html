@@ -16,7 +16,7 @@
     <section class="hero">
       <p class="eyebrow">A2 → B1 · 每日强化训练</p>
       <h1>把每一次错误，<br><em>变成下一道对的题。</em></h1>
-      <p class="intro">词汇与语法训练会根据你的薄弱点调整。先完成一组练习，Lumi 会开始认识你。</p>
+      <p class="intro">词汇、语法与阅读训练会根据你的薄弱点调整。先完成一组练习，Lumi 会开始认识你。</p>
     </section>
     <section class="dashboard">
       <aside>
@@ -24,6 +24,7 @@
         <div class="toggle" role="group" aria-label="题目类型">
           <button class="active" data-type="grammar">语法</button>
           <button data-type="vocabulary">词汇</button>
+          <button data-type="reading">阅读</button>
         </div>
         <label>目标等级<select id="level"><option>B1</option><option>A2</option></select></label>
         <label>本组题数<select id="count"><option>5</option><option>3</option><option>10</option></select></label>
@@ -47,6 +48,7 @@
           <div class="progress-row"><span id="counter"></span><span id="source"></span></div>
           <div class="progress-bar"><i id="progress"></i></div>
           <p id="topic" class="eyebrow"></p>
+          <article id="passage" class="passage" hidden></article>
           <h2 id="prompt"></h2>
           <div id="options" class="options" aria-live="polite"></div>
           <div id="feedback" aria-live="polite" hidden></div>
