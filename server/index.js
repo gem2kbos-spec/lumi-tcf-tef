@@ -7,6 +7,7 @@ import { loadImportedQuestions } from "./imported-questions.js";
 import { addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
+import { blueprintFor } from "./tcf-blueprint.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -43,6 +44,35 @@ const server = http.createServer(async (req, res) => {
       const progress = await readProgress();
       const imported = await loadImportedQuestions();
       return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/bank") {
+      const imported = await loadImportedQuestions();
+      const progress = await readProgress();
+      const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
+      const merged = [...imported, ...questionBank.map((question) => ({ source: "curated", ...question }))];
+      const type = url.searchParams.get("type") || "all";
+      const level = url.searchParams.get("level") || "all";
+      const source = url.searchParams.get("source") || "all";
+      const status = url.searchParams.get("status") || "all";
+      const questions = merged.filter((question) =>
+        (type === "all" || question.type === type) &&
+        (level === "all" || question.level === level) &&
+        (source === "all" || question.source === source)
+      ).map((question, index) => ({ ...publicQuestion(question), number: index + 1, completed: completedIds.has(question.id) }))
+        .filter((question) => status === "all" || (status === "completed" ? question.completed : !question.completed));
+      return sendJson(res, 200, {
+        questions,
+        meta: { total: questions.length, allQuestions: merged.length, imported: imported.length, curated: questionBank.length, completed: questions.filter((question) => question.completed).length }
+      });
+    }
+    if (req.method === "GET" && url.pathname === "/api/insights") {
+      const imported = await loadImportedQuestions();
+      const progress = await readProgress();
+      const stats = summarize(progress.attempts);
+      const covered = new Set(imported.map((question) => question.skill));
+      const types = ["grammar", "vocabulary", "reading", "listening"];
+      const gaps = types.flatMap((type) => blueprintFor(type, "B1").skills.map((skill) => ({ type, skill }))).filter((item) => !covered.has(item.skill));
+      return sendJson(res, 200, { weakSkills: stats.weakSkills.slice(0, 5), coverageGaps: gaps.slice(0, 12), imported: importedProgress(progress.attempts, imported), recommendedToday: Math.max(10, Math.min(30, 10 + stats.pendingReview * 2)) });
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
@@ -93,6 +123,24 @@ const server = http.createServer(async (req, res) => {
       const variation = { ...generated[0], source: "ai_variation", parentQuestionId: reference.id };
       sessions.set(variation.id, variation);
       return sendJson(res, 201, { question: publicQuestion(variation) });
+    }
+    if (req.method === "POST" && url.pathname === "/api/smart-generation") {
+      if (!process.env.OPENAI_API_KEY) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
+      const input = await body(req);
+      const type = ["grammar", "vocabulary", "reading", "listening"].includes(input.type) ? input.type : "grammar";
+      const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
+      const imported = await loadImportedQuestions();
+      const progress = await readProgress();
+      const stats = summarize(progress.attempts);
+      const covered = new Set(imported.filter((question) => question.type === type).map((question) => question.skill));
+      const gap = blueprintFor(type, level).skills.find((skill) => !covered.has(skill));
+      const weak = stats.weakSkills.find((item) => item.skill)?.skill || stats.weakSkills[0]?.skill;
+      const targetSkill = input.mode === "weak" ? (weak || gap) : (gap || weak);
+      const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
+      const generated = await generateQuestions({ type, level, count: 1, weakSkills: targetSkill ? [targetSkill] : [], variationRequest: request });
+      const question = { ...generated[0], source: "ai_supplement", targetReason: input.mode === "weak" ? "重点考点强化" : "真题覆盖缺口" };
+      sessions.set(question.id, question);
+      return sendJson(res, 201, { question: publicQuestion(question), targetSkill, reason: question.targetReason });
     }
     if (req.method === "POST" && url.pathname === "/api/attempts") {
       const input = await body(req);

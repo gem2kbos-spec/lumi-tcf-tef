@@ -100,6 +100,54 @@ async function refreshStats() {
   $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
 }
 
+async function loadInsights() {
+  const insights = await api("/api/insights");
+  $("#recommended-today").textContent = `${insights.recommendedToday}题`;
+  $("#sprint-review").textContent = `${insights.weakSkills.reduce((sum, item) => sum + item.count, 0)}题`;
+  $("#sprint-coverage").textContent = `${insights.imported.percentage}%`;
+  $("#sprint-advice").textContent = insights.weakSkills.length
+    ? `优先强化：${insights.weakSkills.slice(0, 3).map((item) => item.skill.replaceAll("_", " ")).join("、")}。先复习错题，再做AI重点强化。`
+    : "先完成语言结构与阅读各5题，系统会据此识别你的薄弱点。";
+  $("#coverage-gaps").replaceChildren(...insights.coverageGaps.slice(0, 8).map((item) => {
+    const tag = document.createElement("span"); tag.textContent = `${item.type} · ${item.skill}`; return tag;
+  }));
+}
+
+async function loadBank() {
+  const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value });
+  const payload = await api(`/api/bank?${params}`);
+  $("#bank-count").textContent = payload.questions.length;
+  if (!payload.questions.length) {
+    const empty = document.createElement("div"); empty.className = "bank-empty";
+    empty.innerHTML = $("#bank-source").value === "user_imported" ? "<strong>真题等待导入</strong><p>你把真题发给我后，会在这里按照原始顺序和难度展示。</p>" : "<strong>没有符合筛选条件的题目</strong>";
+    $("#bank-list").replaceChildren(empty); return;
+  }
+  $("#bank-list").replaceChildren(...payload.questions.map((question) => {
+    const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
+    const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
+    const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${escapeHtml(question.level)}</span><span>${escapeHtml(source)}</span><span>${escapeHtml(question.type)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button>进入作答 →</button></div>`;
+    card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); return card;
+  }));
+}
+
+function openBankQuestion(question) {
+  state.type = question.type; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
+  $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
+  $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function smartGenerate() {
+  const button = $("#smart-generate"); button.disabled = true; button.textContent = "正在分析题库覆盖…";
+  try {
+    const payload = await api("/api/smart-generation", { method: "POST", body: JSON.stringify({ mode: $("#ai-mode").value, type: $("#ai-type").value, level: $("#ai-level").value, request: $("#ai-request").value }) });
+    openBankQuestion(payload.question); state.mode = "ai";
+    $("#notice").hidden = false; $("#notice").textContent = `${payload.reason} · 目标考点：${payload.targetSkill || "综合能力"}`;
+  } catch (error) {
+    alert(error.message === "AI_KEY_REQUIRED" ? "AI补缺训练需要先配置 OPENAI_API_KEY。配置后会根据真题覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
+  } finally { button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
+}
+
 async function start(typeOverride, preserveSequence = false) {
   const requestedType = typeof typeOverride === "string" ? typeOverride : state.type;
   if (["writing", "speaking"].includes(requestedType)) return showProduction();
@@ -142,7 +190,7 @@ async function answer(selected, selectedButton) {
   const analysis = result.analysis;
   $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
   $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
-  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await refreshStats();
+  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadInsights(), loadBank()]);
 }
 
 async function variation() {
@@ -170,7 +218,9 @@ function showProduction() {
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
+$("#smart-generate").addEventListener("click", smartGenerate);
+for (const selector of ["#bank-source", "#bank-type", "#bank-level", "#bank-status"]) $(selector).addEventListener("change", loadBank);
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
