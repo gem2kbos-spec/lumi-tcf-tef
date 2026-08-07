@@ -29,8 +29,8 @@ export function validateImportedQuestions(questions) {
     const label = question.id || `第 ${index + 1} 题`;
     if (!allowedTypes.has(question.type)) throw new Error(`${label}: unsupported type`);
     if (!question.skill || !question.prompt || !question.explanation) throw new Error(`${label}: missing required text`);
-    if (!Array.isArray(question.options) || question.options.length !== 4) throw new Error(`${label}: exactly four options required`);
-    if (!Number.isInteger(question.answer) || question.answer < 0 || question.answer > 3) throw new Error(`${label}: invalid answer index`);
+    if (!Array.isArray(question.options) || question.options.length < 2 || question.options.length > 5) throw new Error(`${label}: two to five options required`);
+    if (question.answer !== null && (!Number.isInteger(question.answer) || question.answer < 0 || question.answer >= question.options.length)) throw new Error(`${label}: invalid answer index`);
     if (question.id && ids.has(question.id)) throw new Error(`${label}: duplicate id`);
     if (question.id) ids.add(question.id);
     if (question.type === "reading" && !question.passage) throw new Error(`${label}: reading passage required`);

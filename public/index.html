@@ -58,7 +58,7 @@
         <select id="bank-source" aria-label="题库来源"><option value="all">全部来源</option><option value="user_imported">真题</option><option value="curated">精选题</option></select>
         <select id="bank-type" aria-label="题库题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
         <select id="bank-category" aria-label="细分考点"><option value="all">全部细分考点</option></select>
-        <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A2">A2</option><option value="B1">B1</option></select>
+        <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
         <select id="bank-status" aria-label="完成状态"><option value="all">全部状态</option><option value="pending">未完成</option><option value="completed">已完成</option></select>
       </div>
       <div id="bank-list" class="bank-list" aria-live="polite"></div>
@@ -71,7 +71,7 @@
           <button data-type="vocabulary">词汇</button>
           <button data-type="reading">阅读</button>
         </div>
-        <label>目标等级<select id="level"><option>B1</option><option>A2</option></select></label>
+        <label>目标等级<select id="level"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label id="count-label">本组题数<select id="count"><option>1</option></select></label>
         <button id="start" class="primary">开始连续刷题 <span>→</span></button>
         <button id="review" class="secondary">复习错题 <span id="review-count">0</span></button>

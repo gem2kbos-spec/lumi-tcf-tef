@@ -1,0 +1,34 @@
+{
+  "totalImported": 700,
+  "summary": {
+    "grammar_ready": 222,
+    "grammar_pending": 5,
+    "vocabulary_pending": 244,
+    "reading_pending": 229
+  },
+  "sourceAudit": {
+    "TCF TEF语法.docx": {
+      "headlineClaim": 358,
+      "structurallyCompleteImported": 227,
+      "note": "文档后半部分含只提及题量但没有题干的压缩说明，且各处自述数字互相矛盾。"
+    },
+    "TCF词汇题.docx": {
+      "singleQuestions": 215,
+      "clozeBlanks": 14,
+      "synonymQuestions": 15,
+      "structurallyCompleteImported": 244,
+      "answerKeyPresent": false
+    },
+    "TCFTEF阅读.docx": {
+      "questionMarkers": 233,
+      "structurallyCompleteImported": 229,
+      "incompleteSourceGroups": [
+        64,
+        76,
+        77,
+        78
+      ],
+      "answerKeyPresent": false
+    }
+  }
+}

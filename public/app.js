@@ -228,8 +228,8 @@ async function loadBank() {
     const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${escapeHtml(question.level)}</span><span>${escapeHtml(source)}</span><span>${escapeHtml(question.type)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button>进入作答 →</button></div>`;
-    card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); return card;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "答案校准中"}</button></div>`;
+    if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
   }));
 }
 
@@ -238,7 +238,7 @@ async function loadCategories(type = $("#category-type").value) {
   $("#category-grid").replaceChildren(...payload.categories.map((category) => {
     const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
-    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>全部 ${category.completed}/${category.total}</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.total ? `点击查看并刷题 · ${progress}%` : "等待题目导入"}</small>`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可作答 ${category.readyTotal}</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.pendingTotal ? `${category.pendingTotal} 题答案校准中` : category.total ? `点击查看并刷题 · ${progress}%` : "等待题目导入"}</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
@@ -252,7 +252,9 @@ function setCategoryOptions(categories, selected = "all") {
 }
 
 function openBankQuestion(question) {
+  if (!question.answerVerified) return;
   state.type = question.type; state.activeCategory = question.category || null; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
+  if ([...$("#level").options].some((option) => option.value === question.level)) $("#level").value = question.level;
   $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
 }

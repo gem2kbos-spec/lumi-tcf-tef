@@ -37,6 +37,8 @@ API 密钥仅由服务端读取，不能提交到 Git。默认模型可通过 `O
 - 词汇语法错题附相关知识卡，举一反三支持自定义生成要求
 - 可滚动题库浏览器：按来源、题型、A2/B1和完成状态查看
 - 两级考点题库：语法、词汇、阅读、听力可继续按细分考点筛选；分别统计真题和全部题目的完成进度
+- 六档能力层级（A1–C2）与1–10内部难度；同类题按难度递进排列，估算等级以“≈”标识
+- Word 真题批量导入与对账：保留来源题号、原始顺序、答案校准状态和源文件异常报告
 - AI补缺训练室：覆盖缺口生成与高频薄弱考点强化
 - 短期冲刺面板：今日建议题量、错题优先级和真题覆盖率
 - 随题选词生词本：语境收藏、中文释义、法语用法、搭配和例句
@@ -60,6 +62,7 @@ server/index.js         HTTP 服务和 API
 server/ai-generator.js  AI 出题与输出约束
 server/question-bank.js 内置题库
 server/question-taxonomy.js 题型与细分考点分类体系
+scripts/import_word_banks.py Word 真题解析、分级与导入脚本
 server/tcf-blueprint.js TCF 范围与出题约束
 server/store.js         学习记录和统计
 test/                   自动测试
@@ -74,3 +77,5 @@ npm test
 ## 真题分类
 
 导入题目可以提供 `category` 使用明确的细分考点；没有提供时会根据 `type` 和 `skill` 自动归类。真题进度只统计 `user_imported` 来源，不与精选题或 AI 补充题混合。
+
+当前导入结果及源文档缺项记录在 `server/imports/import-report.json`。源文件没有答案键或答案有歧义的题会完整展示，但在校准前不会开放作答，防止错误答案进入错题统计。
