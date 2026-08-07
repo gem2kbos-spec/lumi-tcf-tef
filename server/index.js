@@ -3,7 +3,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
-import { addAttempt, readProgress, reviewQuestions, summarize } from "./store.js";
+import { loadImportedQuestions } from "./imported-questions.js";
+import { addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 
 const port = Number(process.env.PORT || 3000);
@@ -39,7 +40,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/stats") {
       const progress = await readProgress();
-      return sendJson(res, 200, summarize(progress.attempts));
+      const imported = await loadImportedQuestions();
+      return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported) });
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
@@ -49,6 +51,8 @@ const server = http.createServer(async (req, res) => {
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
       const progress = await readProgress();
+      const imported = await loadImportedQuestions();
+      const mergedBank = [...questionBank.map((question) => ({ source: "curated", ...question })), ...imported];
       const weakSkills = summarize(progress.attempts).weakSkills.slice(0, 3).map((item) => item.skill);
       let questions;
       let mode = "bank";
@@ -62,22 +66,36 @@ const server = http.createServer(async (req, res) => {
           mode = "ai";
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
-          const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
+          const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level));
           const unseen = matching.filter((item) => !excludeIds.has(item.id));
           questions = sample(unseen.length ? unseen : matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
-        const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
+        const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level));
+        const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
+        const nextImported = matching.filter((item) => item.source === "user_imported" && !completedIds.has(item.id)).sort((a, b) => a.order - b.order);
         const unseen = matching.filter((item) => !excludeIds.has(item.id));
-        questions = sample(unseen.length ? unseen : matching, count);
+        questions = nextImported.length ? nextImported.slice(0, count) : sample(unseen.length ? unseen : matching, count);
       }
       for (const question of questions) sessions.set(question.id, question);
       return sendJson(res, 200, { mode, notice, questions: questions.map(publicQuestion) });
     }
+    if (req.method === "POST" && url.pathname === "/api/variations") {
+      if (!process.env.OPENAI_API_KEY) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
+      const input = await body(req);
+      const imported = await loadImportedQuestions();
+      const reference = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
+      if (!reference) return sendJson(res, 404, { error: "Question not found" });
+      const generated = await generateQuestions({ type: reference.type, level: reference.level, count: 1, weakSkills: [reference.skill], referenceQuestion: reference });
+      const variation = { ...generated[0], source: "ai_variation", parentQuestionId: reference.id };
+      sessions.set(variation.id, variation);
+      return sendJson(res, 201, { question: publicQuestion(variation) });
+    }
     if (req.method === "POST" && url.pathname === "/api/attempts") {
       const input = await body(req);
-      const question = sessions.get(input.questionId) || questionBank.find((item) => item.id === input.questionId);
+      const imported = await loadImportedQuestions();
+      const question = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       if (!question || !Number.isInteger(input.selected) || input.selected < 0 || input.selected > 3) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
       const attempt = {

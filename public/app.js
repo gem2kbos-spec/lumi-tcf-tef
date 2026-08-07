@@ -93,6 +93,7 @@ async function api(path, options) {
 async function refreshStats() {
   const stats = await api("/api/stats");
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
+  $("#authentic-progress").textContent = `${stats.imported.completed}/${stats.imported.total}`;
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 3); $("#weak-card").hidden = weak.length === 0;
   $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
@@ -117,11 +118,11 @@ async function start(typeOverride, preserveSequence = false) {
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.audioPlayed = false;
   $("#counter").textContent = `第 ${state.continuousNumber} 题 · 作答后立即解析`;
-  $("#source").textContent = state.mode === "ai" ? "AI 动态生成" : state.mode === "review" ? "错题复习" : `${state.exam.toUpperCase()} 精选题库`;
+  $("#source").textContent = state.mode === "ai" ? "AI 同考点变式" : state.mode === "review" ? "错题复习" : "合并精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
-  $("#feedback").hidden = true; $("#next").hidden = true;
+  $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); button.innerHTML = `<span>${String.fromCharCode(65 + index)}</span>${option}`; button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
 }
 
@@ -137,7 +138,17 @@ async function answer(selected, selectedButton) {
   const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
   const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); buttons[result.answer].classList.add("correct");
   if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
-  $("#feedback").className = result.correct ? "good" : "bad"; $("#feedback").innerHTML = `<strong>${result.correct ? "正确 · Bravo !" : "再看一步"}</strong><p>${result.explanation}</p>`; $("#feedback").hidden = false; $("#next").hidden = false; await refreshStats();
+  $("#feedback").className = result.correct ? "good" : "bad"; $("#feedback").innerHTML = `<strong>${result.correct ? "正确 · Bravo !" : "再看一步"}</strong><p>${result.explanation}</p>`; $("#feedback").hidden = false; $("#answer-actions").hidden = false; await refreshStats();
+}
+
+async function variation() {
+  const button = $("#variation"); button.disabled = true; button.firstChild.textContent = "正在生成同考点题… ";
+  try {
+    const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id }) });
+    state.questions = [payload.question]; state.index = 0; state.mode = "ai"; state.continuousNumber++; render();
+  } catch (error) {
+    alert(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 OPENAI_API_KEY。配置后会针对当前考点生成全新的变式题。" : `生成失败：${error.message}`);
+  } finally { button.disabled = false; button.firstChild.textContent = "举一反三 · AI同考点 "; }
 }
 
 function next() {
@@ -153,7 +164,7 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
-$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
+$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 

@@ -41,6 +41,7 @@
           <div><strong id="accuracy">0%</strong><span>正确率</span></div>
           <div><strong id="total">0</strong><span>已答题</span></div>
           <div><strong id="streak">0</strong><span>连续天数</span></div>
+          <div><strong id="authentic-progress">0/0</strong><span>真题进度</span></div>
         </div>
         <div id="weak-card" class="weak-card" hidden><p class="label">当前薄弱点</p><div id="weak-skills"></div></div>
       </aside>
@@ -60,7 +61,10 @@
           <h2 id="prompt"></h2>
           <div id="options" class="options" aria-live="polite"></div>
           <div id="feedback" aria-live="polite" hidden></div>
-          <button id="next" class="primary" hidden>下一道随机题 <span>→</span></button>
+          <div id="answer-actions" class="answer-actions" hidden>
+            <button id="variation" class="secondary">举一反三 · AI同考点 <span>✦</span></button>
+            <button id="next" class="primary">下一道随机题 <span>→</span></button>
+          </div>
         </div>
         <div id="production" hidden>
           <div class="progress-row"><span id="production-exam"></span><span id="production-format"></span></div>

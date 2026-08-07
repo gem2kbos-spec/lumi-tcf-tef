@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { questionBank } from "../server/question-bank.js";
 import { blueprintFor } from "../server/tcf-blueprint.js";
 import { validateGeneratedQuestions } from "../server/ai-generator.js";
+import { validateImportedQuestions } from "../server/imported-questions.js";
 
 test("all bank questions have one valid answer among four options", () => {
   for (const question of questionBank) {
@@ -39,4 +40,12 @@ test("blueprint defines bounded reading skills and length for each level", () =>
 test("AI validator rejects reading passages outside the target range", () => {
   const question = { passage: "Texte trop court.", options: ["A", "B", "C", "D"] };
   assert.throws(() => validateGeneratedQuestions([question], { type: "reading", level: "B1", count: 1 }), /target length/);
+});
+
+test("import validator preserves supported authentic question structure", () => {
+  assert.equal(validateImportedQuestions([{
+    id: "source-1", type: "grammar", level: "B1", topic: "temps", skill: "imparfait",
+    passage: "", audioText: "", prompt: "Il ___.", options: ["A", "B", "C", "D"], answer: 0,
+    explanation: "Une explication suffisamment claire."
+  }]), true);
 });

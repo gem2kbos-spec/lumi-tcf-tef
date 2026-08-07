@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reviewQuestions, summarize } from "../server/store.js";
+import { importedProgress, reviewQuestions, summarize } from "../server/store.js";
 
 test("summarize calculates accuracy and ranks weak skills", () => {
   const stats = summarize([
@@ -30,4 +30,11 @@ test("reviewQuestions keeps only the latest unresolved mistakes", () => {
     { questionId: "q1", correct: true, createdAt: "2026-01-03", question }
   ]);
   assert.deepEqual(result, [other]);
+});
+
+test("importedProgress counts each source question only once", () => {
+  const result = importedProgress([
+    { questionId: "real-1" }, { questionId: "real-1" }, { questionId: "ai-1" }
+  ], [{ id: "real-1" }, { id: "real-2" }]);
+  assert.deepEqual(result, { completed: 1, total: 2, percentage: 50 });
 });

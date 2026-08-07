@@ -70,3 +70,13 @@ export function reviewQuestions(attempts, count = 10) {
     .slice(0, count)
     .map((attempt) => attempt.question);
 }
+
+export function importedProgress(attempts, importedQuestions) {
+  const ids = new Set(importedQuestions.map((question) => question.id));
+  const completed = new Set(attempts.filter((attempt) => ids.has(attempt.questionId)).map((attempt) => attempt.questionId));
+  return {
+    completed: completed.size,
+    total: ids.size,
+    percentage: ids.size ? Math.round(completed.size / ids.size * 100) : 0
+  };
+}
