@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { aiEnabled, completeAi } from "./ai-client.js";
 
 const file = path.resolve("server/data/vocabulary.json");
 
@@ -43,11 +44,8 @@ export async function toggleMastered(id) {
 export function localLookup(word) { return lexicon[word.toLocaleLowerCase("fr").trim()] || null; }
 
 export async function aiLookup(word, context = "") {
-  if (!process.env.OPENAI_API_KEY) return null;
+  if (!aiEnabled()) return null;
   const schema = { type: "object", additionalProperties: false, required: ["meaningZh", "partOfSpeech", "usageFr", "usageZh", "examples", "collocations"], properties: { meaningZh: { type: "string" }, partOfSpeech: { type: "string" }, usageFr: { type: "string" }, usageZh: { type: "string" }, examples: { type: "array", minItems: 2, maxItems: 3, items: { type: "string" } }, collocations: { type: "array", minItems: 2, maxItems: 5, items: { type: "string" } } } };
-  const response = await fetch("https://api.openai.com/v1/responses", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }, body: JSON.stringify({ model: process.env.OPENAI_MODEL || "gpt-5.6-sol", instructions: "Tu es un lexicographe français-chinois précis. Explique le mot dans son contexte, au niveau A2-B1. Les exemples doivent être naturels, courts et utiles pour le TCF/TEF.", input: `Mot ou expression : ${word}\nContexte : ${context || "non fourni"}`, text: { format: { type: "json_schema", name: "vocabulary_usage", strict: true, schema } } }) });
-  if (!response.ok) throw new Error(`OpenAI vocabulary lookup failed: ${response.status}`);
-  const payload = await response.json();
-  const output = payload.output_text ?? payload.output?.flatMap((item) => item.content || []).find((item) => item.type === "output_text")?.text;
+  const output = await completeAi({ instructions: "Tu es un lexicographe français-chinois précis. Explique le mot dans son contexte, au niveau A2-B1. Les exemples doivent être naturels, courts et utiles pour le TCF/TEF.", input: `Mot ou expression : ${word}\nContexte : ${context || "non fourni"}\nRéponds uniquement en JSON.`, schema, schemaName: "vocabulary_usage" });
   return output ? JSON.parse(output) : null;
 }

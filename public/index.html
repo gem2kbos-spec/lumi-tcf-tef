@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/activity.css" />
   <link rel="stylesheet" href="/navigation.css" />
   <link rel="stylesheet" href="/anchors.css" />
+  <link rel="stylesheet" href="/tutor.css" />
 </head>
 <body>
   <main>
@@ -56,7 +57,7 @@
       <div id="coverage-gaps" class="coverage-gaps"></div>
     </section>
     <section id="bank-center" class="bank-browser">
-      <div class="section-heading"><div><p class="label">可滚动题库</p><h2>查看全部题目</h2></div><div><strong id="bank-count">0</strong><span> 道题</span></div></div>
+      <div class="section-heading"><div><p class="label">可滚动题库</p><h2>查看可作答题目</h2></div><div><strong id="bank-count">0</strong><span> 道可练题</span></div></div>
       <div class="category-heading"><div><strong>按细分考点进入</strong><span>每类显示真题题量与完成进度</span></div><select id="category-type" aria-label="细分题型"><option value="grammar">语法选择题</option><option value="vocabulary">词汇题</option><option value="reading">阅读理解</option><option value="listening">听力理解</option></select></div>
       <div id="category-grid" class="category-grid" aria-live="polite"></div>
       <div class="bank-toolbar">
@@ -66,7 +67,7 @@
         <select id="bank-category" aria-label="细分考点"><option value="all">全部细分考点</option></select>
         <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
         <select id="bank-status" aria-label="完成状态"><option value="all">全部状态</option><option value="pending">未完成</option><option value="completed">已完成</option></select>
-        <select id="bank-answer-status" aria-label="答案状态"><option value="all">全部答案状态</option><option value="ready">可以作答</option><option value="pending">答案校准中</option></select>
+        <input id="bank-answer-status" type="hidden" value="ready" />
       </div>
       <div id="bank-list" class="bank-list" aria-live="polite"></div>
       <button id="bank-load-more" class="bank-load-more" hidden>继续加载更多题目 ↓</button>
@@ -145,6 +146,13 @@
     <div id="lesson-content" class="lesson-content"></div>
     <section class="knowledge-practice-card"><div><strong>马上检验是否真正掌握</strong><p>按当前考点生成一题符合 TCF / TEF 方式的四选一题。</p></div><label>难度<select id="knowledge-level"><option>B1</option><option>A2</option></select></label><button id="knowledge-practice">生成考点题 ✦</button></section>
     <section class="knowledge-chat"><div><p class="label">哪里没懂就继续问</p><h3>我会保留当前知识点和这轮对话</h3></div><div id="knowledge-messages" class="knowledge-messages"><p class="chat-hint">例如：为什么 penser à quelqu'un 不能用 y？请再用时间轴解释一遍。</p></div><form id="knowledge-form"><textarea id="knowledge-question" rows="2" maxlength="600" placeholder="输入你的疑问，直到彻底弄懂……"></textarea><button>追问老师 →</button></form></section>
+  </aside>
+  <button id="open-tutor" class="tutor-launch" aria-label="打开AI老师">AI老师 <span>问问题</span></button>
+  <aside id="tutor-drawer" class="tutor-drawer" aria-label="AI老师" hidden>
+    <header><div><p class="label">随时追问</p><h2>AI 法语老师</h2><span id="tutor-mode">正在连接…</span></div><button id="close-tutor" aria-label="收起AI老师">×</button></header>
+    <div class="tutor-starters"><button>y 和 en 到底怎么选？</button><button>帮我解释当前题</button><button>为什么其他选项不对？</button></div>
+    <div id="tutor-messages" class="tutor-messages"><div class="tutor-message assistant">可以问我语法、词汇、阅读方法，也可以在做题时让我解释当前题。</div></div>
+    <form id="tutor-form"><textarea id="tutor-question" rows="3" maxlength="800" placeholder="输入你的问题……"></textarea><button>发送 →</button></form>
   </aside>
   <script type="module" src="/app.js"></script>
 </body>

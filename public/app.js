@@ -10,6 +10,7 @@ let bankOffset = 0;
 let bankLoading = false;
 let bankHasMore = false;
 let bankSearchTimer = null;
+let tutorHistory = [];
 
 const catalogs = {
   tcf: {
@@ -148,14 +149,14 @@ async function askKnowledge(event) {
   try {
     const payload = await api("/api/knowledge/ask", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, question, history: knowledgeChat }) });
     knowledgeChat.push({ role: "user", content: question }, { role: "assistant", content: payload.answer }); knowledgeChat = knowledgeChat.slice(-8); appendKnowledgeMessage("assistant", payload.answer);
-  } catch (error) { appendKnowledgeMessage("assistant", error.message === "AI_KEY_REQUIRED" ? "追问老师需要先配置 OPENAI_API_KEY。完整固定讲解仍可直接阅读；配置后我会保留本轮上下文，陪你追问到弄懂为止。" : `讲解暂时失败：${error.message}`); }
+  } catch (error) { appendKnowledgeMessage("assistant", error.message === "AI_KEY_REQUIRED" ? "追问老师需要先配置 DeepSeek 密钥。完整固定讲解仍可直接阅读；配置后我会保留本轮上下文，陪你追问到弄懂为止。" : `讲解暂时失败：${error.message}`); }
   finally { button.disabled = false; button.textContent = "追问老师 →"; input.focus(); }
 }
 
 async function knowledgePractice() {
   const button = $("#knowledge-practice"); button.disabled = true; button.textContent = "正在生成…";
   try { const payload = await api("/api/knowledge/practice", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, level: $("#knowledge-level").value }) }); closeKnowledge(); openBankQuestion(payload.question); state.mode = "ai"; }
-  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成考点题需要先配置 OPENAI_API_KEY。配置后会严格围绕当前知识点生成 TCF / TEF 风格四选一题。" : `生成失败：${error.message}`); }
+  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成考点题需要先配置 DeepSeek 密钥。配置后会严格围绕当前知识点生成 TCF / TEF 风格四选一题。" : `生成失败：${error.message}`); }
   finally { button.disabled = false; button.textContent = "生成考点题 ✦"; }
 }
 
@@ -238,7 +239,7 @@ async function loadBank(reset = true) {
     const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "答案校准中"}</button></div>`;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
     if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
     });
     if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
@@ -251,7 +252,7 @@ async function loadCategories(type = $("#category-type").value) {
   $("#category-grid").replaceChildren(...payload.categories.map((category) => {
     const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
-    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可作答 ${category.readyTotal}</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.pendingTotal ? `${category.pendingTotal} 题答案校准中` : category.total ? `点击查看并刷题 · ${progress}%` : "等待题目导入"}</small>`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可练 ${category.readyTotal}题</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.readyTotal ? `点击查看并刷题 · ${progress}%` : "题目整理中"}</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
@@ -279,7 +280,7 @@ async function smartGenerate() {
     openBankQuestion(payload.question); state.mode = "ai";
     $("#notice").hidden = false; $("#notice").textContent = `${payload.reason} · 目标考点：${payload.targetSkill || "综合能力"}`;
   } catch (error) {
-    alert(error.message === "AI_KEY_REQUIRED" ? "AI补缺训练需要先配置 OPENAI_API_KEY。配置后会根据真题覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
+    alert(error.message === "AI_KEY_REQUIRED" ? "AI补缺训练需要先配置 DeepSeek 密钥。配置后会根据真题覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
   } finally { button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
 }
 
@@ -334,7 +335,7 @@ async function variation() {
     const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, request: $("#variation-request").value }) });
     state.questions = [payload.question]; state.index = 0; state.mode = "ai"; state.continuousNumber++; render();
   } catch (error) {
-    alert(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 OPENAI_API_KEY。配置后会针对当前考点生成全新的变式题。" : `生成失败：${error.message}`);
+    alert(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 DeepSeek 密钥。配置后会针对当前考点生成全新的变式题。" : `生成失败：${error.message}`);
   } finally { button.disabled = false; button.textContent = "生成变式题 ✦"; }
 }
 
@@ -351,6 +352,16 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
+function openTutor() { $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
+function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
+function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
+async function askTutor(question) {
+  const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "回答中…";
+  try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); appendTutorMessage("assistant", payload.answer); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; }
+  catch (error) { appendTutorMessage("assistant", `暂时无法回答：${error.message}`); }
+  finally { button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
+}
+
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
@@ -362,6 +373,8 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
+$("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
+document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
 for (const selector of ["#bank-source", "#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });
 $("#bank-search").addEventListener("input", () => { clearTimeout(bankSearchTimer); bankSearchTimer = setTimeout(() => loadBank(true), 250); });
 $("#bank-load-more").addEventListener("click", () => loadBank(false));
@@ -371,4 +384,4 @@ $("#bank-type").addEventListener("change", async (event) => { state.activeCatego
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库"; $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 本地题库模式"; $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });

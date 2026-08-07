@@ -14,8 +14,8 @@ test("Word import preserves every structurally complete question with unique IDs
 });
 
 test("import separates verified answers from pending answer calibration", () => {
-  assert.equal(questions.filter((question) => question.answerVerified).length, 222);
-  assert.equal(questions.filter((question) => !question.answerVerified).length, 478);
+  assert.equal(questions.filter((question) => question.answerVerified).length, 227);
+  assert.equal(questions.filter((question) => !question.answerVerified).length, 473);
   assert.ok(questions.every((question) => question.options.length >= 2 && question.options.length <= 5));
   assert.deepEqual(report.sourceAudit["TCFTEF阅读.docx"].incompleteSourceGroups, [64, 76, 77, 78]);
 });

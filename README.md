@@ -13,13 +13,20 @@ npm start
 
 打开 `http://localhost:3000`。没有配置 API 密钥时，应用会自动使用内置题库，全部训练和错题功能仍然可用。
 
-如需 AI 动态出题，在 `.env` 中填写 `OPENAI_API_KEY`，然后启动：
+如需 AI 动态出题、右侧连续提问、举一反三与智能生词解释，在 `.env` 中填写 DeepSeek 密钥：
+
+```dotenv
+DEEPSEEK_API_KEY=你的密钥
+DEEPSEEK_MODEL=deepseek-v4-flash
+```
+
+然后启动：
 
 ```bash
 npm start
 ```
 
-API 密钥仅由服务端读取，不能提交到 Git。默认模型可通过 `OPENAI_MODEL` 修改。
+API 密钥仅由服务端读取，不能提交到 Git。项目优先使用 DeepSeek；如未配置 DeepSeek，也可用 `OPENAI_API_KEY` 作为备用。
 
 ## 第一版范围
 
@@ -47,7 +54,7 @@ API 密钥仅由服务端读取，不能提交到 Git。默认模型可通过 `O
 - 可刷新的顶部精炼知识点，替代宣传式标语
 - 独立考试蓝图约束 A2/B1 范围、篇幅、技能与材料类型
 - A2 / B1 难度和每组题数选择
-- OpenAI Responses API + JSON Schema 结构化生成
+- DeepSeek Chat Completion + JSON 输出（支持 OpenAI 备用）
 - 无密钥自动降级为精选本地题库
 - 自动批改、法语解析、错题持久化
 - 一键错题复习，答对后自动移出待复习列表

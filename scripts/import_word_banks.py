@@ -8,6 +8,14 @@ GRAMMAR_CATEGORIES = {
     "七、": "adjectives-adverbs", "九、": "idioms"
 }
 
+GRAMMAR_CORRECTIONS = {
+    "auth-grammar-043": (0, "Sans l'aide du gouvernement, l'entreprise serait fermée：sans + nom 表示与事实相反的条件，主句使用条件式现在时。"),
+    "auth-grammar-122": (0, "On laisse une voiture dans la rue；这里 dans la rue 表示车辆停留在街道空间中。"),
+    "auth-grammar-126": (1, "On met ou prend du sucre dans son café；dans 表示糖加入咖啡中。"),
+    "auth-grammar-171": (0, "频率表达为 deux fois par jour，意思是每天两次。"),
+    "auth-grammar-221": (0, "Poser un lapin à quelqu'un 表示约好后不出现且不通知对方。")
+}
+
 def clean(text):
     return re.sub(r"\*\*|__", "", text.replace("\u2003", " ")).strip()
 
@@ -58,13 +66,17 @@ def grammar_questions(path):
     for order, item in enumerate(raw, 1):
         idx = seen.get(item["category"], 0); seen[item["category"]] = idx + 1
         answer_verified = not re.search(r"或|原答案|可能|缺过去分词", item["sourceExplanation"])
+        question_id = f"auth-grammar-{order:03d}"
         result.append({
-            "id": f"auth-grammar-{order:03d}", "type": "grammar", "exam": "shared", "sourceDocument": Path(path).name,
+            "id": question_id, "type": "grammar", "exam": "shared", "sourceDocument": Path(path).name,
             "sourceNumber": item["sourceNumber"], "order": order, "category": item["category"], "topic": item["heading"].split("—")[0].replace("#", "").strip(),
             "prompt": item["prompt"], "options": item["options"], "answer": item["answer"], "answerVerified": answer_verified,
             "explanation": f"原文档答案：{item['sourceExplanation']}" if answer_verified else f"原文档答案存在歧义，等待校准：{item['sourceExplanation']}", "skill": item["category"].replace("-", "_"),
             "level": level_for(item["category"], idx, totals[item["category"]]), "levelEstimated": True, "difficulty": difficulty_for(idx, totals[item["category"]])
         })
+        if question_id in GRAMMAR_CORRECTIONS:
+            result[-1]["answer"], result[-1]["explanation"] = GRAMMAR_CORRECTIONS[question_id]
+            result[-1]["answerVerified"] = True
     return result
 
 def vocabulary_questions(path):
