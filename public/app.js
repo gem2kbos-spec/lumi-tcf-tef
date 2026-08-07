@@ -1,5 +1,6 @@
 const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [] };
 const $ = (selector) => document.querySelector(selector);
+const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 
 const catalogs = {
   tcf: {
@@ -138,17 +139,20 @@ async function answer(selected, selectedButton) {
   const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
   const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); buttons[result.answer].classList.add("correct");
   if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
-  $("#feedback").className = result.correct ? "good" : "bad"; $("#feedback").innerHTML = `<strong>${result.correct ? "正确 · Bravo !" : "再看一步"}</strong><p>${result.explanation}</p>`; $("#feedback").hidden = false; $("#answer-actions").hidden = false; await refreshStats();
+  const analysis = result.analysis;
+  $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
+  $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
+  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await refreshStats();
 }
 
 async function variation() {
-  const button = $("#variation"); button.disabled = true; button.firstChild.textContent = "正在生成同考点题… ";
+  const button = $("#variation"); button.disabled = true; button.textContent = "正在生成…";
   try {
-    const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id }) });
+    const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, request: $("#variation-request").value }) });
     state.questions = [payload.question]; state.index = 0; state.mode = "ai"; state.continuousNumber++; render();
   } catch (error) {
     alert(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 OPENAI_API_KEY。配置后会针对当前考点生成全新的变式题。" : `生成失败：${error.message}`);
-  } finally { button.disabled = false; button.firstChild.textContent = "举一反三 · AI同考点 "; }
+  } finally { button.disabled = false; button.textContent = "生成变式题 ✦"; }
 }
 
 function next() {

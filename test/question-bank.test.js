@@ -4,6 +4,7 @@ import { questionBank } from "../server/question-bank.js";
 import { blueprintFor } from "../server/tcf-blueprint.js";
 import { validateGeneratedQuestions } from "../server/ai-generator.js";
 import { validateImportedQuestions } from "../server/imported-questions.js";
+import { buildAttemptAnalysis } from "../server/knowledge-base.js";
 
 test("all bank questions have one valid answer among four options", () => {
   for (const question of questionBank) {
@@ -48,4 +49,13 @@ test("import validator preserves supported authentic question structure", () => 
     passage: "", audioText: "", prompt: "Il ___.", options: ["A", "B", "C", "D"], answer: 0,
     explanation: "Une explication suffisamment claire."
   }]), true);
+});
+
+test("attempt analysis pairs French explanation with Chinese diagnosis", () => {
+  const question = questionBank.find((item) => item.id === "grammar-001");
+  const analysis = buildAttemptAnalysis(question, 0);
+  assert.equal(analysis.explanationFr, question.explanation);
+  assert.match(analysis.explanationZh, /正确答案/);
+  assert.match(analysis.errorReasonZh, /虚拟式/);
+  assert.equal(analysis.knowledge.label, "虚拟式");
 });

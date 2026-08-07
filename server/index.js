@@ -6,6 +6,7 @@ import { questionBank } from "./question-bank.js";
 import { loadImportedQuestions } from "./imported-questions.js";
 import { addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
+import { buildAttemptAnalysis } from "./knowledge-base.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -87,7 +88,8 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions();
       const reference = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       if (!reference) return sendJson(res, 404, { error: "Question not found" });
-      const generated = await generateQuestions({ type: reference.type, level: reference.level, count: 1, weakSkills: [reference.skill], referenceQuestion: reference });
+      const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
+      const generated = await generateQuestions({ type: reference.type, level: reference.level, count: 1, weakSkills: [reference.skill], referenceQuestion: reference, variationRequest: request });
       const variation = { ...generated[0], source: "ai_variation", parentQuestionId: reference.id };
       sessions.set(variation.id, variation);
       return sendJson(res, 201, { question: publicQuestion(variation) });
@@ -98,14 +100,15 @@ const server = http.createServer(async (req, res) => {
       const question = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       if (!question || !Number.isInteger(input.selected) || input.selected < 0 || input.selected > 3) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
+      const analysis = buildAttemptAnalysis(question, input.selected);
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
         exam: ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf",
         skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
-        question
+        question, analysis
       };
       await addAttempt(attempt);
-      return sendJson(res, 201, { correct, answer: question.answer, explanation: question.explanation });
+      return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
     const filePath = path.join(publicDir, requested);
