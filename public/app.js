@@ -1,6 +1,15 @@
 const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [] };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+let selectedVocabulary = null;
+const knowledgePoints = [
+  ["连接词先判断逻辑，再判断后接结构", "malgré 后接名词；bien que 后接完整从句并触发虚拟式。先识别让步关系，再检查空格后的语法形态。"],
+  ["过去叙述先建立时间轴", "背景和持续状态常用未完成过去时；发生并完成的事件常用复合过去时；更早发生的动作使用愈过去时。"],
+  ["阅读主旨题不要选择只覆盖一个细节的选项", "先用一句话概括每段作用，再选择能覆盖全文目的的答案。出现原文词最多的选项不一定正确。"],
+  ["y 和 en 的区别看介词，不看中文", "y 通常替代 à + 地点或事物；en 通常替代 de + 名词或数量。涉及人物时还要检查 lui、leur。"],
+  ["听力干扰项常复用录音原词", "不要因为听到同一个词就立即选择。等到动作、人物、时间和否定关系完整后，再判断选项是否准确复述意思。"],
+  ["条件句先看 si 从句的时态", "si + 现在时搭配现在、将来或命令式；si + 未完成过去时搭配条件式现在时。si 后通常不直接使用条件式。"]
+];
 
 const catalogs = {
   tcf: {
@@ -98,6 +107,59 @@ async function refreshStats() {
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 3); $("#weak-card").hidden = weak.length === 0;
   $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
+}
+
+function refreshKnowledge() {
+  const current = $("#knowledge-title").textContent;
+  const choices = knowledgePoints.filter(([title]) => title !== current);
+  const [title, body] = choices[Math.floor(Math.random() * choices.length)];
+  $("#knowledge-title").textContent = title; $("#knowledge-body").textContent = body;
+}
+
+async function loadNotebook() {
+  const payload = await api("/api/vocabulary");
+  $("#vocab-count").textContent = payload.entries.filter((entry) => !entry.mastered).length;
+  $("#notebook-summary").textContent = `${payload.entries.length} 个词`;
+  if (!payload.entries.length) {
+    const empty = document.createElement("p"); empty.className = "notebook-empty"; empty.textContent = "还没有收藏。做题时选中单词即可加入。"; $("#notebook-list").replaceChildren(empty); return;
+  }
+  $("#notebook-list").replaceChildren(...payload.entries.map((entry) => {
+    const card = document.createElement("article"); card.className = entry.mastered ? "mastered" : "";
+    card.innerHTML = `<div><strong>${escapeHtml(entry.word)}</strong><button>${entry.mastered ? "重新学习" : "标记掌握"}</button></div><p>${escapeHtml(entry.contexts[0] || "暂无语境")}</p><small>${new Date(entry.createdAt).toLocaleDateString("zh-CN")}</small>`;
+    card.querySelector("strong").addEventListener("click", () => lookupWord(entry.word, entry.contexts[0] || ""));
+    card.querySelector("button").addEventListener("click", async () => { await api("/api/vocabulary/mastered", { method: "POST", body: JSON.stringify({ id: entry.id }) }); await loadNotebook(); });
+    return card;
+  }));
+}
+
+function openNotebook() { $("#vocab-drawer").hidden = false; document.body.classList.add("drawer-open"); loadNotebook(); }
+function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("drawer-open"); }
+
+async function lookupWord(word, context = "") {
+  openNotebook(); $("#lookup-word").textContent = word; $("#lookup-detail").innerHTML = "<p>正在查找用法…</p>";
+  try {
+    const payload = await api(`/api/vocabulary/lookup?word=${encodeURIComponent(word)}&context=${encodeURIComponent(context)}`);
+    if (!payload.result) {
+      $("#lookup-detail").innerHTML = `<p><strong>已保留原题语境。</strong></p><p>这个词暂时没有本地词条。配置 AI 后可生成经语境约束的中法用法解析。</p>${context ? `<blockquote>${escapeHtml(context)}</blockquote>` : ""}`; return;
+    }
+    const item = payload.result;
+    $("#lookup-detail").innerHTML = `<div class="word-meaning"><strong>${escapeHtml(item.meaningZh)}</strong><span>${escapeHtml(item.partOfSpeech)}</span></div><section><b>Usage en français</b><p lang="fr">${escapeHtml(item.usageFr)}</p></section><section><b>中文用法</b><p>${escapeHtml(item.usageZh)}</p></section><section><b>常用搭配</b><div class="collocations">${item.collocations.map((text) => `<span>${escapeHtml(text)}</span>`).join("")}</div></section><section><b>例句</b>${item.examples.map((text) => `<p lang="fr">${escapeHtml(text)}</p>`).join("")}</section>`;
+  } catch (error) { $("#lookup-detail").innerHTML = `<p>查询失败：${escapeHtml(error.message)}</p>`; }
+}
+
+async function saveSelectedWord() {
+  if (!selectedVocabulary) return;
+  await api("/api/vocabulary", { method: "POST", body: JSON.stringify(selectedVocabulary) });
+  $("#selection-tools").hidden = true; await loadNotebook(); openNotebook();
+}
+
+function captureVocabularySelection() {
+  const selection = window.getSelection(); const raw = selection?.toString().trim();
+  if (!raw || raw.length > 80 || raw.split(/\s+/).length > 4 || !selection.anchorNode?.parentElement?.closest("#practice")) { $("#selection-tools").hidden = true; return; }
+  const word = raw.replace(/^[^A-Za-zÀ-ÿ'-]+|[^A-Za-zÀ-ÿ'-]+$/g, ""); if (!word) return;
+  const range = selection.getRangeAt(0); const rect = range.getBoundingClientRect(); const question = state.questions[state.index];
+  selectedVocabulary = { word, context: question?.passage || question?.prompt || selection.anchorNode.parentElement.textContent.trim(), questionId: question?.id || null };
+  const tools = $("#selection-tools"); tools.style.left = `${Math.min(window.innerWidth - 220, Math.max(10, rect.left))}px`; tools.style.top = `${Math.max(10, rect.bottom + 8)}px`; tools.hidden = false;
 }
 
 async function loadInsights() {
@@ -218,9 +280,17 @@ function showProduction() {
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
+$("#refresh-knowledge").addEventListener("click", refreshKnowledge);
+$("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
+$("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
+$("#save-selection").addEventListener("click", saveSelectedWord);
+document.addEventListener("mouseup", () => setTimeout(captureVocabularySelection, 0));
+document.addEventListener("click", (event) => {
+  if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
 for (const selector of ["#bank-source", "#bank-type", "#bank-level", "#bank-status"]) $(selector).addEventListener("change", loadBank);
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank(), loadNotebook()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });

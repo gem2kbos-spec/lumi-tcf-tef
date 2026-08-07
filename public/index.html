@@ -7,17 +7,19 @@
   <title>Lumi TCF · TEF Trainer</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/advanced.css" />
+  <link rel="stylesheet" href="/notebook.css" />
 </head>
 <body>
   <main>
     <header>
       <div class="brand"><span>lu</span> Lumi Français</div>
-      <div id="ai-status" class="status">正在连接…</div>
+      <div class="header-actions"><button id="open-notebook">生词本 <span id="vocab-count">0</span></button><div id="ai-status" class="status">正在连接…</div></div>
     </header>
     <section class="hero">
-      <p class="eyebrow">TCF 预签证 / DAP · 连续刷题</p>
-      <h1>把每一次错误，<br><em>变成下一道对的题。</em></h1>
-      <p class="intro">两个考试共用一套能力档案。重复出现的词汇、语法和理解能力只记一次，练习会持续回到你的真实薄弱点。</p>
+      <div class="knowledge-summary">
+        <div><p class="eyebrow">今日精炼知识点</p><h1 id="knowledge-title">连接词先判断逻辑，再判断后接结构</h1><p id="knowledge-body">malgré 后接名词；bien que 后接完整从句并触发虚拟式。做题时先识别让步关系，再检查空格后的语法形态。</p></div>
+        <button id="refresh-knowledge" aria-label="刷新知识点">↻ 换一个</button>
+      </div>
     </section>
     <section class="exam-hub">
       <div class="exam-tabs" role="group" aria-label="选择考试">
@@ -117,6 +119,13 @@
       </section>
     </section>
   </main>
+  <div id="selection-tools" class="selection-tools" hidden><button id="lookup-selection">查看用法</button><button id="save-selection">＋ 生词本</button></div>
+  <aside id="vocab-drawer" class="vocab-drawer" aria-label="生词本" hidden>
+    <header><div><p class="label">随题生词本</p><h2 id="lookup-word">Mes mots</h2></div><button id="close-notebook" aria-label="关闭生词本">×</button></header>
+    <div id="lookup-detail" class="lookup-detail"><p>在题目中选择一个法语单词，即可查看中文释义、法语用法、搭配和例句。</p></div>
+    <div class="notebook-heading"><strong>已收藏</strong><span id="notebook-summary"></span></div>
+    <div id="notebook-list" class="notebook-list"></div>
+  </aside>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

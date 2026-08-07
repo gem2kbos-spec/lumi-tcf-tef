@@ -8,6 +8,7 @@ import { addAttempt, importedProgress, readProgress, reviewQuestions, summarize 
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
+import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -73,6 +74,23 @@ const server = http.createServer(async (req, res) => {
       const types = ["grammar", "vocabulary", "reading", "listening"];
       const gaps = types.flatMap((type) => blueprintFor(type, "B1").skills.map((skill) => ({ type, skill }))).filter((item) => !covered.has(item.skill));
       return sendJson(res, 200, { weakSkills: stats.weakSkills.slice(0, 5), coverageGaps: gaps.slice(0, 12), imported: importedProgress(progress.attempts, imported), recommendedToday: Math.max(10, Math.min(30, 10 + stats.pendingReview * 2)) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary() });
+    if (req.method === "GET" && url.pathname === "/api/vocabulary/lookup") {
+      const word = (url.searchParams.get("word") || "").trim().slice(0, 80);
+      if (!word) return sendJson(res, 400, { error: "Word required" });
+      const context = (url.searchParams.get("context") || "").slice(0, 500);
+      const result = localLookup(word) || await aiLookup(word, context);
+      return sendJson(res, 200, { word, result, aiAvailable: Boolean(process.env.OPENAI_API_KEY) });
+    }
+    if (req.method === "POST" && url.pathname === "/api/vocabulary") {
+      const input = await body(req); const word = typeof input.word === "string" ? input.word.trim().slice(0, 80) : "";
+      if (!word) return sendJson(res, 400, { error: "Word required" });
+      return sendJson(res, 201, { entry: await saveVocabulary({ word, context: String(input.context || "").slice(0, 500), questionId: input.questionId }) });
+    }
+    if (req.method === "POST" && url.pathname === "/api/vocabulary/mastered") {
+      const input = await body(req); const entry = await toggleMastered(input.id);
+      return entry ? sendJson(res, 200, { entry }) : sendJson(res, 404, { error: "Entry not found" });
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
