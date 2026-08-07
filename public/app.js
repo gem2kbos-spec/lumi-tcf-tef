@@ -6,6 +6,10 @@ let knowledgeTopics = [];
 let currentKnowledgeId = "y-en-prepositions";
 let knowledgeChat = [];
 let categoryCatalog = [];
+let bankOffset = 0;
+let bankLoading = false;
+let bankHasMore = false;
+let bankSearchTimer = null;
 
 const catalogs = {
   tcf: {
@@ -217,23 +221,29 @@ async function loadActivity() {
   $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
 }
 
-async function loadBank() {
-  const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value, category: $("#bank-category").value });
-  const payload = await api(`/api/bank?${params}`);
-  $("#bank-count").textContent = payload.questions.length;
-  if (!payload.questions.length) {
+async function loadBank(reset = true) {
+  if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
+  if (reset) bankOffset = 0;
+  const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value, category: $("#bank-category").value, answerStatus: $("#bank-answer-status").value, q: $("#bank-search").value.trim(), offset: bankOffset, limit: 50 });
+  try {
+    const payload = await api(`/api/bank?${params}`);
+    $("#bank-count").textContent = payload.meta.total; bankHasMore = payload.meta.hasMore; $("#bank-load-more").hidden = !bankHasMore;
+    if (!payload.questions.length && reset) {
     const empty = document.createElement("div"); empty.className = "bank-empty";
-    empty.innerHTML = $("#bank-source").value === "user_imported" ? "<strong>真题等待导入</strong><p>你把真题发给我后，会在这里按照原始顺序和难度展示。</p>" : "<strong>没有符合筛选条件的题目</strong>";
+    empty.innerHTML = "<strong>没有符合当前条件的题目</strong><p>可以清除搜索词，或放宽题型、难度和答案状态。</p>";
     $("#bank-list").replaceChildren(empty); return;
-  }
-  $("#bank-list").replaceChildren(...payload.questions.map((question) => {
+    }
+    const cards = payload.questions.map((question) => {
     const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
     const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
-    const category = categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
+    const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
     card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "答案校准中"}</button></div>`;
     if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
-  }));
+    });
+    if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
+    bankOffset += payload.questions.length;
+  } finally { bankLoading = false; $("#bank-list").classList.remove("loading"); }
 }
 
 async function loadCategories(type = $("#category-type").value) {
@@ -242,7 +252,7 @@ async function loadCategories(type = $("#category-type").value) {
     const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
     card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可作答 ${category.readyTotal}</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.pendingTotal ? `${category.pendingTotal} 题答案校准中` : category.total ? `点击查看并刷题 · ${progress}%` : "等待题目导入"}</small>`;
-    card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
   if ($("#bank-type").value === type) setCategoryOptions(payload.categories, $("#bank-category").value);
@@ -352,9 +362,12 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
-for (const selector of ["#bank-source", "#bank-level", "#bank-status", "#bank-category"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(); });
+for (const selector of ["#bank-source", "#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });
+$("#bank-search").addEventListener("input", () => { clearTimeout(bankSearchTimer); bankSearchTimer = setTimeout(() => loadBank(true), 250); });
+$("#bank-load-more").addEventListener("click", () => loadBank(false));
+$("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });
 $("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
-$("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(); });
+$("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();

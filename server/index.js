@@ -10,7 +10,7 @@ import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
 import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
 import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
-import { categoriesFor, categoryFor } from "./question-taxonomy.js";
+import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxonomy.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -39,7 +39,8 @@ function sample(items, count) {
 
 function normalizedQuestion(question, source = question.source || "curated") {
   const levelDifficulty = { A1: 1, A2: 3, B1: 5, B2: 7, C1: 9, C2: 10 };
-  return { source, ...question, category: categoryFor(question), difficulty: question.difficulty || levelDifficulty[question.level] || 5, answerVerified: question.answerVerified ?? question.answer !== null };
+  const category = categoryFor(question);
+  return { source, ...question, category, categoryLabel: QUESTION_CATEGORIES.find((item) => item.id === category)?.label || question.skill?.replaceAll("_", " ") || category, difficulty: question.difficulty || levelDifficulty[question.level] || 5, answerVerified: question.answerVerified ?? question.answer !== null };
 }
 
 function responseText(payload) {
@@ -71,18 +72,24 @@ const server = http.createServer(async (req, res) => {
       const source = url.searchParams.get("source") || "all";
       const status = url.searchParams.get("status") || "all";
       const category = url.searchParams.get("category") || "all";
+      const answerStatus = url.searchParams.get("answerStatus") || "all";
+      const query = (url.searchParams.get("q") || "").trim().toLocaleLowerCase("fr").slice(0, 100);
+      const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0); const limit = Math.min(100, Math.max(20, Number(url.searchParams.get("limit")) || 50));
       const priority = new Map(categoriesFor(type === "all" ? "grammar" : type).map((item, index) => [item.id, index]));
-      const questions = merged.filter((question) =>
+      const filtered = merged.filter((question) =>
         (type === "all" || question.type === type) &&
         (level === "all" || question.level === level) &&
         (source === "all" || question.source === source) &&
-        (category === "all" || question.category === category)
+        (category === "all" || question.category === category) &&
+        (answerStatus === "all" || (answerStatus === "ready" ? question.answerVerified : !question.answerVerified)) &&
+        (!query || [question.prompt, question.passage, question.topic, question.categoryLabel].some((value) => String(value || "").toLocaleLowerCase("fr").includes(query)))
       ).sort((a, b) => (priority.get(a.category) ?? 99) - (priority.get(b.category) ?? 99) || a.difficulty - b.difficulty || a.order - b.order)
         .map((question, index) => ({ ...publicQuestion(question), number: index + 1, completed: completedIds.has(question.id) }))
         .filter((question) => status === "all" || (status === "completed" ? question.completed : !question.completed));
+      const questions = filtered.slice(offset, offset + limit);
       return sendJson(res, 200, {
         questions,
-        meta: { total: questions.length, allQuestions: merged.length, imported: imported.length, curated: questionBank.length, completed: questions.filter((question) => question.completed).length }
+        meta: { total: filtered.length, returned: questions.length, offset, hasMore: offset + questions.length < filtered.length, allQuestions: merged.length, imported: imported.length, curated: questionBank.length, completed: filtered.filter((question) => question.completed).length }
       });
     }
     if (req.method === "GET" && url.pathname === "/api/categories") {

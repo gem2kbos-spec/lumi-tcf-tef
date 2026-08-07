@@ -11,6 +11,8 @@
   <link rel="stylesheet" href="/knowledge.css" />
   <link rel="stylesheet" href="/categories.css" />
   <link rel="stylesheet" href="/activity.css" />
+  <link rel="stylesheet" href="/navigation.css" />
+  <link rel="stylesheet" href="/anchors.css" />
 </head>
 <body>
   <main>
@@ -18,20 +20,21 @@
       <div class="brand"><span>lu</span> Lumi Français</div>
       <div class="header-actions"><button id="open-notebook">生词本 <span id="vocab-count">0</span></button><div id="ai-status" class="status">正在连接…</div></div>
     </header>
+    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a><a href="#practice">开始做题</a></nav>
     <section class="hero">
       <div class="knowledge-summary">
         <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
         <button id="refresh-knowledge" aria-label="刷新知识点">↻ 换一个</button>
       </div>
     </section>
-    <section class="exam-hub">
+    <section id="exam-center" class="exam-hub">
       <div class="exam-tabs" role="group" aria-label="选择考试">
         <button class="active" data-exam="tcf"><strong>TCF</strong><span>预签证 / DAP</span></button>
         <button data-exam="tef"><strong>TEF</strong><span>全题型训练</span></button>
       </div>
       <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
-    <section class="activity-panel">
+    <section id="activity-center" class="activity-panel">
       <div class="activity-heading"><div><p class="label">训练记录</p><h2>真题与生成题进度</h2></div><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div></div>
       <div class="activity-metrics">
         <article><span>历史已做真题</span><strong id="history-authentic">0 / 700</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 真题进度</small></article>
@@ -41,8 +44,8 @@
       </div>
       <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>真题库总量 <b id="authentic-total">700题</b></span></div>
     </section>
-    <section class="ai-lab">
-      <div class="section-heading"><div><p class="label">AI 补缺训练室</p><h2>生成真题没有覆盖，但考试可能考到的题</h2></div><span class="ai-badge">官方范围约束</span></div>
+    <section id="ai-center" class="ai-lab">
+      <div class="section-heading"><div><p class="label">AI 补缺训练室</p><h2>生成真题没有覆盖，但考试可能考到的题</h2></div><span class="ai-badge">公开考试范围约束</span></div>
       <div class="ai-lab-grid">
         <label>生成策略<select id="ai-mode"><option value="gap">真题缺口补充</option><option value="weak">重点考点强化</option></select></label>
         <label>题型<select id="ai-type"><option value="grammar">语言结构</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select></label>
@@ -52,18 +55,21 @@
       </div>
       <div id="coverage-gaps" class="coverage-gaps"></div>
     </section>
-    <section class="bank-browser">
+    <section id="bank-center" class="bank-browser">
       <div class="section-heading"><div><p class="label">可滚动题库</p><h2>查看全部题目</h2></div><div><strong id="bank-count">0</strong><span> 道题</span></div></div>
       <div class="category-heading"><div><strong>按细分考点进入</strong><span>每类显示真题题量与完成进度</span></div><select id="category-type" aria-label="细分题型"><option value="grammar">语法选择题</option><option value="vocabulary">词汇题</option><option value="reading">阅读理解</option><option value="listening">听力理解</option></select></div>
       <div id="category-grid" class="category-grid" aria-live="polite"></div>
       <div class="bank-toolbar">
+        <input id="bank-search" type="search" maxlength="100" placeholder="搜索题干、文章或考点…" aria-label="搜索题库" />
         <select id="bank-source" aria-label="题库来源"><option value="all">全部来源</option><option value="user_imported">真题</option><option value="curated">精选题</option></select>
         <select id="bank-type" aria-label="题库题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
         <select id="bank-category" aria-label="细分考点"><option value="all">全部细分考点</option></select>
         <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
         <select id="bank-status" aria-label="完成状态"><option value="all">全部状态</option><option value="pending">未完成</option><option value="completed">已完成</option></select>
+        <select id="bank-answer-status" aria-label="答案状态"><option value="all">全部答案状态</option><option value="ready">可以作答</option><option value="pending">答案校准中</option></select>
       </div>
       <div id="bank-list" class="bank-list" aria-live="polite"></div>
+      <button id="bank-load-more" class="bank-load-more" hidden>继续加载更多题目 ↓</button>
     </section>
     <section class="dashboard">
       <aside>
