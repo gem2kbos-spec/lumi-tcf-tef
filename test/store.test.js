@@ -1,17 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activitySummary, importedProgress, reviewQuestions, summarize } from "../server/store.js";
+import { activitySummary, importedProgress, reviewQuestions, summarize, weakSkillForType } from "../server/store.js";
 
 test("summarize calculates accuracy and ranks weak skills", () => {
   const stats = summarize([
-    { correct: true, skill: "subjonctif" },
-    { correct: false, skill: "subjonctif" },
-    { correct: false, skill: "subjonctif" },
-    { correct: false, skill: "pronom_y" }
+    { correct: true, type: "grammar", skill: "subjonctif" },
+    { correct: false, type: "grammar", skill: "subjonctif" },
+    { correct: false, type: "grammar", skill: "subjonctif" },
+    { correct: false, type: "grammar", skill: "pronom_y" }
   ]);
   assert.equal(stats.accuracy, 25);
   assert.equal(stats.wrongCount, 3);
-  assert.deepEqual(stats.weakSkills[0], { skill: "subjonctif", count: 2 });
+  assert.deepEqual(stats.weakSkills[0], { type: "grammar", skill: "subjonctif", count: 2 });
+});
+
+test("weak skills keep grammar and reading mistakes separate", () => {
+  const stats = summarize([
+    { correct: false, type: "grammar", skill: "inference" },
+    { correct: false, type: "reading", skill: "inference" }
+  ]);
+  assert.equal(stats.weakSkills.length, 2);
+  assert.deepEqual(new Set(stats.weakSkills.map((item) => item.type)), new Set(["grammar", "reading"]));
+  assert.equal(weakSkillForType(stats.weakSkills, "reading"), "inference");
+  assert.equal(weakSkillForType(stats.weakSkills, "listening"), null);
 });
 
 test("summarize handles an empty history", () => {
@@ -19,6 +30,13 @@ test("summarize handles an empty history", () => {
   assert.equal(stats.total, 0);
   assert.equal(stats.accuracy, 0);
   assert.deepEqual(stats.weakSkills, []);
+});
+
+test("streak uses the learner timezone around midnight", () => {
+  const stats = summarize([
+    { correct: true, type: "grammar", skill: "present", createdAt: "2026-08-06T16:30:00.000Z" }
+  ], new Date("2026-08-06T17:00:00.000Z"), "Asia/Shanghai");
+  assert.equal(stats.streak, 1);
 });
 
 test("reviewQuestions keeps only the latest unresolved mistakes", () => {

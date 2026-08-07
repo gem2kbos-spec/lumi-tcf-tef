@@ -22,30 +22,30 @@ export async function addAttempt(attempt) {
   return attempt;
 }
 
-export function summarize(attempts) {
+export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai") {
   const total = attempts.length;
   const correct = attempts.filter((item) => item.correct).length;
   const wrongBySkill = {};
   for (const item of attempts.filter((entry) => !entry.correct)) {
-    wrongBySkill[item.skill] = (wrongBySkill[item.skill] || 0) + 1;
+    const key = `${item.type || "unknown"}:${item.skill}`;
+    wrongBySkill[key] ||= { type: item.type || "unknown", skill: item.skill, count: 0 };
+    wrongBySkill[key].count++;
   }
   const byType = Object.fromEntries(["grammar", "vocabulary", "reading", "listening"].map((type) => {
     const entries = attempts.filter((item) => item.type === type);
     const right = entries.filter((item) => item.correct).length;
     return [type, { total: entries.length, accuracy: entries.length ? Math.round(right / entries.length * 100) : 0 }];
   }));
-  const days = [...new Set(attempts.map((item) => item.createdAt?.slice(0, 10)).filter(Boolean))].sort().reverse();
+  const dateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
+  const days = [...new Set(attempts.map((item) => item.createdAt).filter(Boolean).map(dateKey))].sort().reverse();
   let streak = 0;
-  const cursor = new Date();
+  let offset = 0;
+  const today = dateKey(now);
+  if (days[0] !== today) offset = 1;
   for (let index = 0; index < days.length; index++) {
-    const expected = new Date(cursor);
-    expected.setDate(cursor.getDate() - index);
-    const expectedDay = expected.toISOString().slice(0, 10);
+    const expectedDay = dateKey(new Date(now.getTime() - (index + offset) * 86400000));
     if (days[index] === expectedDay) streak++;
-    else if (index === 0) {
-      cursor.setDate(cursor.getDate() - 1);
-      index--;
-    } else break;
+    else break;
   }
   return {
     total,
@@ -55,9 +55,7 @@ export function summarize(attempts) {
     pendingReview: reviewQuestions(attempts, Number.MAX_SAFE_INTEGER).length,
     streak,
     byType,
-    weakSkills: Object.entries(wrongBySkill)
-      .sort((a, b) => b[1] - a[1])
-      .map(([skill, count]) => ({ skill, count }))
+    weakSkills: Object.values(wrongBySkill).sort((a, b) => b.count - a.count)
   };
 }
 
@@ -69,6 +67,10 @@ export function reviewQuestions(attempts, count = 10) {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, count)
     .map((attempt) => attempt.question);
+}
+
+export function weakSkillForType(weakSkills, type) {
+  return weakSkills.find((item) => item.type === type)?.skill || null;
 }
 
 export function importedProgress(attempts, importedQuestions) {

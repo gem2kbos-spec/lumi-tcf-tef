@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
 import { loadImportedQuestions } from "./imported-questions.js";
-import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
+import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, summarize, weakSkillForType } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
@@ -238,7 +238,7 @@ const server = http.createServer(async (req, res) => {
       const progress = await readProgress();
       const stats = summarize(progress.attempts);
       const gap = coverageGaps(imported, type, blueprintFor(type, level).skills)[0];
-      const weak = stats.weakSkills.find((item) => item.skill)?.skill || stats.weakSkills[0]?.skill;
+      const weak = weakSkillForType(stats.weakSkills, type);
       const targetSkill = input.mode === "weak" ? (weak || gap) : (gap || weak);
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
       const generated = await generateQuestions({ type, level, count: 1, weakSkills: targetSkill ? [targetSkill] : [], variationRequest: request });

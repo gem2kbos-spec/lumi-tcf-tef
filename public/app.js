@@ -108,7 +108,9 @@ async function refreshStats() {
   $("#authentic-progress").textContent = `${stats.imported.completed}/${stats.imported.total}`;
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 3); $("#weak-card").hidden = weak.length === 0;
-  $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
+  const weakLabels = { collocation: "固定搭配", verb_tenses: "动词时态", connecteurs: "逻辑连接词", prepositions: "介词", pronouns: "代词", information_explicite: "阅读信息定位", idee_principale: "阅读主旨", inference: "阅读推断", synonymes: "近义词辨析", sens_en_contexte: "语境词义" };
+  const typeLabels = { grammar: "语法", vocabulary: "词汇", reading: "阅读", listening: "听力" };
+  $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); const label = weakLabels[item.skill] || item.skill.replaceAll("_", " "); row.innerHTML = `<span>${typeLabels[item.type] || "综合"} · ${escapeHtml(label)}</span><b>${item.count}</b>`; return row; }));
 }
 
 function showKnowledgePreview(topic) {
