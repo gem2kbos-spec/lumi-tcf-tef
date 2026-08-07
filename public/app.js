@@ -1,15 +1,14 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [] };
 const $ = (selector) => document.querySelector(selector);
 
 const catalogs = {
   tcf: {
-    title: "TCF Tout Public", note: "三项 QCM + 写作 + 口语",
+    title: "TCF 预签证 / DAP", note: "必考：三项 QCM + 书面表达",
     modules: [
       ["listening", "听力理解", "29题 · 25分钟", "一次播放，难度递进", "CO"],
       ["grammar", "语言结构", "18题 · 15分钟", "语法、词汇与语域", "MSL"],
       ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"],
-      ["writing", "书面表达", "3项 · 60分钟", "信息、叙述与观点比较", "EE"],
-      ["speaking", "口语表达", "3项 · 12分钟", "面谈、互动与观点", "EO"]
+      ["writing", "书面表达", "3项 · 60分钟", "信息、叙述与观点比较", "EE"]
     ]
   },
   tef: {
@@ -99,23 +98,25 @@ async function refreshStats() {
   $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
 }
 
-async function start(typeOverride) {
+async function start(typeOverride, preserveSequence = false) {
   const requestedType = typeof typeOverride === "string" ? typeOverride : state.type;
   if (["writing", "speaking"].includes(requestedType)) return showProduction();
   $("#start").disabled = true; $("#review").disabled = true; $("#start").firstChild.textContent = "正在准备… ";
   try {
-    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: Number($("#count").value) }) });
+    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds }) });
     if (!payload.questions.length) { alert("这一专项的本地题目正在扩充，请配置 AI 出题或换一个等级。"); return; }
-    Object.assign(state, { questions: payload.questions, index: 0, score: 0, mode: payload.mode, answered: false, mistakes: [] });
+    if (!preserveSequence) state.continuousNumber = 1;
+    Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false });
+    state.recentIds = [...state.recentIds, ...payload.questions.map((question) => question.id)].slice(-12);
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
     $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   } catch (error) { alert(`暂时无法生成题目：${error.message}`); }
-  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始新训练 "; }
+  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始连续刷题 "; }
 }
 
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.audioPlayed = false;
-  $("#counter").textContent = `${String(state.index + 1).padStart(2, "0")} / ${String(state.questions.length).padStart(2, "0")}`;
+  $("#counter").textContent = `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   $("#source").textContent = state.mode === "ai" ? "AI 动态生成" : state.mode === "review" ? "错题复习" : `${state.exam.toUpperCase()} 精选题库`;
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
@@ -140,9 +141,8 @@ async function answer(selected, selectedButton) {
 }
 
 function next() {
-  if (state.index < state.questions.length - 1) { state.index++; render(); return; }
-  $("#quiz").hidden = true; $("#finished").hidden = false; $("#result").textContent = `答对 ${state.score} / ${state.questions.length} 题。错题已进入 TCF / TEF 共享薄弱点记录。`;
-  const accuracy = Math.round(state.score / state.questions.length * 100); $("#session-summary").innerHTML = `<strong>${accuracy}%</strong><span>${accuracy >= 70 ? "Très bien！继续巩固。" : "保持节奏，薄弱点正在变得清晰。"}</span>`;
+  state.continuousNumber++;
+  start(state.mode === "review" ? "review" : state.type, true);
 }
 
 function showProduction() {

@@ -47,6 +47,7 @@ const server = http.createServer(async (req, res) => {
       const exam = ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
+      const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
       const progress = await readProgress();
       const weakSkills = summarize(progress.attempts).weakSkills.slice(0, 3).map((item) => item.skill);
       let questions;
@@ -62,12 +63,14 @@ const server = http.createServer(async (req, res) => {
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
           const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
-          questions = sample(matching, count);
+          const unseen = matching.filter((item) => !excludeIds.has(item.id));
+          questions = sample(unseen.length ? unseen : matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
         const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
-        questions = sample(matching, count);
+        const unseen = matching.filter((item) => !excludeIds.has(item.id));
+        questions = sample(unseen.length ? unseen : matching, count);
       }
       for (const question of questions) sessions.set(question.id, question);
       return sendJson(res, 200, { mode, notice, questions: questions.map(publicQuestion) });
