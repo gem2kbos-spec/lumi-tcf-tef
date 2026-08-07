@@ -1,4 +1,4 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 let selectedVocabulary = null;
@@ -239,7 +239,7 @@ async function loadBank(reset = true) {
     const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
     if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
     });
     if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
@@ -250,7 +250,7 @@ async function loadBank(reset = true) {
 async function loadCategories(type = $("#category-type").value) {
   const payload = await api(`/api/categories?type=${encodeURIComponent(type)}`); categoryCatalog = payload.categories;
   $("#category-grid").replaceChildren(...payload.categories.map((category) => {
-    const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
+    const progress = category.authenticTotal ? Math.round(category.authenticCompleted / category.authenticTotal * 100) : 0;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
     card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可练 ${category.readyTotal}题</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.readyTotal ? `点击查看并刷题 · ${progress}%` : "题目整理中"}</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
@@ -301,14 +301,15 @@ async function start(typeOverride, preserveSequence = false) {
 }
 
 function render() {
-  const question = state.questions[state.index]; state.answered = false; state.audioPlayed = false;
+  const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
   $("#counter").textContent = `第 ${state.continuousNumber} 题 · 作答后立即解析`;
-  $("#source").textContent = state.mode === "ai" ? "AI 同考点变式" : state.mode === "review" ? "错题复习" : "合并精选题库";
+  $("#source").textContent = state.mode === "ai" ? "AI 同考点变式" : state.mode === "review" ? "错题复习" : state.mode === "authentic" ? "导入真题" : "精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
-  $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); button.innerHTML = `<span>${String.fromCharCode(65 + index)}</span>${option}`; button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
+  $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
+  $("#next").firstChild.textContent = state.mode === "authentic" ? "下一道同考点真题 " : state.mode === "review" ? "下一道错题 " : "下一道随机题 ";
 }
 
 function playAudio() {
@@ -319,14 +320,19 @@ function playAudio() {
 }
 
 async function answer(selected, selectedButton) {
-  if (state.answered) return; state.answered = true;
-  const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
-  const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); buttons[result.answer].classList.add("correct");
-  if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
-  const analysis = result.analysis;
-  $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
-  $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
-  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]);
+  if (state.answered || state.submitting) return; state.submitting = true;
+  const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true);
+  try {
+    const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
+    state.answered = true; buttons[result.answer].classList.add("correct");
+    if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
+    const analysis = result.analysis;
+    $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
+    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
+    $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]);
+  } catch (error) {
+    buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
+  } finally { state.submitting = false; }
 }
 
 async function variation() {

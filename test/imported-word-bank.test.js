@@ -22,8 +22,10 @@ test("all imported questions have calibrated answers", () => {
   assert.deepEqual(report.sourceAudit["TCFTEF阅读.docx"].incompleteSourceGroups, [64, 76, 77, 78]);
 });
 
-test("import uses six CEFR bands plus a ten-point internal difficulty", () => {
+test("import uses content-assessed CEFR bands plus a ten-point internal difficulty", () => {
   assert.deepEqual(new Set(questions.map((question) => question.level)), new Set(["A1", "A2", "B1", "B2", "C1", "C2"]));
   assert.ok(questions.every((question) => question.difficulty >= 1 && question.difficulty <= 10));
-  assert.ok(questions.every((question) => question.levelEstimated === true));
+  assert.ok(questions.every((question) => question.levelEstimated === false));
+  assert.ok(questions.every((question) => question.options.length === 4));
+  assert.ok(questions.every((question) => question.explanation.includes("中文解析：") && question.explanation.includes("Explication française")));
 });

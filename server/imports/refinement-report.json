@@ -1,0 +1,76 @@
+{
+  "refinedAt": "2026-08-07T09:38:53.747Z",
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "total": 700,
+  "grammarRefined": 227,
+  "levelsReassessed": 700,
+  "allFourOptions": true,
+  "allBilingual": true,
+  "sourceIssues": [
+    {
+      "id": "auth-grammar-002",
+      "note": "Prompt missing 'mets' ; original has 'ton blouson' but no verb."
+    },
+    {
+      "id": "auth-grammar-003",
+      "note": "Prompt missing 'vous' before blank; corrected to 'vous  à quelle heure ?'"
+    },
+    {
+      "id": "auth-grammar-016",
+      "note": "L'option 'venait de tomber' pourrait être contextuellement plausible, mais l'original choisit l'aspect progressif."
+    },
+    {
+      "id": "auth-grammar-053",
+      "note": "源题选项有两个相同的 réussissiez，已保留但提示可能为笔误。"
+    },
+    {
+      "id": "auth-grammar-089",
+      "note": "源题答案标注为0，但更自然的答案应为1（tandis que），若需保留原答案则alors que也可接受，故按原答案调整。"
+    },
+    {
+      "id": "auth-grammar-092",
+      "note": "源题答案可能有争议，car也能接受，但根据语义强调已知原因，puisque更佳。"
+    },
+    {
+      "id": "auth-grammar-095",
+      "note": "源题可能意图是‘bien que’但已给出虚拟式缺失，si更符合时态。"
+    },
+    {
+      "id": "auth-grammar-102",
+      "note": "原文可能有拼写或语义不清，但选项逻辑合理。"
+    },
+    {
+      "id": "auth-grammar-133",
+      "note": "题目缺乏语境，可能指代不明"
+    },
+    {
+      "id": "auth-grammar-169",
+      "note": "选项 la quelle 为错误拼写，已改为 laquelle"
+    },
+    {
+      "id": "auth-grammar-170",
+      "note": "原题选项重复 laquelle，已去重保留一个"
+    },
+    {
+      "id": "auth-grammar-173",
+      "note": "原答案有误，已改为正确答案"
+    },
+    {
+      "id": "auth-grammar-188",
+      "note": "原题选项有误，'aucune part' 作为干扰项应改为 'nulle part' 的正确形式，但正确选项已给出，故保留。"
+    },
+    {
+      "id": "auth-grammar-189",
+      "note": "原题填空符号可能缺失，未显示 ne 的位置，但上下文可推断。"
+    },
+    {
+      "id": "auth-grammar-200",
+      "note": "源题只有三个选项，补充了一个干扰项。不过由于答案明确，且其他选项错误明显，不构成问题。"
+    },
+    {
+      "id": "auth-grammar-221",
+      "note": "Il y a deux réponses possibles : posé un lapin et fait faux bond. L'option correcte devrait être 'fait faux bond' car l'option 'posé un lapin' manque de préposition 'à'."
+    }
+  ]
+}
