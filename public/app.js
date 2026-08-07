@@ -208,8 +208,15 @@ function captureVocabularySelection() {
 
 async function loadInsights() {
   const insights = await api("/api/insights");
+  const typeLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读", listening: "听力" };
+  const skillLabels = {
+    technologie: "科技主题", culture: "文化主题", médias: "媒体主题", société: "社会主题",
+    "identifier l'intention": "判断说话意图", "comprendre l'idée principale": "理解主旨",
+    "repérer une information détaillée": "定位详细信息", "inférer l'attitude d'un locuteur": "推断说话人态度",
+    "comprendre un échange professionnel courant": "理解常见职场对话"
+  };
   $("#coverage-gaps").replaceChildren(...insights.coverageGaps.slice(0, 8).map((item) => {
-    const tag = document.createElement("span"); tag.textContent = `${item.type} · ${item.skill}`; return tag;
+    const tag = document.createElement("span"); tag.textContent = `${typeLabels[item.type] || item.type} · ${skillLabels[item.skill] || item.skill}`; return tag;
   }));
 }
 
@@ -249,10 +256,13 @@ async function loadBank(reset = true) {
 
 async function loadCategories(type = $("#category-type").value) {
   const payload = await api(`/api/categories?type=${encodeURIComponent(type)}`); categoryCatalog = payload.categories;
-  $("#category-grid").replaceChildren(...payload.categories.map((category) => {
+  const sourceFilter = $("#bank-source").value;
+  const visibleCategories = payload.categories.filter((category) => sourceFilter === "user_imported" ? category.authenticTotal > 0 : sourceFilter === "curated" ? category.readyTotal - category.authenticTotal > 0 : category.readyTotal > 0);
+  $("#category-grid").replaceChildren(...visibleCategories.map((category) => {
     const progress = category.authenticTotal ? Math.round(category.authenticCompleted / category.authenticTotal * 100) : 0;
+    const curatedTotal = Math.max(0, category.readyTotal - category.authenticTotal);
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
-    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>可练 ${category.readyTotal}题</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.readyTotal ? `点击查看并刷题 · ${progress}%` : "题目整理中"}</small>`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span>${curatedTotal ? `<span>精选 ${curatedTotal}题</span>` : ""}</div><div class="category-progress"><i style="width:${progress}%"></i></div><small>点击查看并刷题 · 真题进度 ${progress}%</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
@@ -289,7 +299,7 @@ async function start(typeOverride, preserveSequence = false) {
   if (["writing", "speaking"].includes(requestedType)) return showProduction();
   $("#start").disabled = true; $("#review").disabled = true; $("#start").firstChild.textContent = "正在准备… ";
   try {
-    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: !state.activeCategory }) });
+    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: false }) });
     if (!payload.questions.length) { alert("这一专项的本地题目正在扩充，请配置 AI 出题或换一个等级。"); return; }
     if (!preserveSequence) state.continuousNumber = 1;
     Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false });
@@ -382,7 +392,8 @@ document.addEventListener("click", (event) => {
 $("#smart-generate").addEventListener("click", smartGenerate);
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
 document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
-for (const selector of ["#bank-source", "#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });
+for (const selector of ["#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });
+$("#bank-source").addEventListener("change", () => { state.activeCategory = null; $("#bank-category").value = "all"; loadBank(true); loadCategories($("#category-type").value); });
 $("#bank-search").addEventListener("input", () => { clearTimeout(bankSearchTimer); bankSearchTimer = setTimeout(() => loadBank(true), 250); });
 $("#bank-load-more").addEventListener("click", () => loadBank(false));
 $("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });

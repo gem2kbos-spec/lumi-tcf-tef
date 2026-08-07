@@ -12,6 +12,7 @@ import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered }
 import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
 import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxonomy.js";
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
+import { coverageGaps } from "./coverage.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -119,9 +120,8 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions();
       const progress = await readProgress();
       const stats = summarize(progress.attempts);
-      const covered = new Set(imported.map((question) => question.skill));
       const types = ["grammar", "vocabulary", "reading", "listening"];
-      const gaps = types.flatMap((type) => blueprintFor(type, "B1").skills.map((skill) => ({ type, skill }))).filter((item) => !covered.has(item.skill));
+      const gaps = types.flatMap((type) => coverageGaps(imported, type, blueprintFor(type, "B1").skills).map((skill) => ({ type, skill })));
       return sendJson(res, 200, { weakSkills: stats.weakSkills.slice(0, 5), coverageGaps: gaps.slice(0, 12), imported: importedProgress(progress.attempts, imported), recommendedToday: Math.max(10, Math.min(30, 10 + stats.pendingReview * 2)) });
     }
     if (req.method === "GET" && url.pathname === "/api/knowledge") {
@@ -237,8 +237,7 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions();
       const progress = await readProgress();
       const stats = summarize(progress.attempts);
-      const covered = new Set(imported.filter((question) => question.type === type).map((question) => question.skill));
-      const gap = blueprintFor(type, level).skills.find((skill) => !covered.has(skill));
+      const gap = coverageGaps(imported, type, blueprintFor(type, level).skills)[0];
       const weak = stats.weakSkills.find((item) => item.skill)?.skill || stats.weakSkills[0]?.skill;
       const targetSkill = input.mode === "weak" ? (weak || gap) : (gap || weak);
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
