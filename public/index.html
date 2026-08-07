@@ -3,25 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="AI 驱动的 TCF 法语训练器" />
-  <title>Lumi TCF AI Trainer</title>
+  <meta name="description" content="AI 驱动的 TCF 与 TEF 法语训练器" />
+  <title>Lumi TCF · TEF Trainer</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <main>
     <header>
-      <div class="brand"><span>lu</span> Lumi TCF</div>
+      <div class="brand"><span>lu</span> Lumi Français</div>
       <div id="ai-status" class="status">正在连接…</div>
     </header>
     <section class="hero">
-      <p class="eyebrow">A2 → B1 · 每日强化训练</p>
+      <p class="eyebrow">TCF · TEF · A2 → B1</p>
       <h1>把每一次错误，<br><em>变成下一道对的题。</em></h1>
-      <p class="intro">词汇、语法与阅读训练会根据你的薄弱点调整。先完成一组练习，Lumi 会开始认识你。</p>
+      <p class="intro">两个考试共用一套能力档案。重复出现的词汇、语法和理解能力只记一次，练习会持续回到你的真实薄弱点。</p>
+    </section>
+    <section class="exam-hub">
+      <div class="exam-tabs" role="group" aria-label="选择考试">
+        <button class="active" data-exam="tcf"><strong>TCF</strong><span>Tout Public</span></button>
+        <button data-exam="tef"><strong>TEF</strong><span>全题型训练</span></button>
+      </div>
+      <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
     <section class="dashboard">
       <aside>
         <p class="label">训练设置</p>
-        <div class="toggle" role="group" aria-label="题目类型">
+        <div class="toggle legacy-toggle" role="group" aria-label="题目类型">
           <button class="active" data-type="grammar">语法</button>
           <button data-type="vocabulary">词汇</button>
           <button data-type="reading">阅读</button>
@@ -48,11 +55,20 @@
           <div class="progress-row"><span id="counter"></span><span id="source"></span></div>
           <div class="progress-bar"><i id="progress"></i></div>
           <p id="topic" class="eyebrow"></p>
+          <button id="play-audio" class="audio-button" hidden>▶ 播放音频（仅一次）</button>
           <article id="passage" class="passage" hidden></article>
           <h2 id="prompt"></h2>
           <div id="options" class="options" aria-live="polite"></div>
           <div id="feedback" aria-live="polite" hidden></div>
           <button id="next" class="primary" hidden>下一题 <span>→</span></button>
+        </div>
+        <div id="production" hidden>
+          <div class="progress-row"><span id="production-exam"></span><span id="production-format"></span></div>
+          <p id="production-topic" class="eyebrow"></p>
+          <h2 id="production-prompt"></h2>
+          <div id="production-guidance" class="passage"></div>
+          <textarea id="production-answer" rows="10" placeholder="在这里练习作答……"></textarea>
+          <div class="production-footer"><span id="word-count">0 mots</span><button id="new-production" class="primary">换一道题 <span>↻</span></button></div>
         </div>
         <div id="finished" hidden>
           <div class="orb">✓</div><h2>这一组完成了</h2><p id="result"></p>

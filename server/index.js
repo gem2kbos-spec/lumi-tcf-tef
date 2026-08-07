@@ -43,7 +43,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
-      const type = ["vocabulary", "grammar", "reading", "review"].includes(input.type) ? input.type : "grammar";
+      const type = ["vocabulary", "grammar", "mixed", "reading", "listening", "review"].includes(input.type) ? input.type : "grammar";
+      const exam = ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const progress = await readProgress();
@@ -56,16 +57,16 @@ const server = http.createServer(async (req, res) => {
         mode = "review";
       } else if (input.useAI !== false && process.env.OPENAI_API_KEY) {
         try {
-          questions = await generateQuestions({ type, level, count, weakSkills });
+          questions = await generateQuestions({ type: type === "mixed" ? "grammar" : type, level, count, weakSkills });
           mode = "ai";
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
-          const matching = questionBank.filter((item) => item.type === type && [level, "A2"].includes(item.level));
+          const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
           questions = sample(matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
-        const matching = questionBank.filter((item) => item.type === type && [level, "A2"].includes(item.level));
+        const matching = questionBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (!item.exam || item.exam === "shared" || item.exam === exam));
         questions = sample(matching, count);
       }
       for (const question of questions) sessions.set(question.id, question);
@@ -78,6 +79,7 @@ const server = http.createServer(async (req, res) => {
       const correct = input.selected === question.answer;
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
+        exam: ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf",
         skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
         question
       };

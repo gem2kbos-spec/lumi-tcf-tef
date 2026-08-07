@@ -206,5 +206,61 @@ export const questionBank = [
     prompt: "Quel conseil l'auteur donne-t-il ?",
     options: ["Lire uniquement les titres les plus courts", "Éviter toute information sur téléphone", "Contrôler le contenu avant de le diffuser", "Partager rapidement les nouvelles importantes"], answer: 2,
     explanation: "L'auteur recommande de lire l'article et de vérifier sa source avant de le partager.", skill: "intention_auteur"
+  },
+  {
+    id: "listening-001", type: "listening", level: "A2", topic: "message téléphonique", exam: "shared",
+    audioText: "Bonjour Madame, votre rendez-vous de jeudi est déplacé à vendredi, à dix heures trente. Merci de nous rappeler si cet horaire ne vous convient pas.",
+    prompt: "Pourquoi cette personne téléphone-t-elle ?",
+    options: ["Pour annuler un rendez-vous", "Pour modifier un rendez-vous", "Pour confirmer une adresse", "Pour demander un document"], answer: 1,
+    explanation: "Le rendez-vous est déplacé du jeudi au vendredi.", skill: "intention_orale"
+  },
+  {
+    id: "listening-002", type: "listening", level: "A2", topic: "annonce publique", exam: "shared",
+    audioText: "Mesdames et messieurs, le train à destination de Lyon partira exceptionnellement de la voie huit avec un retard de quinze minutes.",
+    prompt: "Quelle information est annoncée ?",
+    options: ["Le train est supprimé", "Le billet doit être changé", "Le départ est retardé", "La destination a changé"], answer: 2,
+    explanation: "L'annonce indique un retard de quinze minutes.", skill: "information_orale"
+  },
+  {
+    id: "listening-003", type: "listening", level: "A2", topic: "conversation", exam: "shared",
+    audioText: "Je voulais aller au marché ce matin, mais il pleut trop. Je vais attendre cet après-midi et, si le temps ne change pas, je prendrai le bus jusqu'au supermarché.",
+    prompt: "Que va faire cette personne maintenant ?",
+    options: ["Prendre immédiatement le bus", "Attendre avant de sortir", "Aller au marché sous la pluie", "Commander ses courses"], answer: 1,
+    explanation: "La personne dit qu'elle va attendre cet après-midi.", skill: "information_orale"
+  },
+  {
+    id: "listening-004", type: "listening", level: "B1", topic: "travail", exam: "shared",
+    audioText: "On avait prévu de présenter le projet lundi, mais plusieurs collègues seront absents. Je propose de maintenir la réunion pour régler les derniers détails et de reporter uniquement la présentation au client.",
+    prompt: "Que propose la personne ?",
+    options: ["D'annuler toutes les réunions", "De changer de client", "De préparer le projet lundi sans le présenter", "De présenter le projet sans les collègues"], answer: 2,
+    explanation: "La réunion de préparation est maintenue, mais la présentation au client est reportée.", skill: "idee_principale_orale"
+  },
+  {
+    id: "listening-005", type: "listening", level: "B1", topic: "radio", exam: "tcf",
+    audioText: "La médiathèque attire désormais un public plus jeune grâce à ses ateliers numériques. Pourtant, sa directrice insiste : les livres restent au cœur du lieu. Les nouveaux services servent surtout à donner envie aux visiteurs de découvrir l'ensemble des collections.",
+    prompt: "Quel est le point de vue de la directrice ?",
+    options: ["Les services numériques doivent remplacer les livres", "Les ateliers éloignent les jeunes de la lecture", "Les nouveautés peuvent conduire vers les collections", "La médiathèque doit limiter son public"], answer: 2,
+    explanation: "Pour elle, les nouveaux services donnent accès à l'ensemble des collections, dont les livres.", skill: "point_de_vue_oral"
+  },
+  {
+    id: "listening-006", type: "listening", level: "B1", topic: "annonce", exam: "tef",
+    audioText: "Vous souhaitez améliorer votre français professionnel ? Notre formation se déroule entièrement à distance. Les séances en direct ont lieu le soir, mais tous les exercices restent accessibles pendant trois mois. Une évaluation individuelle est proposée avant l'inscription.",
+    prompt: "Quel avantage particulier offre cette formation ?",
+    options: ["Elle garantit un nouvel emploi", "Elle adapte le parcours avant le début", "Elle ne comporte aucun cours en direct", "Elle est gratuite pendant trois mois"], answer: 1,
+    explanation: "L'évaluation individuelle avant l'inscription permet d'adapter le parcours.", skill: "information_detaillee_orale"
+  },
+  {
+    id: "listening-007", type: "listening", level: "B1", topic: "témoignage", exam: "shared",
+    audioText: "Au début, je prenais le vélo uniquement le week-end. Puis mon entreprise a installé un local sécurisé et des douches. C'est ce qui m'a décidé à venir travailler à vélo presque chaque jour, même si le trajet est un peu plus long.",
+    prompt: "Qu'est-ce qui a changé l'habitude de cette personne ?",
+    options: ["Un trajet plus court", "De nouveaux équipements au travail", "La vente de sa voiture", "Une activité organisée le week-end"], answer: 1,
+    explanation: "Le local sécurisé et les douches installés par l'entreprise ont motivé ce changement.", skill: "cause_orale"
+  },
+  {
+    id: "listening-008", type: "listening", level: "B1", topic: "service client", exam: "tef",
+    audioText: "Votre commande a bien été expédiée lundi. Le transporteur signale toutefois une adresse incomplète. Connectez-vous à votre espace client avant ce soir pour ajouter le numéro de l'appartement, sinon le colis nous sera retourné.",
+    prompt: "Que doit faire le client ?",
+    options: ["Commander un autre produit", "Contacter directement le transporteur", "Compléter rapidement son adresse", "Récupérer le colis au magasin"], answer: 2,
+    explanation: "Le client doit ajouter le numéro de l'appartement avant ce soir.", skill: "consigne_orale"
   }
 ];

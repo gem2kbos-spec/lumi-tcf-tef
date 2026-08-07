@@ -11,9 +11,10 @@ const schema = {
       items: {
         type: "object",
         additionalProperties: false,
-        required: ["passage", "prompt", "options", "answer", "explanation", "topic", "skill"],
+        required: ["passage", "audioText", "prompt", "options", "answer", "explanation", "topic", "skill"],
         properties: {
           passage: { type: "string" },
+          audioText: { type: "string" },
           prompt: { type: "string" },
           options: { type: "array", minItems: 4, maxItems: 4, items: { type: "string" } },
           answer: { type: "integer", minimum: 0, maximum: 3 },
@@ -32,8 +33,8 @@ export async function generateQuestions({ type, level, count, weakSkills = [] })
 
   const model = process.env.OPENAI_MODEL || "gpt-5.6-sol";
   const blueprint = blueprintFor(type, level);
-  const section = type === "grammar" ? "maîtrise des structures" : type === "reading" ? "compréhension écrite" : "lexique en contexte";
-  const instructions = `Tu es un concepteur expert du TCF Tout Public. Crée des QCM originaux de ${section}, niveau CECR ${level}. Respecte strictement ce référentiel public : ${JSON.stringify(blueprint)}. Imite le mode d'évaluation du TCF sans reproduire de question protégée. Une seule réponse doit être incontestablement correcte et directement justifiable. Les distracteurs doivent être plausibles, homogènes, de longueur comparable et sans ambiguïté. N'exige aucune connaissance extérieure au document. Rédige tout en français. Donne une explication pédagogique courte qui indique l'indice décisif. Pour la lecture, passage contient le document et prompt contient une seule question. Pour les autres sections, passage est une chaîne vide. Compétences faibles à renforcer : ${weakSkills.join(", ") || "aucune donnée"}.`;
+  const section = type === "grammar" ? "maîtrise des structures" : type === "reading" ? "compréhension écrite" : type === "listening" ? "compréhension orale" : "lexique en contexte";
+  const instructions = `Tu es un concepteur expert des tests de français TCF et TEF. Crée des QCM originaux de ${section}, niveau CECR ${level}. Respecte strictement ce référentiel public : ${JSON.stringify(blueprint)}. Imite le mode d'évaluation sans reproduire de question protégée. Une seule réponse doit être incontestablement correcte et directement justifiable. Les distracteurs doivent être plausibles, homogènes, de longueur comparable et sans ambiguïté. N'exige aucune connaissance extérieure au document. Rédige tout en français. Donne une explication pédagogique courte qui indique l'indice décisif. Pour la lecture, passage contient le document. Pour l'écoute, audioText contient un court document oral naturel et le candidat ne doit pas voir sa transcription. Pour les autres sections, ces champs sont des chaînes vides. Compétences faibles à renforcer : ${weakSkills.join(", ") || "aucune donnée"}.`;
 
   const response = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
@@ -67,5 +68,7 @@ export function validateGeneratedQuestions(questions, { type, level, count }) {
       const words = question.passage.trim().split(/\s+/).filter(Boolean).length;
       if (words < blueprint.wordRange[0] || words > blueprint.wordRange[1]) throw new Error("AI reading passage is outside the target length.");
     } else if (question.passage !== "") throw new Error("AI returned an unexpected passage.");
+    if (type === "listening" && question.audioText.trim().split(/\s+/).length < 8) throw new Error("AI listening script is too short.");
+    if (type !== "listening" && question.audioText !== "") throw new Error("AI returned an unexpected audio script.");
   }
 }

@@ -29,7 +29,7 @@ export function summarize(attempts) {
   for (const item of attempts.filter((entry) => !entry.correct)) {
     wrongBySkill[item.skill] = (wrongBySkill[item.skill] || 0) + 1;
   }
-  const byType = Object.fromEntries(["grammar", "vocabulary", "reading"].map((type) => {
+  const byType = Object.fromEntries(["grammar", "vocabulary", "reading", "listening"].map((type) => {
     const entries = attempts.filter((item) => item.type === type);
     const right = entries.filter((item) => item.correct).length;
     return [type, { total: entries.length, accuracy: entries.length ? Math.round(right / entries.length * 100) : 0 }];
