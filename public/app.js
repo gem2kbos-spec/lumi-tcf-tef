@@ -303,13 +303,14 @@ async function start(typeOverride, preserveSequence = false) {
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
   $("#counter").textContent = `第 ${state.continuousNumber} 题 · 作答后立即解析`;
-  $("#source").textContent = state.mode === "ai" ? "AI 同考点变式" : state.mode === "review" ? "错题复习" : state.mode === "authentic" ? "导入真题" : "精选题库";
+  const currentSource = question.source === "user_imported" ? "authentic" : question.source?.startsWith("ai") ? "ai" : state.mode;
+  $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : "精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
-  $("#next").firstChild.textContent = state.mode === "authentic" ? "下一道同考点真题 " : state.mode === "review" ? "下一道错题 " : "下一道随机题 ";
+  $("#next").firstChild.textContent = currentSource === "authentic" ? "下一道同考点真题 " : currentSource === "review" ? "下一道错题 " : "下一道随机题 ";
 }
 
 function playAudio() {
@@ -321,7 +322,7 @@ function playAudio() {
 
 async function answer(selected, selectedButton) {
   if (state.answered || state.submitting) return; state.submitting = true;
-  const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true);
+  const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); $("#options").setAttribute("aria-busy", "true");
   try {
     const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
     state.answered = true; buttons[result.answer].classList.add("correct");
@@ -332,7 +333,7 @@ async function answer(selected, selectedButton) {
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]);
   } catch (error) {
     buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
-  } finally { state.submitting = false; }
+  } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
 }
 
 async function variation() {
