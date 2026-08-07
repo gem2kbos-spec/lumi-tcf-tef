@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/notebook.css" />
   <link rel="stylesheet" href="/knowledge.css" />
   <link rel="stylesheet" href="/categories.css" />
+  <link rel="stylesheet" href="/activity.css" />
 </head>
 <body>
   <main>
@@ -30,14 +31,15 @@
       </div>
       <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
-    <section class="sprint-panel">
-      <div><p class="label">短期冲刺</p><h2>今天最值得做什么</h2></div>
-      <div class="sprint-metrics">
-        <div><span>今日建议</span><strong id="recommended-today">10题</strong></div>
-        <div><span>待复习</span><strong id="sprint-review">0题</strong></div>
-        <div><span>真题覆盖</span><strong id="sprint-coverage">0%</strong></div>
+    <section class="activity-panel">
+      <div class="activity-heading"><div><p class="label">训练记录</p><h2>真题与生成题进度</h2></div><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div></div>
+      <div class="activity-metrics">
+        <article><span>历史已做真题</span><strong id="history-authentic">0 / 700</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 真题进度</small></article>
+        <article><span>历史已做生成题</span><strong id="history-generated">0题</strong><small>AI补缺与举一反三</small></article>
+        <article><span>今日已做真题</span><strong id="today-authentic">0题</strong><small>按不同题目计数</small></article>
+        <article><span>今日已做生成题</span><strong id="today-generated">0题</strong><small>按不同题目计数</small></article>
       </div>
-      <div id="sprint-advice" class="sprint-advice">先完成语言结构与阅读各5题。</div>
+      <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>真题库总量 <b id="authentic-total">700题</b></span></div>
     </section>
     <section class="ai-lab">
       <div class="section-heading"><div><p class="label">AI 补缺训练室</p><h2>生成真题没有覆盖，但考试可能考到的题</h2></div><span class="ai-badge">官方范围约束</span></div>

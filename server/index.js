@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
 import { loadImportedQuestions } from "./imported-questions.js";
-import { addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
+import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, summarize } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
@@ -56,6 +56,10 @@ const server = http.createServer(async (req, res) => {
       const progress = await readProgress();
       const imported = await loadImportedQuestions();
       return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/activity") {
+      const progress = await readProgress(); const imported = await loadImportedQuestions();
+      return sendJson(res, 200, activitySummary(progress.attempts, imported));
     }
     if (req.method === "GET" && url.pathname === "/api/bank") {
       const imported = await loadImportedQuestions();

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { importedProgress, reviewQuestions, summarize } from "../server/store.js";
+import { activitySummary, importedProgress, reviewQuestions, summarize } from "../server/store.js";
 
 test("summarize calculates accuracy and ranks weak skills", () => {
   const stats = summarize([
@@ -37,4 +37,17 @@ test("importedProgress counts each source question only once", () => {
     { questionId: "real-1" }, { questionId: "real-1" }, { questionId: "ai-1" }
   ], [{ id: "real-1" }, { id: "real-2" }]);
   assert.deepEqual(result, { completed: 1, total: 2, percentage: 50 });
+});
+
+test("activitySummary separates authentic and generated history for today", () => {
+  const attempts = [
+    { questionId: "real-1", correct: true, createdAt: "2026-08-07T01:00:00.000Z", question: { source: "user_imported" } },
+    { questionId: "real-1", correct: false, createdAt: "2026-08-07T02:00:00.000Z", question: { source: "user_imported" } },
+    { questionId: "ai-1", correct: true, createdAt: "2026-08-07T03:00:00.000Z", question: { source: "ai_variation" } },
+    { questionId: "ai-old", correct: true, createdAt: "2026-08-05T03:00:00.000Z", question: { source: "ai_supplement" } }
+  ];
+  const result = activitySummary(attempts, [{ id: "real-1" }, { id: "real-2" }], new Date("2026-08-07T04:00:00.000Z"), "Asia/Shanghai");
+  assert.equal(result.historicAuthentic, 1); assert.equal(result.historicGenerated, 2);
+  assert.equal(result.todayAuthentic, 1); assert.equal(result.todayGenerated, 1);
+  assert.equal(result.todayTotal, 3); assert.equal(result.todayAccuracy, 67); assert.equal(result.authenticPercentage, 50);
 });

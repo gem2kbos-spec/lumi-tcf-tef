@@ -203,15 +203,18 @@ function captureVocabularySelection() {
 
 async function loadInsights() {
   const insights = await api("/api/insights");
-  $("#recommended-today").textContent = `${insights.recommendedToday}题`;
-  $("#sprint-review").textContent = `${insights.weakSkills.reduce((sum, item) => sum + item.count, 0)}题`;
-  $("#sprint-coverage").textContent = `${insights.imported.percentage}%`;
-  $("#sprint-advice").textContent = insights.weakSkills.length
-    ? `优先强化：${insights.weakSkills.slice(0, 3).map((item) => item.skill.replaceAll("_", " ")).join("、")}。先复习错题，再做AI重点强化。`
-    : "先完成语言结构与阅读各5题，系统会据此识别你的薄弱点。";
   $("#coverage-gaps").replaceChildren(...insights.coverageGaps.slice(0, 8).map((item) => {
     const tag = document.createElement("span"); tag.textContent = `${item.type} · ${item.skill}`; return tag;
   }));
+}
+
+async function loadActivity() {
+  const activity = await api("/api/activity");
+  $("#history-authentic").textContent = `${activity.historicAuthentic} / ${activity.authenticTotal}`;
+  $("#history-generated").textContent = `${activity.historicGenerated}题`; $("#today-authentic").textContent = `${activity.todayAuthentic}题`; $("#today-generated").textContent = `${activity.todayGenerated}题`;
+  $("#history-authentic-percent").textContent = `${activity.authenticPercentage}% 真题进度`; $("#authentic-progress-bar").style.width = `${activity.authenticPercentage}%`;
+  $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.authenticTotal}题`;
+  $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
 }
 
 async function loadBank() {
@@ -312,7 +315,7 @@ async function answer(selected, selectedButton) {
   const analysis = result.analysis;
   $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
   $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
-  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadInsights(), loadBank(), loadCategories()]);
+  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]);
 }
 
 async function variation() {
@@ -355,4 +358,4 @@ $("#bank-type").addEventListener("change", async (event) => { state.activeCatego
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });

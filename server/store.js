@@ -80,3 +80,21 @@ export function importedProgress(attempts, importedQuestions) {
     percentage: ids.size ? Math.round(completed.size / ids.size * 100) : 0
   };
 }
+
+export function activitySummary(attempts, importedQuestions, now = new Date(), timeZone = "Asia/Shanghai") {
+  const authenticIds = new Set(importedQuestions.map((question) => question.id));
+  const dateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
+  const todayKey = dateKey(now); const todayAttempts = attempts.filter((attempt) => attempt.createdAt && dateKey(attempt.createdAt) === todayKey);
+  const uniqueIds = (entries, predicate) => new Set(entries.filter(predicate).map((attempt) => attempt.questionId)).size;
+  const authentic = (attempt) => authenticIds.has(attempt.questionId) || attempt.question?.source === "user_imported";
+  const generated = (attempt) => String(attempt.question?.source || "").startsWith("ai");
+  const todayCorrect = todayAttempts.filter((attempt) => attempt.correct).length;
+  const historicAuthentic = uniqueIds(attempts, authentic);
+  return {
+    historicAuthentic, historicGenerated: uniqueIds(attempts, generated),
+    todayAuthentic: uniqueIds(todayAttempts, authentic), todayGenerated: uniqueIds(todayAttempts, generated),
+    todayTotal: todayAttempts.length, todayAccuracy: todayAttempts.length ? Math.round(todayCorrect / todayAttempts.length * 100) : 0,
+    authenticTotal: authenticIds.size, authenticPercentage: authenticIds.size ? Math.round(historicAuthentic / authenticIds.size * 100) : 0,
+    lastActivityAt: attempts.length ? [...attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0].createdAt : null
+  };
+}
