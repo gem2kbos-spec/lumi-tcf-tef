@@ -3,4 +3,5 @@ node_modules/
 .DS_Store
 server/data/progress.json
 server/data/vocabulary.json
+server/imports/.calibration-checkpoint.json
 npm-debug.log*

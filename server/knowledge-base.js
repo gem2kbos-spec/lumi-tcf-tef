@@ -34,13 +34,14 @@ export function buildAttemptAnalysis(question, selected) {
   const selectedOption = question.options[selected];
   const [label, note] = KNOWLEDGE[question.skill] || [question.topic || "本题考点", "回到题干或原文，确认决定正确答案的唯一证据，并比较其余选项为什么不成立。"];
   const correct = selected === question.answer;
+  const bilingual = question.explanation?.match(/^中文解析：([\s\S]*?)\n\nExplication française\s*:\s*([\s\S]+)$/);
   let errorReasonZh = "本题作答正确。建议仍然确认决定答案的关键线索，避免只是猜对。";
   if (!correct && question.type === "reading") errorReasonZh = `你选择了“${selectedOption}”，但这个选项没有被原文完整支持。你的错误更接近“${label}”环节：可能抓到了局部相似词，却没有核对题干要求和决定性限定条件。`;
   else if (!correct && question.type === "listening") errorReasonZh = `你选择了“${selectedOption}”。这个干扰项可能复用了录音中的词，但没有准确表达说话人的完整意思。需要加强“${label}”。`;
   else if (!correct) errorReasonZh = `你选择了“${selectedOption}”，说明“${label}”还不稳定。不要只看单词是否眼熟，应先判断句法位置、固定搭配或逻辑关系，再排除干扰项。`;
   return {
-    explanationFr: question.explanation,
-    explanationZh: `正确答案是“${correctOption}”。本题考查【${label}】。${note}`,
+    explanationFr: bilingual ? bilingual[2].trim() : question.explanation,
+    explanationZh: bilingual ? bilingual[1].trim() : `正确答案是“${correctOption}”。本题考查【${label}】。${note}`,
     errorReasonZh,
     knowledge: { label, note },
     selectedOption,

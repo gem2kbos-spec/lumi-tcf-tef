@@ -2,8 +2,8 @@
   "totalImported": 700,
   "summary": {
     "grammar_ready": 227,
-    "vocabulary_pending": 244,
-    "reading_pending": 229
+    "vocabulary_ready": 244,
+    "reading_ready": 229
   },
   "sourceAudit": {
     "TCF TEF语法.docx": {
@@ -29,5 +29,80 @@
       ],
       "answerKeyPresent": false
     }
+  },
+  "answerCalibration": {
+    "calibratedAt": "2026-08-07T08:58:27.601Z",
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "totalQuestions": 700,
+    "calibratedThisRun": 473,
+    "firstReviewAgreements": 468,
+    "arbitrationCount": 5,
+    "ambiguities": [
+      {
+        "id": "auth-vocab-008",
+        "note": "L'option correcte est « encouragée » mais elle est écrite sans accent (encouragee), ce qui peut prêter à confusion mais reste identifiable."
+      },
+      {
+        "id": "auth-vocab-015",
+        "note": "Bien que 'gagner une fortune' soit également correct, le contexte 'a d'une fortune' (avec la préposition 'de') suggère fortement 'hériter'."
+      },
+      {
+        "id": "auth-vocab-018",
+        "note": "Les options proposées ne sont pas complètes (il manque des options), mais la réponse correcte est claire."
+      },
+      {
+        "id": "auth-vocab-037",
+        "note": "题目本身无歧义，但需注意 'avoir beau' 后接不定式，且选项中有 'beau'。"
+      },
+      {
+        "id": "auth-vocab-077",
+        "note": "stationner est aussi possible, mais garer est plus idiomatique"
+      },
+      {
+        "id": "auth-vocab-080",
+        "note": "Les autres adjectifs sont grammaticalement possibles, mais le choix du plus spécifique est marron"
+      },
+      {
+        "id": "auth-vocab-083",
+        "note": "Les autres adjectifs (marron, nouveau, grand) pourraient également être grammaticalement corrects, mais le contexte favorise « beau »."
+      },
+      {
+        "id": "auth-vocab-101",
+        "note": "L'auth-vocab-101 présente une option manquante indiquée par '选项缺失', mais les options fournies sont les mêmes que celles de l'auth-vocab-102? Non, ici les options sont trop, très, assez, beaucoup, ce qui est inhabituel pour un contexte de boulangerie. Le sens réel est peut-être 'Je vais à la boulangerie acheter du pain' avec une option manquante, mais l'analyse proposée est basée sur 'assez' comme quantité suffisante de pain. Il y a ambiguïté car le nom manquant n'est pas précisé."
+      },
+      {
+        "id": "auth-vocab-187",
+        "note": "On pourrait discuter de « au contraire », mais dans ce contexte, « cependant » est plus naturel pour introduire une réserve après une concession."
+      },
+      {
+        "id": "auth-vocab-196",
+        "note": "Bien que l'énoncé puisse être amélioré (on dirait plus naturellement « J'ai besoin d'aide »), parmi les options données, « veux » est la seule qui exprime correctement la demande d'aide sans changer le sens de la phrase. Notez que l'ambiguïté entre « peux » et « veux » est résolue par la construction : « Je peux de l'aide » n'est pas correct sans un infinitif."
+      },
+      {
+        "id": "auth-reading-067",
+        "note": "Les graphiques ne sont pas fournis, donc l'identification repose sur l'hypothèse que le graphique 1 correspond à la description."
+      },
+      {
+        "id": "auth-reading-073",
+        "note": "Le texte ne fournit pas de description des graphiques, et les options contiennent une répétition de 'Graphique 1'. La réponse repose sur l'hypothèse que le graphique 1 montre la tendance décrite, mais sans données visuelles, la certitude est faible."
+      },
+      {
+        "id": "auth-reading-095",
+        "note": "La question est une aberration, probablement une erreur de copier-coller, et ne peut être reliée au texte. La réponse est choisie par défaut, avec une grande incertitude."
+      },
+      {
+        "id": "auth-reading-120",
+        "note": "虽然未明确说免费，但通常提供培训可能隐含免费，但严格来说可能是公司出资，但作为选择题，最佳答案是免费课程。"
+      },
+      {
+        "id": "auth-reading-204",
+        "note": "L'intention exacte du propriétaire n'est pas explicitement mentionnée, mais l'option B est la plus cohérente avec le contexte."
+      },
+      {
+        "id": "auth-reading-226",
+        "note": "Le texte ne précise pas si elle est journaliste ou écrivaine; cependant, l'option A reste la plus plausible."
+      }
+    ]
   }
 }
