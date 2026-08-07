@@ -10,6 +10,7 @@ import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
 import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
 import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
+import { categoriesFor, categoryFor } from "./question-taxonomy.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -55,21 +56,35 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions();
       const progress = await readProgress();
       const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
-      const merged = [...imported, ...questionBank.map((question) => ({ source: "curated", ...question }))];
+      const merged = [...imported, ...questionBank.map((question) => ({ source: "curated", ...question, category: categoryFor(question) }))];
       const type = url.searchParams.get("type") || "all";
       const level = url.searchParams.get("level") || "all";
       const source = url.searchParams.get("source") || "all";
       const status = url.searchParams.get("status") || "all";
+      const category = url.searchParams.get("category") || "all";
       const questions = merged.filter((question) =>
         (type === "all" || question.type === type) &&
         (level === "all" || question.level === level) &&
-        (source === "all" || question.source === source)
+        (source === "all" || question.source === source) &&
+        (category === "all" || question.category === category)
       ).map((question, index) => ({ ...publicQuestion(question), number: index + 1, completed: completedIds.has(question.id) }))
         .filter((question) => status === "all" || (status === "completed" ? question.completed : !question.completed));
       return sendJson(res, 200, {
         questions,
         meta: { total: questions.length, allQuestions: merged.length, imported: imported.length, curated: questionBank.length, completed: questions.filter((question) => question.completed).length }
       });
+    }
+    if (req.method === "GET" && url.pathname === "/api/categories") {
+      const type = ["grammar", "vocabulary", "reading", "listening"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : "grammar";
+      const imported = await loadImportedQuestions(); const progress = await readProgress();
+      const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
+      const merged = [...imported, ...questionBank.map((question) => ({ source: "curated", ...question, category: categoryFor(question) }))];
+      const categories = categoriesFor(type).map((category) => {
+        const items = merged.filter((question) => question.type === type && question.category === category.id);
+        const authentic = items.filter((question) => question.source === "user_imported");
+        return { ...category, total: items.length, completed: items.filter((question) => completedIds.has(question.id)).length, authenticTotal: authentic.length, authenticCompleted: authentic.filter((question) => completedIds.has(question.id)).length };
+      });
+      return sendJson(res, 200, { type, categories });
     }
     if (req.method === "GET" && url.pathname === "/api/insights") {
       const imported = await loadImportedQuestions();
@@ -140,9 +155,10 @@ const server = http.createServer(async (req, res) => {
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
+      const category = typeof input.category === "string" ? input.category : "all";
       const progress = await readProgress();
       const imported = await loadImportedQuestions();
-      const mergedBank = [...questionBank.map((question) => ({ source: "curated", ...question })), ...imported];
+      const mergedBank = [...questionBank.map((question) => ({ source: "curated", ...question, category: categoryFor(question) })), ...imported];
       const weakSkills = summarize(progress.attempts).weakSkills.slice(0, 3).map((item) => item.skill);
       let questions;
       let mode = "bank";
@@ -156,13 +172,13 @@ const server = http.createServer(async (req, res) => {
           mode = "ai";
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
-          const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level));
+          const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (category === "all" || item.category === category));
           const unseen = matching.filter((item) => !excludeIds.has(item.id));
           questions = sample(unseen.length ? unseen : matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
-        const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level));
+        const matching = mergedBank.filter((item) => (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && [level, "A2"].includes(item.level) && (category === "all" || item.category === category));
         const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
         const nextImported = matching.filter((item) => item.source === "user_imported" && !completedIds.has(item.id)).sort((a, b) => a.order - b.order);
         const unseen = matching.filter((item) => !excludeIds.has(item.id));

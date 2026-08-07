@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { categoryFor } from "./question-taxonomy.js";
 
 const importsFile = path.resolve("server/imports/questions.json");
 
@@ -12,6 +13,7 @@ export async function loadImportedQuestions() {
       ...question,
       id: question.id || `imported-${index + 1}`,
       source: "user_imported",
+      category: categoryFor(question),
       order: Number.isFinite(question.order) ? question.order : index + 1
     }));
   } catch (error) {

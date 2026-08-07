@@ -1,10 +1,11 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [] };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 let selectedVocabulary = null;
 let knowledgeTopics = [];
 let currentKnowledgeId = "y-en-prepositions";
 let knowledgeChat = [];
+let categoryCatalog = [];
 
 const catalogs = {
   tcf: {
@@ -69,6 +70,7 @@ function renderCatalog() {
 
 function selectModule(type) {
   state.type = type;
+  state.activeCategory = null;
   state.productionType = ["writing", "speaking"].includes(type) ? type : null;
   document.querySelectorAll("[data-type]").forEach((item) => item.classList.toggle("active", item.dataset.type === type));
   renderCatalog();
@@ -213,7 +215,7 @@ async function loadInsights() {
 }
 
 async function loadBank() {
-  const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value });
+  const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value, category: $("#bank-category").value });
   const payload = await api(`/api/bank?${params}`);
   $("#bank-count").textContent = payload.questions.length;
   if (!payload.questions.length) {
@@ -225,13 +227,32 @@ async function loadBank() {
     const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
     const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${escapeHtml(question.level)}</span><span>${escapeHtml(source)}</span><span>${escapeHtml(question.type)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button>进入作答 →</button></div>`;
+    const category = categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${escapeHtml(question.level)}</span><span>${escapeHtml(source)}</span><span>${escapeHtml(question.type)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)} · ${escapeHtml(question.skill.replaceAll("_", " "))}</small><button>进入作答 →</button></div>`;
     card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); return card;
   }));
 }
 
+async function loadCategories(type = $("#category-type").value) {
+  const payload = await api(`/api/categories?type=${encodeURIComponent(type)}`); categoryCatalog = payload.categories;
+  $("#category-grid").replaceChildren(...payload.categories.map((category) => {
+    const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
+    const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span><span>全部 ${category.completed}/${category.total}</span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>${category.total ? `点击查看并刷题 · ${progress}%` : "等待题目导入"}</small>`;
+    card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
+    return card;
+  }));
+  if ($("#bank-type").value === type) setCategoryOptions(payload.categories, $("#bank-category").value);
+}
+
+function setCategoryOptions(categories, selected = "all") {
+  const first = document.createElement("option"); first.value = "all"; first.textContent = "全部细分考点";
+  $("#bank-category").replaceChildren(first, ...categories.map((category) => { const option = document.createElement("option"); option.value = category.id; option.textContent = `${category.label}（${category.total}）`; return option; }));
+  $("#bank-category").value = categories.some((item) => item.id === selected) ? selected : "all";
+}
+
 function openBankQuestion(question) {
-  state.type = question.type; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
+  state.type = question.type; state.activeCategory = question.category || null; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
   $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -252,7 +273,7 @@ async function start(typeOverride, preserveSequence = false) {
   if (["writing", "speaking"].includes(requestedType)) return showProduction();
   $("#start").disabled = true; $("#review").disabled = true; $("#start").firstChild.textContent = "正在准备… ";
   try {
-    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds }) });
+    const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: !state.activeCategory }) });
     if (!payload.questions.length) { alert("这一专项的本地题目正在扩充，请配置 AI 出题或换一个等级。"); return; }
     if (!preserveSequence) state.continuousNumber = 1;
     Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false });
@@ -289,7 +310,7 @@ async function answer(selected, selectedButton) {
   const analysis = result.analysis;
   $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
   $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
-  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadInsights(), loadBank()]);
+  $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadInsights(), loadBank(), loadCategories()]);
 }
 
 async function variation() {
@@ -326,8 +347,10 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
-for (const selector of ["#bank-source", "#bank-type", "#bank-level", "#bank-status"]) $(selector).addEventListener("change", loadBank);
+for (const selector of ["#bank-source", "#bank-level", "#bank-status", "#bank-category"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(); });
+$("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
+$("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(); });
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank(), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
