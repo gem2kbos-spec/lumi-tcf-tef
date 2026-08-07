@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/advanced.css" />
   <link rel="stylesheet" href="/notebook.css" />
+  <link rel="stylesheet" href="/knowledge.css" />
 </head>
 <body>
   <main>
@@ -17,7 +18,7 @@
     </header>
     <section class="hero">
       <div class="knowledge-summary">
-        <div><p class="eyebrow">今日精炼知识点</p><h1 id="knowledge-title">连接词先判断逻辑，再判断后接结构</h1><p id="knowledge-body">malgré 后接名词；bien que 后接完整从句并触发虚拟式。做题时先识别让步关系，再检查空格后的语法形态。</p></div>
+        <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
         <button id="refresh-knowledge" aria-label="刷新知识点">↻ 换一个</button>
       </div>
     </section>
@@ -125,6 +126,13 @@
     <div id="lookup-detail" class="lookup-detail"><p>在题目中选择一个法语单词，即可查看中文释义、法语用法、搭配和例句。</p></div>
     <div class="notebook-heading"><strong>已收藏</strong><span id="notebook-summary"></span></div>
     <div id="notebook-list" class="notebook-list"></div>
+  </aside>
+  <aside id="knowledge-drawer" class="knowledge-drawer" aria-label="知识点教室" hidden>
+    <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>
+    <nav id="knowledge-topics" aria-label="知识点列表"></nav>
+    <div id="lesson-content" class="lesson-content"></div>
+    <section class="knowledge-practice-card"><div><strong>马上检验是否真正掌握</strong><p>按当前考点生成一题符合 TCF / TEF 方式的四选一题。</p></div><label>难度<select id="knowledge-level"><option>B1</option><option>A2</option></select></label><button id="knowledge-practice">生成考点题 ✦</button></section>
+    <section class="knowledge-chat"><div><p class="label">哪里没懂就继续问</p><h3>我会保留当前知识点和这轮对话</h3></div><div id="knowledge-messages" class="knowledge-messages"><p class="chat-hint">例如：为什么 penser à quelqu'un 不能用 y？请再用时间轴解释一遍。</p></div><form id="knowledge-form"><textarea id="knowledge-question" rows="2" maxlength="600" placeholder="输入你的疑问，直到彻底弄懂……"></textarea><button>追问老师 →</button></form></section>
   </aside>
   <script type="module" src="/app.js"></script>
 </body>

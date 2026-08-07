@@ -9,6 +9,7 @@ import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
 import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
+import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -33,6 +34,10 @@ function publicQuestion(question) {
 function sample(items, count) {
   return [...items].sort(() => Math.random() - 0.5).slice(0, count)
     .sort((a, b) => ({ A2: 0, B1: 1 }[a.level] - ({ A2: 0, B1: 1 }[b.level])));
+}
+
+function responseText(payload) {
+  return payload.output_text ?? payload.output?.flatMap((item) => item.content || []).find((item) => item.type === "output_text")?.text;
 }
 
 const server = http.createServer(async (req, res) => {
@@ -74,6 +79,42 @@ const server = http.createServer(async (req, res) => {
       const types = ["grammar", "vocabulary", "reading", "listening"];
       const gaps = types.flatMap((type) => blueprintFor(type, "B1").skills.map((skill) => ({ type, skill }))).filter((item) => !covered.has(item.skill));
       return sendJson(res, 200, { weakSkills: stats.weakSkills.slice(0, 5), coverageGaps: gaps.slice(0, 12), imported: importedProgress(progress.attempts, imported), recommendedToday: Math.max(10, Math.min(30, 10 + stats.pendingReview * 2)) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/knowledge") {
+      return sendJson(res, 200, { topics: knowledgeTopics.map(({ sections, examples, ...topic }) => topic) });
+    }
+    if (req.method === "GET" && url.pathname.startsWith("/api/knowledge/")) {
+      const topic = getKnowledgeTopic(decodeURIComponent(url.pathname.slice("/api/knowledge/".length)));
+      return topic ? sendJson(res, 200, { topic }) : sendJson(res, 404, { error: "Knowledge topic not found" });
+    }
+    if (req.method === "POST" && url.pathname === "/api/knowledge/ask") {
+      if (!process.env.OPENAI_API_KEY) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
+      const input = await body(req); const topic = getKnowledgeTopic(input.topicId);
+      const question = typeof input.question === "string" ? input.question.trim().slice(0, 600) : "";
+      if (!topic || !question) return sendJson(res, 400, { error: "Topic and question required" });
+      const history = Array.isArray(input.history) ? input.history.slice(-8).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1000) })) : [];
+      const aiResponse = await fetch("https://api.openai.com/v1/responses", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-5.6-sol",
+          instructions: `你是一位严格、耐心的 TCF/TEF 法语教师。当前知识点为：${JSON.stringify(topic)}。必须用中文讲解，法语结构和例句保留法语。只讲与当前问题和该知识点有关的内容；先直接回答，再给对比例句，最后给一道不揭晓答案的快速检查题。如果学习者仍不理解，要换一种角度继续解释，而不是重复原话。`,
+          input: [...history, { role: "user", content: question }]
+        })
+      });
+      if (!aiResponse.ok) throw new Error(`OpenAI API error ${aiResponse.status}: ${await aiResponse.text()}`);
+      const answer = responseText(await aiResponse.json());
+      if (!answer) throw new Error("OpenAI did not return an explanation.");
+      return sendJson(res, 200, { answer });
+    }
+    if (req.method === "POST" && url.pathname === "/api/knowledge/practice") {
+      if (!process.env.OPENAI_API_KEY) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
+      const input = await body(req); const topic = getKnowledgeTopic(input.topicId);
+      if (!topic) return sendJson(res, 404, { error: "Knowledge topic not found" });
+      const level = ["A2", "B1"].includes(input.level) ? input.level : (topic.level.includes("B1") ? "B1" : "A2");
+      const generated = await generateQuestions({ type: topic.type, level, count: 1, weakSkills: [topic.skill], variationRequest: `Évalue exclusivement le point « ${topic.title} » (${topic.skill}). La question doit être probable et fidèle au mode d'évaluation TCF/TEF.` });
+      const question = { ...generated[0], source: "ai_knowledge", knowledgeTopicId: topic.id };
+      sessions.set(question.id, question);
+      return sendJson(res, 201, { question: publicQuestion(question) });
     }
     if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary() });
     if (req.method === "GET" && url.pathname === "/api/vocabulary/lookup") {

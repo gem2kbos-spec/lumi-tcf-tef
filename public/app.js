@@ -2,14 +2,9 @@ const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0,
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 let selectedVocabulary = null;
-const knowledgePoints = [
-  ["连接词先判断逻辑，再判断后接结构", "malgré 后接名词；bien que 后接完整从句并触发虚拟式。先识别让步关系，再检查空格后的语法形态。"],
-  ["过去叙述先建立时间轴", "背景和持续状态常用未完成过去时；发生并完成的事件常用复合过去时；更早发生的动作使用愈过去时。"],
-  ["阅读主旨题不要选择只覆盖一个细节的选项", "先用一句话概括每段作用，再选择能覆盖全文目的的答案。出现原文词最多的选项不一定正确。"],
-  ["y 和 en 的区别看介词，不看中文", "y 通常替代 à + 地点或事物；en 通常替代 de + 名词或数量。涉及人物时还要检查 lui、leur。"],
-  ["听力干扰项常复用录音原词", "不要因为听到同一个词就立即选择。等到动作、人物、时间和否定关系完整后，再判断选项是否准确复述意思。"],
-  ["条件句先看 si 从句的时态", "si + 现在时搭配现在、将来或命令式；si + 未完成过去时搭配条件式现在时。si 后通常不直接使用条件式。"]
-];
+let knowledgeTopics = [];
+let currentKnowledgeId = "y-en-prepositions";
+let knowledgeChat = [];
 
 const catalogs = {
   tcf: {
@@ -109,11 +104,53 @@ async function refreshStats() {
   $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.innerHTML = `<span>${item.skill.replaceAll("_", " ")}</span><b>${item.count}</b>`; return row; }));
 }
 
+function showKnowledgePreview(topic) {
+  if (!topic) return;
+  currentKnowledgeId = topic.id; $("#knowledge-title").textContent = topic.title; $("#knowledge-body").textContent = topic.summary;
+}
+
+async function loadKnowledgeTopics() {
+  const payload = await api("/api/knowledge"); knowledgeTopics = payload.topics;
+  showKnowledgePreview(knowledgeTopics.find((topic) => topic.id === currentKnowledgeId) || knowledgeTopics[0]);
+}
+
 function refreshKnowledge() {
-  const current = $("#knowledge-title").textContent;
-  const choices = knowledgePoints.filter(([title]) => title !== current);
-  const [title, body] = choices[Math.floor(Math.random() * choices.length)];
-  $("#knowledge-title").textContent = title; $("#knowledge-body").textContent = body;
+  if (knowledgeTopics.length < 2) return;
+  const choices = knowledgeTopics.filter((topic) => topic.id !== currentKnowledgeId);
+  showKnowledgePreview(choices[Math.floor(Math.random() * choices.length)]);
+}
+
+async function openKnowledge(topicId = currentKnowledgeId) {
+  const payload = await api(`/api/knowledge/${encodeURIComponent(topicId)}`); const topic = payload.topic;
+  currentKnowledgeId = topic.id; knowledgeChat = []; showKnowledgePreview(topic);
+  $("#lesson-title").textContent = topic.title; $("#lesson-meta").textContent = `${topic.level} · ${topic.type === "grammar" ? "语言结构" : topic.type === "reading" ? "阅读理解" : "听力理解"} · ${topic.skill.replaceAll("_", " ")}`;
+  $("#lesson-content").innerHTML = `${topic.sections.map(([title, content], index) => `<article class="lesson-rule"><span>${index + 1}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(content)}</p></article>`).join("")}<section class="lesson-examples"><h3>对比例句</h3>${topic.examples.map(([example, note]) => `<div class="lesson-example"><strong lang="fr">${escapeHtml(example)}</strong><p>${escapeHtml(note)}</p></div>`).join("")}</section>`;
+  $("#knowledge-topics").replaceChildren(...knowledgeTopics.map((item) => { const button = document.createElement("button"); button.textContent = item.title; button.classList.toggle("active", item.id === topic.id); button.addEventListener("click", () => openKnowledge(item.id)); return button; }));
+  $("#knowledge-messages").innerHTML = '<p class="chat-hint">例如：为什么 penser à quelqu’un 不能用 y？请换一种方式讲数量为什么要保留。</p>';
+  $("#knowledge-drawer").hidden = false; document.body.classList.add("knowledge-drawer-open");
+}
+
+function closeKnowledge() { $("#knowledge-drawer").hidden = true; document.body.classList.remove("knowledge-drawer-open"); }
+
+function appendKnowledgeMessage(role, content) {
+  const message = document.createElement("div"); message.className = `chat-message ${role}`; message.textContent = content; $("#knowledge-messages").append(message); $("#knowledge-messages").scrollTop = $("#knowledge-messages").scrollHeight;
+}
+
+async function askKnowledge(event) {
+  event.preventDefault(); const input = $("#knowledge-question"); const question = input.value.trim(); if (!question) return;
+  const button = $("#knowledge-form button"); appendKnowledgeMessage("user", question); input.value = ""; button.disabled = true; button.textContent = "正在讲解…";
+  try {
+    const payload = await api("/api/knowledge/ask", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, question, history: knowledgeChat }) });
+    knowledgeChat.push({ role: "user", content: question }, { role: "assistant", content: payload.answer }); knowledgeChat = knowledgeChat.slice(-8); appendKnowledgeMessage("assistant", payload.answer);
+  } catch (error) { appendKnowledgeMessage("assistant", error.message === "AI_KEY_REQUIRED" ? "追问老师需要先配置 OPENAI_API_KEY。完整固定讲解仍可直接阅读；配置后我会保留本轮上下文，陪你追问到弄懂为止。" : `讲解暂时失败：${error.message}`); }
+  finally { button.disabled = false; button.textContent = "追问老师 →"; input.focus(); }
+}
+
+async function knowledgePractice() {
+  const button = $("#knowledge-practice"); button.disabled = true; button.textContent = "正在生成…";
+  try { const payload = await api("/api/knowledge/practice", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, level: $("#knowledge-level").value }) }); closeKnowledge(); openBankQuestion(payload.question); state.mode = "ai"; }
+  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成考点题需要先配置 OPENAI_API_KEY。配置后会严格围绕当前知识点生成 TCF / TEF 风格四选一题。" : `生成失败：${error.message}`); }
+  finally { button.disabled = false; button.textContent = "生成考点题 ✦"; }
 }
 
 async function loadNotebook() {
@@ -280,7 +317,7 @@ function showProduction() {
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
-$("#refresh-knowledge").addEventListener("click", refreshKnowledge);
+$("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);
@@ -293,4 +330,4 @@ for (const selector of ["#bank-source", "#bank-type", "#bank-level", "#bank-stat
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank(), loadNotebook()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadInsights(), loadBank(), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { $("#ai-status").textContent = health.aiEnabled ? "● AI 已连接" : "● 本地题库模式"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
