@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { questionBank } from "../server/question-bank.js";
 import { blueprintFor } from "../server/tcf-blueprint.js";
-import { validateGeneratedQuestions } from "../server/ai-generator.js";
+import { validateBlankPlacement, validateGeneratedQuestions } from "../server/ai-generator.js";
 import { validateImportedQuestions } from "../server/imported-questions.js";
 import { buildAttemptAnalysis, formatAiAnalysis } from "../server/knowledge-base.js";
 
@@ -39,8 +39,16 @@ test("blueprint defines bounded reading skills and length for each level", () =>
 });
 
 test("AI validator rejects reading passages outside the target range", () => {
-  const question = { passage: "Texte trop court.", options: ["A", "B", "C", "D"] };
+  const question = { passage: "Texte trop court.", audioText: "", prompt: "Quelle est l'idée principale ?", options: ["A", "B", "C", "D"], answer: 0, explanation: "A est la réponse correcte." };
   assert.throws(() => validateGeneratedQuestions([question], { type: "reading", level: "B1", count: 1 }), /target length/);
+});
+
+test("AI validator rejects an object pronoun blank after the past participle", () => {
+  assert.throws(() => validateBlankPlacement({ prompt: "Je n'ai pas trouvé mon téléphone, mais j'ai vu ____ sur le canapé.", options: ["le", "la", "les", "l'"], answer: 0 }), /object pronoun/);
+});
+
+test("AI validator rejects impossible apostrophe elision", () => {
+  assert.throws(() => validateBlankPlacement({ prompt: "Il regarde ____ sur le canapé.", options: ["le", "la", "les", "l'"], answer: 0 }), /elision/);
 });
 
 test("import validator preserves supported authentic question structure", () => {

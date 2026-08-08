@@ -455,9 +455,11 @@ function playAudio() {
 async function answer(selected, selectedButton) {
   if (state.answered || state.submitting) return; state.submitting = true;
   const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); $("#options").setAttribute("aria-busy", "true");
+  selectedButton.classList.add("checking");
+  $("#feedback").className = "feedback-loading"; $("#feedback").innerHTML = `<div class="answer-loading"><i></i><div><strong>已收到你的答案：${String.fromCharCode(65 + selected)}</strong><p>正在核对正确答案，并生成每个选项的详细中文解析…</p></div></div>`; $("#feedback").hidden = false;
   try {
     const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
-    state.answered = true; buttons[result.answer].classList.add("correct");
+    state.answered = true; selectedButton.classList.remove("checking"); buttons[result.answer].classList.add("correct");
     if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     const analysis = result.analysis;
@@ -466,7 +468,7 @@ async function answer(selected, selectedButton) {
     $("#ask-lili-analysis").addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis));
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), result.correct ? Promise.resolve() : loadJournal()]);
   } catch (error) {
-    buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
+    selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
 }
 

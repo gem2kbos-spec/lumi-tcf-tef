@@ -38,3 +38,10 @@ body:has(#practice-hub:not([hidden]), #history-drawer:not([hidden]), .tool-drawe
 
 .detailed-analysis p,
 .history-analysis p { white-space: pre-wrap; line-height: 1.75; }
+
+.options button.checking { border-color: #7fa244; background: #f1f7e4; box-shadow: 0 0 0 3px #b9d57a33; }
+.answer-loading { display: flex; align-items: center; gap: 12px; }
+.answer-loading i { width: 22px; height: 22px; flex: 0 0 auto; border: 3px solid #cfd9bd; border-top-color: var(--green); border-radius: 50%; animation: answer-spin .8s linear infinite; }
+.answer-loading strong { color: var(--green); font-size: 13px; }
+.answer-loading p { margin: 3px 0 0!important; font-size: 11px; }
+@keyframes answer-spin { to { transform: rotate(360deg); } }
