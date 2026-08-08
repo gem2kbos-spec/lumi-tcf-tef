@@ -17,12 +17,13 @@
   <link rel="stylesheet" href="/journal.css" />
   <link rel="stylesheet" href="/journal-refine.css" />
   <link rel="stylesheet" href="/fullscreen.css" />
+  <link rel="stylesheet" href="/study-tools.css" />
 </head>
 <body>
   <main>
     <header>
       <div class="brand"><span>lu</span> Lumi Français</div>
-      <div class="header-actions"><button id="open-journal">知识点整理 <span id="journal-count">0</span></button><button id="open-notebook">生词本 <span id="vocab-count">0</span></button><div id="ai-status" class="status">正在连接…</div></div>
+      <div class="header-actions"><div id="ai-status" class="status">正在连接…</div></div>
     </header>
     <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a><a href="#practice">开始做题</a></nav>
     <section class="hero">
@@ -144,10 +145,15 @@
     <div class="notebook-heading"><strong>已收藏</strong><span id="notebook-summary"></span></div>
     <div id="notebook-list" class="notebook-list"></div>
   </aside>
-  <aside id="journal-drawer" class="journal-drawer" aria-label="知识点整理" hidden>
-    <header><div><p class="label">自动知识整理</p><h2>我的问题与错因</h2><p>AI提问和做错的题会按时间自动记录。</p></div><button id="close-journal" aria-label="关闭知识点整理">×</button></header>
-    <div class="journal-filters" role="group" aria-label="知识记录筛选"><button class="active" data-journal-filter="all">全部</button><button data-journal-filter="mistake">错因</button><button data-journal-filter="question">提问</button></div>
+  <aside id="journal-drawer" class="journal-drawer tool-drawer" aria-label="知识点整理" hidden>
+    <header><div><p class="label">自动知识整理</p><h2>知识点整理</h2><p>把lili老师的答疑、归纳和速查表集中整理。</p></div><button id="close-journal" aria-label="关闭知识点整理">×</button></header>
+    <div class="journal-filters" role="group" aria-label="知识记录筛选"><button class="active" data-journal-filter="all">全部知识</button><button data-journal-filter="quick-reference">速查表</button><button data-journal-filter="question">答疑整理</button></div>
     <div id="journal-list" class="journal-list"></div>
+  </aside>
+  <aside id="mistake-drawer" class="journal-drawer tool-drawer" aria-label="错题本" hidden>
+    <header><div><p class="label">自动错因复盘</p><h2>错题本</h2><p>按具体考点整理错误原因、中法解析和原题。</p></div><button id="close-mistakes" aria-label="关闭错题本">×</button></header>
+    <div class="mistake-summary"><strong id="mistake-count">0</strong><span>个待复盘考点</span></div>
+    <div id="mistake-list" class="journal-list"></div>
   </aside>
   <aside id="knowledge-drawer" class="knowledge-drawer" aria-label="知识点教室" hidden>
     <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>
@@ -156,7 +162,12 @@
     <section class="knowledge-practice-card"><div><strong>马上检验是否真正掌握</strong><p>按当前考点生成一题符合 TCF / TEF 方式的四选一题。</p></div><label>难度<select id="knowledge-level"><option>B1</option><option>A2</option></select></label><button id="knowledge-practice">生成考点题 ✦</button></section>
     <section class="knowledge-chat"><div><p class="label">哪里没懂就继续问</p><h3>我会保留当前知识点和这轮对话</h3></div><div id="knowledge-messages" class="knowledge-messages"><p class="chat-hint">例如：为什么 penser à quelqu'un 不能用 y？请再用时间轴解释一遍。</p></div><form id="knowledge-form"><textarea id="knowledge-question" rows="2" maxlength="600" placeholder="输入你的疑问，直到彻底弄懂……"></textarea><button>追问老师 →</button></form></section>
   </aside>
-  <button id="open-tutor" class="tutor-launch" aria-label="打开lili老师"><span>lili</span></button>
+  <nav class="study-tools" aria-label="学习工具">
+    <button id="open-journal" class="tool-ball" aria-label="打开知识点整理"><span>知识</span><b id="journal-count">0</b></button>
+    <button id="open-mistakes" class="tool-ball" aria-label="打开错题本"><span>错题</span><b id="mistake-ball-count">0</b></button>
+    <button id="open-notebook" class="tool-ball" aria-label="打开生词本"><span>生词</span><b id="vocab-count">0</b></button>
+    <button id="open-tutor" class="tool-ball tutor-launch" aria-label="打开lili老师"><span>lili</span></button>
+  </nav>
   <aside id="tutor-drawer" class="tutor-drawer" aria-label="lili老师" hidden>
     <header><div><p class="label">随时追问</p><h2>lili老师</h2><span id="tutor-mode">正在连接…</span></div><button id="close-tutor" aria-label="收起lili老师">×</button></header>
     <div class="tutor-starters"><button>y 和 en 到底怎么选？</button><button>帮我解释当前题</button><button>为什么其他选项不对？</button></div>

@@ -198,32 +198,45 @@ async function loadNotebook() {
   }));
 }
 
-function openNotebook() { $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
+function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
 function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("notebook-open"); }
 
+function isQuickReference(entry) { return entry.subtype === "quick-reference" || /\|\s*:?-{3,}/.test(entry.content || ""); }
+
+function createJournalCard(entry) {
+  const card = document.createElement("article"); card.className = `journal-entry ${entry.kind}`;
+  const top = document.createElement("div"); const kind = document.createElement("span"); const time = document.createElement("time");
+  kind.textContent = entry.kind === "mistake" ? "错题考点" : isQuickReference(entry) ? "速查表" : "答疑整理"; time.textContent = new Date(entry.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); top.append(kind, time);
+  const title = document.createElement("h3"); title.textContent = entry.title;
+  const meta = document.createElement("div"); meta.className = "journal-meta"; [entry.meta?.category, entry.meta?.level, entry.meta?.type === "reading" ? "阅读" : entry.meta?.type === "vocabulary" ? "词汇" : entry.meta?.type === "grammar" ? "语法" : entry.meta?.type === "listening" ? "听力" : ""].filter(Boolean).forEach((text) => { const chip = document.createElement("span"); chip.textContent = text; meta.append(chip); });
+  const question = document.createElement("p"); question.className = "journal-question"; question.textContent = `${entry.kind === "question" ? "我的提问" : "原题回看"}：${entry.question}`;
+  const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("div"); content.className = "journal-content"; summary.textContent = entry.kind === "mistake" ? "展开错因与解析" : "展开整理内容"; renderTutorRichText(content, entry.content); detail.append(summary, content);
+  card.append(top, title); if (meta.children.length) card.append(meta); card.append(question, detail); return card;
+}
+
 function renderJournal() {
-  const entries = journalEntries.filter((entry) => journalFilter === "all" || entry.kind === journalFilter);
+  const knowledgeEntries = journalEntries.filter((entry) => entry.kind !== "mistake");
+  const entries = knowledgeEntries.filter((entry) => journalFilter === "all" || journalFilter === "quick-reference" ? (journalFilter === "all" || isQuickReference(entry)) : entry.kind === journalFilter);
   if (!entries.length) {
-    const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = journalFilter === "all" ? "还没有整理内容。你的错题原因和向 AI 提问的答案会自动出现在这里。" : "这一类暂时没有内容。";
+    const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = journalFilter === "quick-reference" ? "还没有速查表。让lili老师生成对比表或速查表后会自动归入这里。" : "还没有知识整理内容。向lili老师提问后会自动出现在这里。";
     $("#journal-list").replaceChildren(empty); return;
   }
-  $("#journal-list").replaceChildren(...entries.map((entry) => {
-    const card = document.createElement("article"); card.className = `journal-entry ${entry.kind}`;
-    const top = document.createElement("div"); const kind = document.createElement("span"); const time = document.createElement("time");
-    kind.textContent = entry.kind === "mistake" ? "错因" : "提问"; time.textContent = new Date(entry.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); top.append(kind, time);
-    const title = document.createElement("h3"); title.textContent = entry.title;
-    const meta = document.createElement("div"); meta.className = "journal-meta"; [entry.meta?.category, entry.meta?.level, entry.meta?.type === "reading" ? "阅读" : entry.meta?.type === "vocabulary" ? "词汇" : entry.meta?.type === "grammar" ? "语法" : entry.meta?.type === "listening" ? "听力" : ""].filter(Boolean).forEach((text) => { const chip = document.createElement("span"); chip.textContent = text; meta.append(chip); });
-    const question = document.createElement("p"); question.className = "journal-question"; question.textContent = `${entry.kind === "question" ? "我的提问" : "原题回看"}：${entry.question}`;
-    const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("div"); content.className = "journal-content"; summary.textContent = "展开整理内容"; renderTutorRichText(content, entry.content); detail.append(summary, content);
-    card.append(top, title); if (meta.children.length) card.append(meta); card.append(question, detail); return card;
-  }));
+  $("#journal-list").replaceChildren(...entries.map(createJournalCard));
+}
+
+function renderMistakes() {
+  const mistakes = journalEntries.filter((entry) => entry.kind === "mistake"); $("#mistake-count").textContent = mistakes.length; $("#mistake-ball-count").textContent = mistakes.length;
+  if (!mistakes.length) { const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = "还没有错题。做错后会自动按具体考点整理到这里。"; $("#mistake-list").replaceChildren(empty); return; }
+  $("#mistake-list").replaceChildren(...mistakes.map(createJournalCard));
 }
 
 async function loadJournal() {
-  const payload = await api("/api/journal"); journalEntries = payload.entries || []; $("#journal-count").textContent = journalEntries.length; renderJournal();
+  const payload = await api("/api/journal"); journalEntries = payload.entries || []; $("#journal-count").textContent = journalEntries.filter((entry) => entry.kind !== "mistake").length; renderJournal(); renderMistakes();
 }
-function openJournal() { $("#journal-drawer").hidden = false; loadJournal(); }
+function openJournal() { closeNotebook(); closeMistakes(); closeTutor(); $("#journal-drawer").hidden = false; loadJournal(); }
 function closeJournal() { $("#journal-drawer").hidden = true; }
+function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); $("#mistake-drawer").hidden = false; loadJournal(); }
+function closeMistakes() { $("#mistake-drawer").hidden = true; }
 
 async function lookupWord(word, context = "") {
   openNotebook(); $("#lookup-word").textContent = word; $("#lookup-detail").innerHTML = "<p>正在查找用法…</p>";
@@ -418,7 +431,7 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
-function openTutor() { $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
+function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
 function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
@@ -433,6 +446,7 @@ $("#production-answer").addEventListener("input", (event) => { const words = eve
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
 $("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
+$("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
 document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);
