@@ -4,6 +4,32 @@ import { aiEnabled, completeAi } from "./ai-client.js";
 
 const file = path.resolve("server/data/vocabulary.json");
 
+const commonLemmas = {
+  suis: "être", es: "être", est: "être", sommes: "être", êtes: "être", sont: "être", étais: "être", était: "être", étaient: "être",
+  ai: "avoir", as: "avoir", a: "avoir", avons: "avoir", avez: "avoir", ont: "avoir", avait: "avoir", avaient: "avoir",
+  vais: "aller", vas: "aller", va: "aller", allons: "aller", allez: "aller", vont: "aller",
+  fais: "faire", fait: "faire", faisons: "faire", faites: "faire", font: "faire",
+  peux: "pouvoir", peut: "pouvoir", pouvons: "pouvoir", pouvez: "pouvoir", peuvent: "pouvoir",
+  veux: "vouloir", veut: "vouloir", voulons: "vouloir", voulez: "vouloir", veulent: "vouloir",
+  dois: "devoir", doit: "devoir", devons: "devoir", devez: "devoir", doivent: "devoir",
+  prends: "prendre", prend: "prendre", prenons: "prendre", prenez: "prendre", prennent: "prendre", pris: "prendre",
+  obtenu: "obtenir", obtenue: "obtenir", obtenus: "obtenir", obtenues: "obtenir", acquis: "acquérir", acquise: "acquérir",
+  ressens: "ressentir", ressent: "ressentir", ressentons: "ressentir", ressentez: "ressentir", ressentent: "ressentir",
+  envahissait: "envahir", "m'envahissait": "envahir"
+};
+
+export async function resolveFrenchLemma(word, context = "") {
+  const normalized = String(word || "").toLocaleLowerCase("fr").trim().replace(/^[^a-zà-ÿœæ'-]+|[^a-zà-ÿœæ'-]+$/gi, "");
+  if (!normalized) return "";
+  if (commonLemmas[normalized]) return commonLemmas[normalized];
+  if (!aiEnabled()) return normalized;
+  try {
+    const schema = { type: "object", additionalProperties: false, required: ["lemma"], properties: { lemma: { type: "string" } } };
+    const output = await completeAi({ instructions: "Tu es un lemmatiseur français strict. Donne uniquement la forme canonique du mot sélectionné selon le contexte : infinitif pour un verbe, masculin singulier pour un adjectif, singulier correctement orthographié pour un nom. Ne traduis pas et ne change pas de lexème.", input: `Forme sélectionnée : ${normalized}\nContexte : ${context || "non fourni"}\nRéponds uniquement en JSON.`, schema, schemaName: "french_lemma", maxTokens: 80 });
+    return JSON.parse(output)?.lemma?.toLocaleLowerCase("fr").trim() || normalized;
+  } catch { return normalized; }
+}
+
 const lexicon = {
   pourtant: { meaningZh: "然而、可是", partOfSpeech: "连接副词", usageFr: "Introduit une opposition avec ce qui précède.", usageZh: "表示与前文相反或出乎预料的情况，常可与 cependant 对照学习。", examples: ["Il était fatigué. Pourtant, il a continué.", "Ce projet est difficile, pourtant il est utile."], collocations: ["et pourtant", "pourtant bien"] },
   malgré: { meaningZh: "尽管、不顾", partOfSpeech: "介词", usageFr: "Se place devant un nom ou un pronom pour exprimer la concession.", usageZh: "后接名词或代词；如果后面是完整从句，通常使用 bien que。", examples: ["Malgré la pluie, nous sommes sortis.", "Elle a réussi malgré les difficultés."], collocations: ["malgré tout", "malgré les difficultés"] },

@@ -180,8 +180,8 @@ async function loadNotebook() {
   }));
 }
 
-function openNotebook() { $("#vocab-drawer").hidden = false; document.body.classList.add("drawer-open"); loadNotebook(); }
-function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("drawer-open"); }
+function openNotebook() { $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
+function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("notebook-open"); }
 
 function renderJournal() {
   const entries = journalEntries.filter((entry) => journalFilter === "all" || entry.kind === journalFilter);
@@ -220,8 +220,9 @@ async function lookupWord(word, context = "") {
 
 async function saveSelectedWord() {
   if (!selectedVocabulary) return;
-  await api("/api/vocabulary", { method: "POST", body: JSON.stringify(selectedVocabulary) });
-  $("#selection-tools").hidden = true; await loadNotebook(); openNotebook();
+  const button = $("#save-selection"); button.disabled = true; button.textContent = "正在转为原形…";
+  try { const payload = await api("/api/vocabulary", { method: "POST", body: JSON.stringify(selectedVocabulary) }); $("#selection-tools").hidden = true; await loadNotebook(); openNotebook(); $("#lookup-word").textContent = payload.lemma; }
+  finally { button.disabled = false; button.textContent = "＋ 生词本"; }
 }
 
 function captureVocabularySelection() {
@@ -339,6 +340,7 @@ async function start(typeOverride, preserveSequence = false) {
 
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
+  $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source?.startsWith("ai") ? "ai" : state.mode;
   $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : "精选题库";
@@ -415,7 +417,8 @@ $("#open-journal").addEventListener("click", openJournal); $("#close-journal").a
 document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);
-document.addEventListener("mouseup", () => setTimeout(captureVocabularySelection, 0));
+document.addEventListener("mouseup", (event) => { if (event.button === 0) setTimeout(captureVocabularySelection, 0); });
+$("#practice").addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);

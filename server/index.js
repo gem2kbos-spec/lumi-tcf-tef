@@ -8,7 +8,7 @@ import { activitySummary, addAttempt, importedProgress, readProgress, reviewQues
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
-import { aiLookup, listVocabulary, localLookup, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
+import { aiLookup, listVocabulary, localLookup, resolveFrenchLemma, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
 import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
 import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxonomy.js";
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
@@ -180,7 +180,8 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/vocabulary") {
       const input = await body(req); const word = typeof input.word === "string" ? input.word.trim().slice(0, 80) : "";
       if (!word) return sendJson(res, 400, { error: "Word required" });
-      return sendJson(res, 201, { entry: await saveVocabulary({ word, context: String(input.context || "").slice(0, 500), questionId: input.questionId }) });
+      const context = String(input.context || "").slice(0, 500); const lemma = await resolveFrenchLemma(word, context);
+      return sendJson(res, 201, { entry: await saveVocabulary({ word: lemma || word, context, questionId: input.questionId }), selectedForm: word, lemma: lemma || word });
     }
     if (req.method === "POST" && url.pathname === "/api/vocabulary/mastered") {
       const input = await body(req); const entry = await toggleMastered(input.id);

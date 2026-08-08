@@ -1,0 +1,2 @@
+main{width:100%;max-width:none;padding-left:clamp(24px,4vw,68px);padding-right:clamp(24px,4vw,68px)}
+@media(max-width:760px){main{padding-left:18px;padding-right:18px}}
