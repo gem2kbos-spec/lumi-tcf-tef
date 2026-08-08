@@ -462,7 +462,8 @@ async function answer(selected, selectedButton) {
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     const analysis = result.analysis;
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
-    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
+    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}<button id="ask-lili-analysis" class="ask-lili-analysis"><span>lili</span><strong>解析没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small></button>`;
+    $("#ask-lili-analysis").addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis));
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), result.correct ? Promise.resolve() : loadJournal()]);
   } catch (error) {
     buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
@@ -492,8 +493,12 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
-function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); closeHistory(); closePracticeHub(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
+function openTutor() { $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
+function askLiliAboutAttempt(selectedIndex, result, analysis) {
+  const question = state.questions[state.index]; const selectedAnswer = question.options[selectedIndex] || "未记录"; const correct = question.options[result.answer] || "未记录";
+  openTutor(); askTutor(`我没有完全看懂这道题的解析，请结合原句逐步讲清楚，并说明判断顺序和每个干扰项为什么不对。\n\n题目：${question.prompt}\n我的答案：${selectedAnswer}\n正确答案：${correct}\n当前中文解析：${analysis.explanationZh}\n当前错因：${analysis.errorReasonZh}`);
+}
 function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
   const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "回答中…";
