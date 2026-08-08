@@ -51,12 +51,20 @@ test("import validator preserves supported authentic question structure", () => 
   }]), true);
 });
 
-test("attempt analysis pairs French explanation with Chinese diagnosis", () => {
+test("attempt analysis provides a detailed Chinese explanation", () => {
   const question = questionBank.find((item) => item.id === "grammar-001");
   const analysis = buildAttemptAnalysis(question, 0);
-  assert.equal(analysis.explanationFr, question.explanation);
-  assert.match(analysis.explanationZh, /正确答案/);
-  assert.match(analysis.errorReasonZh, /虚拟式/);
+  assert.match(analysis.detailedZh, /题干理解/);
+  assert.match(analysis.detailedZh, /选项逐项分析/);
+  assert.match(analysis.detailedZh, /正确答案/);
   assert.equal(analysis.knowledge.label, "虚拟式");
   assert.match(analysis.knowledge.title, /^虚拟式：/);
+});
+
+test("il se peut que analysis explains every distractor in Chinese", () => {
+  const analysis = buildAttemptAnalysis({ type: "grammar", skill: "subjonctif", topic: "subjonctif", prompt: "Il se peut _ il pleuve demain.", options: ["pour", "que", "si", "de"], answer: 1, explanation: "" }, 0);
+  assert.match(analysis.detailedZh, /pour 后面通常/);
+  assert.match(analysis.detailedZh, /si 用于条件句/);
+  assert.match(analysis.detailedZh, /il est possible de/);
+  assert.doesNotMatch(analysis.detailedZh, /还不稳定/);
 });

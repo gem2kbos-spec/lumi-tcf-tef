@@ -35,13 +35,34 @@ export function buildAttemptAnalysis(question, selected) {
   const [label, note] = KNOWLEDGE[question.skill] || [question.topic || "本题考点", "回到题干或原文，确认决定正确答案的唯一证据，并比较其余选项为什么不成立。"];
   const correct = selected === question.answer;
   const bilingual = question.explanation?.match(/^中文解析：([\s\S]*?)\n\nExplication française\s*:\s*([\s\S]+)$/);
+  const sourceZh = bilingual ? bilingual[1].trim() : "";
   let errorReasonZh = "本题作答正确。建议仍然确认决定答案的关键线索，避免只是猜对。";
   if (!correct && question.type === "reading") errorReasonZh = `你选择了“${selectedOption}”，但这个选项没有被原文完整支持。你的错误更接近“${label}”环节：可能抓到了局部相似词，却没有核对题干要求和决定性限定条件。`;
   else if (!correct && question.type === "listening") errorReasonZh = `你选择了“${selectedOption}”。这个干扰项可能复用了录音中的词，但没有准确表达说话人的完整意思。需要加强“${label}”。`;
   else if (!correct) errorReasonZh = `你选择了“${selectedOption}”，说明“${label}”还不稳定。不要只看单词是否眼熟，应先判断句法位置、固定搭配或逻辑关系，再排除干扰项。`;
+  const optionAnalysis = question.options.map((option, index) => {
+    if (/il se peut\s+_+/i.test(question.prompt)) {
+      if (/^que$/i.test(option)) return `✓ ${option}：正确。“il se peut que + 从句”是固定的无人称结构，表示“可能……”。que 引出从句；从句表达尚未确认的可能性，因此使用虚拟式。本题后面已有虚拟式 pleuve，前面必须填 que。`;
+      if (/^pour$/i.test(option)) return `✗ ${option}：pour 后面通常直接接名词或不定式，如 pour demain、pour partir；如果要接完整从句，必须使用 pour que，不能只用 pour。`;
+      if (/^si$/i.test(option)) return `✗ ${option}：si 用于条件句或间接疑问，如 si j'ai le temps、je ne sais pas s'il vient；它不能组成“il se peut si”这一结构。`;
+      if (/^de$/i.test(option)) return `✗ ${option}：de 可以出现在“il est possible de + 不定式”中，但不能在这里直接连接“il pleuve”这个有主语、有变位动词的完整从句。`;
+    }
+    if (index === question.answer) return `✓ ${option}：正确。它同时满足本题的句法位置、固定搭配和上下文含义。${sourceZh || note}`;
+    if (index === selected) return `✗ ${option}：这是你的选择。它看似与题意有关，但不能完整满足本题所要求的句法结构或语义关系。`;
+    return `✗ ${option}：不能填入本题位置；需要检查它通常接名词、不定式还是完整从句，以及是否符合当前语境。`;
+  });
+  const detailedZh = [
+    `【题干理解】${question.prompt}`,
+    `【核心考点】${label}。${note}`,
+    "【判断步骤】① 看空格在句中的作用；② 找固定结构、动词形式或逻辑标记；③ 把选项代回完整句子；④ 检查语法和含义是否同时成立。",
+    `【正确答案】${correctOption}${correct ? "。你本题选择正确，但仍建议按步骤确认，不要只凭语感。" : `。你选择的是“${selectedOption}”，关键区别见下面逐项分析。`}`,
+    `【选项逐项分析】\n${optionAnalysis.join("\n")}`,
+    `【易错提醒】${/il se peut\s+_+/i.test(question.prompt) ? "看到虚拟式 pleuve 后，要向前寻找触发它的完整结构 il se peut que；不要把中文似乎能译通的介词或连词直接代入。" : "不要只比较选项的中文意思。结构题必须同时核对前后接续形式、固定搭配、时态语式和语境含义。"}`
+  ].join("\n\n");
   return {
     explanationFr: bilingual ? bilingual[2].trim() : question.explanation,
     explanationZh: bilingual ? bilingual[1].trim() : `正确答案是“${correctOption}”。本题考查【${label}】。${note}`,
+    detailedZh,
     errorReasonZh,
     knowledge: { label, note, title: `${label}：${String(correctOption).slice(0, 70)}` },
     selectedOption,

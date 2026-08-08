@@ -35,3 +35,6 @@ body:has(#practice-hub:not([hidden]), #history-drawer:not([hidden]), .tool-drawe
 
 .ask-lili-analysis strong { font-size: 12px; }
 .ask-lili-analysis small { color: var(--muted); font-size: 10px; }
+
+.detailed-analysis p,
+.history-analysis p { white-space: pre-wrap; line-height: 1.75; }

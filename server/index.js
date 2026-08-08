@@ -95,7 +95,7 @@ const server = http.createServer(async (req, res) => {
         (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
         (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
         (level === "all" || attempt.question?.level === level)
-      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysis }));
+      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: buildAttemptAnalysis(attempt.question, attempt.selected) }));
       return sendJson(res, 200, { attempts, total: attempts.length });
     }
     if (req.method === "GET" && url.pathname === "/api/bank") {
@@ -298,7 +298,7 @@ const server = http.createServer(async (req, res) => {
         question, analysis
       };
       await addAttempt(attempt);
-      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: `错误原因\n${analysis.errorReasonZh}\n\n中文解析\n${analysis.explanationZh}\n\nExplication française\n${analysis.explanationFr}\n\n相关知识点\n${analysis.knowledge.note}`, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } });
+      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: analysis.detailedZh, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } });
       return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
