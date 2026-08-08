@@ -129,10 +129,18 @@ async function refreshStats() {
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
   $("#authentic-progress").textContent = `${stats.imported.completed}/${stats.imported.total}`;
   $("#review-count").textContent = stats.pendingReview;
-  const weak = stats.weakSkills.slice(0, 3); $("#weak-card").hidden = weak.length === 0;
-  const weakLabels = { collocation: "固定搭配", verb_tenses: "动词时态", connecteurs: "逻辑连接词", prepositions: "介词", pronouns: "代词", information_explicite: "阅读信息定位", idee_principale: "阅读主旨", inference: "阅读推断", synonymes: "近义词辨析", sens_en_contexte: "语境词义" };
-  const typeLabels = { grammar: "语法", vocabulary: "词汇", reading: "阅读", listening: "听力" };
-  $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.className = "weak-skill-row"; const label = item.latestTitle || weakLabels[item.skill] || item.skill.replaceAll("_", " "); row.innerHTML = `<div><strong>${typeLabels[item.type] || "综合"} · ${escapeHtml(label)}</strong><span>错 ${item.count}/${item.total} · 错误率 ${item.errorRate}%</span></div>${item.latestReason ? `<p>${escapeHtml(item.latestReason)}</p>` : ""}`; return row; }));
+  const weak = stats.weakSkills.slice(0, 4); $("#weak-card").hidden = weak.length === 0;
+  $("#weak-skills").replaceChildren(...weak.map((item) => {
+    const row = document.createElement("article"); row.className = "weak-skill-row";
+    row.innerHTML = `<div class="weak-meta"><em>${escapeHtml(item.examAbility)}</em><span>错 ${item.count}/${item.total} · ${item.errorRate}%</span></div><strong>${escapeHtml(item.title)}</strong><p><b>错误判断</b>${escapeHtml(item.errorType)}</p><p><b>下一步</b>${escapeHtml(item.action)}</p><button>练同类真题 →</button>${item.latestReason && item.latestReason !== item.errorType ? `<details><summary>查看最近一次错因</summary><p>${escapeHtml(item.latestReason)}</p></details>` : ""}`;
+    row.querySelector("button").addEventListener("click", () => practiceWeakPoint(item)); return row;
+  }));
+}
+
+function practiceWeakPoint(item) {
+  state.type = item.type; state.activeCategory = item.category || null; state.productionType = null;
+  document.querySelectorAll("[data-type]").forEach((button) => button.classList.toggle("active", button.dataset.type === item.type));
+  renderCatalog(); openPracticeHub(); start(item.type);
 }
 
 function showKnowledgePreview(topic) {

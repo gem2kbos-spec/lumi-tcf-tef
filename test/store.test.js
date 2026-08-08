@@ -11,7 +11,18 @@ test("summarize calculates accuracy and ranks weak skills", () => {
   ]);
   assert.equal(stats.accuracy, 25);
   assert.equal(stats.wrongCount, 3);
-  assert.deepEqual(stats.weakSkills[0], { type: "grammar", skill: "subjonctif", count: 2, total: 3, latestReason: "", latestTitle: "", errorRate: 67 });
+  assert.equal(stats.weakSkills[0].skill, "subjonctif");
+  assert.equal(stats.weakSkills[0].title, "虚拟式的触发与变位");
+  assert.equal(stats.weakSkills[0].count, 2); assert.equal(stats.weakSkills[0].total, 3); assert.equal(stats.weakSkills[0].errorRate, 67);
+});
+
+test("diagnosis separates depuis continuity from futur proche", () => {
+  const stats = summarize([
+    { correct: false, type: "grammar", skill: "verb_tenses", question: { prompt: "Il habite ici ___ 2020.", options: ["depuis", "pendant"], answer: 0 } },
+    { correct: false, type: "grammar", skill: "verb_tenses", question: { prompt: "Demain, nous ___ visiter Lyon.", options: ["allons", "avons"], answer: 0 } }
+  ]);
+  assert.equal(stats.weakSkills.length, 2);
+  assert.deepEqual(new Set(stats.weakSkills.map((item) => item.diagnosticId)), new Set(["time:depuis-present-continuity", "tense:futur-proche"]));
 });
 
 test("weak skills keep grammar and reading mistakes separate", () => {

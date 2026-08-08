@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { examDiagnostic } from "./exam-diagnostics.js";
 
 const dataDir = path.resolve("server/data");
 const progressFile = path.join(dataDir, "progress.json");
@@ -27,10 +28,11 @@ export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai"
   const correct = attempts.filter((item) => item.correct).length;
   const wrongBySkill = {};
   for (const item of attempts) {
-    const key = `${item.type || "unknown"}:${item.skill}`;
-    wrongBySkill[key] ||= { type: item.type || "unknown", skill: item.skill, count: 0, total: 0, latestReason: "", latestTitle: "" };
+    const diagnostic = examDiagnostic(item);
+    const key = `${item.type || "unknown"}:${diagnostic.id}`;
+    wrongBySkill[key] ||= { type: item.type || "unknown", skill: item.skill, diagnosticId: diagnostic.id, category: diagnostic.category, examAbility: diagnostic.examAbility, title: diagnostic.title, errorType: diagnostic.errorType, action: diagnostic.action, count: 0, total: 0, latestReason: "" };
     wrongBySkill[key].total++;
-    if (!item.correct) { const correctOption = item.question?.options?.[item.question?.answer]; wrongBySkill[key].count++; wrongBySkill[key].latestReason = item.analysis?.errorReasonZh || wrongBySkill[key].latestReason; wrongBySkill[key].latestTitle = item.analysis?.knowledge?.title || (correctOption ? `${item.analysis?.knowledge?.label || item.question?.topic || "具体考点"}：${correctOption}` : wrongBySkill[key].latestTitle); }
+    if (!item.correct) { wrongBySkill[key].count++; wrongBySkill[key].latestReason = item.analysis?.errorReasonZh || wrongBySkill[key].latestReason; wrongBySkill[key].errorType = diagnostic.errorType; wrongBySkill[key].action = diagnostic.action; }
   }
   const byType = Object.fromEntries(["grammar", "vocabulary", "reading", "listening"].map((type) => {
     const entries = attempts.filter((item) => item.type === type);
