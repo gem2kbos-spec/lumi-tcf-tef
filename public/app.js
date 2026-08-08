@@ -208,7 +208,7 @@ async function loadNotebook() {
   }));
 }
 
-function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); closeHistory(); closePracticeHub(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
+function openNotebook({ preserveContext = false } = {}) { if (!preserveContext) { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); closeHistory(); closePracticeHub(); } $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
 function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("notebook-open"); }
 
 function isQuickReference(entry) { return entry.subtype === "quick-reference" || /\|\s*:?-{3,}/.test(entry.content || ""); }
@@ -249,7 +249,7 @@ function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); closeHi
 function closeMistakes() { $("#mistake-drawer").hidden = true; }
 
 async function lookupWord(word, context = "") {
-  openNotebook(); $("#lookup-word").textContent = word; $("#lookup-detail").innerHTML = "<p>正在查找用法…</p>";
+  openNotebook({ preserveContext: true }); $("#lookup-word").textContent = word; $("#lookup-detail").innerHTML = "<p>正在查找用法…</p>";
   try {
     const payload = await api(`/api/vocabulary/lookup?word=${encodeURIComponent(word)}&context=${encodeURIComponent(context)}`);
     if (!payload.result) {
@@ -263,17 +263,39 @@ async function lookupWord(word, context = "") {
 async function saveSelectedWord() {
   if (!selectedVocabulary) return;
   const button = $("#save-selection"); button.disabled = true; button.textContent = "正在转为原形…";
-  try { const payload = await api("/api/vocabulary", { method: "POST", body: JSON.stringify(selectedVocabulary) }); $("#selection-tools").hidden = true; await loadNotebook(); openNotebook(); $("#lookup-word").textContent = payload.lemma; }
-  finally { button.disabled = false; button.textContent = "＋ 生词本"; }
+  try { const payload = await api("/api/vocabulary", { method: "POST", body: JSON.stringify(selectedVocabulary) }); await loadNotebook(); button.textContent = `✓ 已加入：${payload.lemma}`; setTimeout(() => { $("#selection-tools").hidden = true; button.textContent = "＋ 生词本"; }, 1100); }
+  finally { button.disabled = false; }
+}
+
+function frenchWordAtPoint(x, y) {
+  const range = document.caretRangeFromPoint?.(x, y); if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
+  const text = range.startContainer.textContent || ""; const offset = range.startOffset; const isFrench = /[A-Za-zÀ-ÖØ-öø-ÿŒœ'-]/;
+  let start = offset; let end = offset; while (start > 0 && isFrench.test(text[start - 1])) start--; while (end < text.length && isFrench.test(text[end])) end++;
+  const word = text.slice(start, end).replace(/^[-']+|[-']+$/g, ""); if (!/[A-Za-zÀ-ÖØ-öø-ÿŒœ]/.test(word)) return null;
+  const wordRange = document.createRange(); wordRange.setStart(range.startContainer, start); wordRange.setEnd(range.startContainer, end); return { word, range: wordRange, element: range.startContainer.parentElement };
+}
+
+function firstFrenchWordIn(element) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT); let node;
+  while ((node = walker.nextNode())) { const match = node.textContent.match(/[A-Za-zÀ-ÖØ-öø-ÿŒœ]+(?:['’-][A-Za-zÀ-ÖØ-öø-ÿŒœ]+)*/); if (match) { const range = document.createRange(); range.setStart(node, match.index); range.setEnd(node, match.index + match[0].length); return { word: match[0], range, element: node.parentElement }; } }
+  return null;
+}
+
+function showVocabularyTools({ word, range, element }, point = null) {
+  if (!word || word.length > 80 || word.split(/\s+/).length > 4 || element?.closest("input, textarea, select, [contenteditable=true], #selection-tools")) return false;
+  const question = element?.closest("#practice") ? state.questions[state.index] : null;
+  const contextElement = element?.closest("p, h1, h2, h3, article, section, button, li, td, th") || element;
+  const context = question?.passage || question?.prompt || contextElement?.textContent.trim().slice(0, 800) || "";
+  selectedVocabulary = { word: word.replace(/^[^A-Za-zÀ-ÿŒœ'-]+|[^A-Za-zÀ-ÿŒœ'-]+$/g, ""), context, questionId: question?.id || null }; if (!selectedVocabulary.word) return false;
+  const rect = range?.getBoundingClientRect(); const x = point?.x ?? rect?.left ?? 10; const y = point?.y ?? rect?.bottom ?? 10;
+  const tools = $("#selection-tools"); tools.style.left = `${Math.min(window.innerWidth - 230, Math.max(10, x))}px`; tools.style.top = `${Math.min(window.innerHeight - 60, Math.max(10, y + 8))}px`; tools.hidden = false; return true;
 }
 
 function captureVocabularySelection() {
   const selection = window.getSelection(); const raw = selection?.toString().trim();
-  if (!raw || raw.length > 80 || raw.split(/\s+/).length > 4 || !selection.anchorNode?.parentElement?.closest("#practice")) { $("#selection-tools").hidden = true; return; }
-  const word = raw.replace(/^[^A-Za-zÀ-ÿ'-]+|[^A-Za-zÀ-ÿ'-]+$/g, ""); if (!word) return;
-  const range = selection.getRangeAt(0); const rect = range.getBoundingClientRect(); const question = state.questions[state.index];
-  selectedVocabulary = { word, context: question?.passage || question?.prompt || selection.anchorNode.parentElement.textContent.trim(), questionId: question?.id || null };
-  const tools = $("#selection-tools"); tools.style.left = `${Math.min(window.innerWidth - 220, Math.max(10, rect.left))}px`; tools.style.top = `${Math.max(10, rect.bottom + 8)}px`; tools.hidden = false;
+  if (!raw || !selection.rangeCount) { $("#selection-tools").hidden = true; return; }
+  const range = selection.getRangeAt(0); const element = selection.anchorNode?.nodeType === Node.TEXT_NODE ? selection.anchorNode.parentElement : selection.anchorNode;
+  if (!showVocabularyTools({ word: raw, range, element })) $("#selection-tools").hidden = true;
 }
 
 async function loadInsights() {
@@ -493,7 +515,13 @@ document.querySelectorAll("[data-journal-filter]").forEach((button) => button.ad
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);
 document.addEventListener("mouseup", (event) => { if (event.button === 0) setTimeout(captureVocabularySelection, 0); });
-$("#practice").addEventListener("contextmenu", (event) => event.preventDefault());
+document.addEventListener("contextmenu", (event) => {
+  if (event.target.closest("input, textarea, select, [contenteditable=true]")) return;
+  const selection = window.getSelection(); const selected = selection?.toString().trim(); let shown = false;
+  if (selected && selection.rangeCount && selection.anchorNode?.parentElement?.contains(event.target)) shown = showVocabularyTools({ word: selected, range: selection.getRangeAt(0), element: selection.anchorNode.parentElement }, { x: event.clientX, y: event.clientY });
+  if (!shown) { const found = frenchWordAtPoint(event.clientX, event.clientY) || firstFrenchWordIn(event.target); if (found) { selection.removeAllRanges(); selection.addRange(found.range); shown = showVocabularyTools(found, { x: event.clientX, y: event.clientY }); } }
+  if (shown) event.preventDefault();
+});
 document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
