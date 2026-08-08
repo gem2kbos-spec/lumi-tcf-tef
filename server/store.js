@@ -83,6 +83,12 @@ export function importedProgress(attempts, importedQuestions) {
   };
 }
 
+export function sequenceProgress(attempts, questions) {
+  const completedIds = new Set(attempts.map((attempt) => attempt.questionId));
+  const completed = questions.filter((question) => completedIds.has(question.id)).length;
+  return { completed, total: questions.length, remaining: Math.max(0, questions.length - completed) };
+}
+
 export function activitySummary(attempts, importedQuestions, now = new Date(), timeZone = "Asia/Shanghai") {
   const authenticIds = new Set(importedQuestions.map((question) => question.id));
   const dateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));

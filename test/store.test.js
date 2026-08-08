@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { activitySummary, importedProgress, reviewQuestions, summarize, weakSkillForType } from "../server/store.js";
+import { activitySummary, importedProgress, reviewQuestions, sequenceProgress, summarize, weakSkillForType } from "../server/store.js";
 
 test("summarize calculates accuracy and ranks weak skills", () => {
   const stats = summarize([
@@ -55,6 +55,11 @@ test("importedProgress counts each source question only once", () => {
     { questionId: "real-1" }, { questionId: "real-1" }, { questionId: "ai-1" }
   ], [{ id: "real-1" }, { id: "real-2" }]);
   assert.deepEqual(result, { completed: 1, total: 2, percentage: 50 });
+});
+
+test("sequenceProgress reports the selected practice range", () => {
+  const result = sequenceProgress([{ questionId: "q1" }, { questionId: "q1" }], [{ id: "q1" }, { id: "q2" }, { id: "q3" }]);
+  assert.deepEqual(result, { completed: 1, total: 3, remaining: 2 });
 });
 
 test("activitySummary separates authentic and generated history for today", () => {

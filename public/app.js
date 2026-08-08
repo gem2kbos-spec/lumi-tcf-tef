@@ -1,4 +1,4 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 let selectedVocabulary = null;
@@ -329,7 +329,7 @@ async function start(typeOverride, preserveSequence = false) {
     const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: false }) });
     if (!payload.questions.length) { alert("这一专项的本地题目正在扩充，请配置 AI 出题或换一个等级。"); return; }
     if (!preserveSequence) state.continuousNumber = 1;
-    Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false });
+    Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false, sequence: payload.sequence });
     state.recentIds = [...state.recentIds, ...payload.questions.map((question) => question.id)].slice(-12);
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
     $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
@@ -339,7 +339,7 @@ async function start(typeOverride, preserveSequence = false) {
 
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
-  $("#counter").textContent = `第 ${state.continuousNumber} 题 · 作答后立即解析`;
+  $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source?.startsWith("ai") ? "ai" : state.mode;
   $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : "精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
@@ -364,6 +364,7 @@ async function answer(selected, selectedButton) {
     const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
     state.answered = true; buttons[result.answer].classList.add("correct");
     if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
+    if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     const analysis = result.analysis;
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
     $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;

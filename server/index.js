@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
 import { loadImportedQuestions } from "./imported-questions.js";
-import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, summarize, weakSkillForType } from "./store.js";
+import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, sequenceProgress, summarize, weakSkillForType } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { blueprintFor } from "./tcf-blueprint.js";
@@ -201,6 +201,7 @@ const server = http.createServer(async (req, res) => {
       let questions;
       let mode = "bank";
       let notice = "";
+      let sequence = null;
       if (type === "review") {
         questions = reviewQuestions(progress.attempts, count);
         mode = "review";
@@ -219,12 +220,14 @@ const server = http.createServer(async (req, res) => {
         const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
         matching.sort((a, b) => a.difficulty - b.difficulty || a.order - b.order);
         const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
-        const nextImported = matching.filter((item) => item.source === "user_imported" && !completedIds.has(item.id));
+        const importedMatching = matching.filter((item) => item.source === "user_imported");
+        const nextImported = importedMatching.filter((item) => !completedIds.has(item.id));
         const unseen = matching.filter((item) => !excludeIds.has(item.id));
         questions = nextImported.length ? nextImported.slice(0, count) : (unseen.length ? unseen : matching).slice(0, count);
+        sequence = sequenceProgress(progress.attempts, importedMatching);
       }
       for (const question of questions) sessions.set(question.id, question);
-      return sendJson(res, 200, { mode, notice, questions: questions.map(publicQuestion) });
+      return sendJson(res, 200, { mode, notice, sequence, questions: questions.map(publicQuestion) });
     }
     if (req.method === "POST" && url.pathname === "/api/variations") {
       if (!aiEnabled()) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
@@ -270,7 +273,7 @@ const server = http.createServer(async (req, res) => {
         question, analysis
       };
       await addAttempt(attempt);
-      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.label, question: question.prompt, content: `${analysis.errorReasonZh}\n\n${analysis.explanationZh}`, skill: question.skill, questionId: question.id });
+      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.label, question: question.prompt, content: `错误原因\n${analysis.errorReasonZh}\n\n中文解析\n${analysis.explanationZh}\n\nExplication française\n${analysis.explanationFr}\n\n相关知识点\n${analysis.knowledge.note}`, skill: question.skill, questionId: question.id });
       return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
