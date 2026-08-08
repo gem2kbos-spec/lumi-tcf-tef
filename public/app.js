@@ -106,6 +106,7 @@ function selectModule(type) {
     $("#welcome h2").textContent = catalogs[state.exam].modules.find((item) => item[0] === type)[1];
     $("#welcome p").textContent = "设置等级和题数，然后开始专项训练。";
   }
+  openPracticeHub();
   $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -199,7 +200,7 @@ async function loadNotebook() {
   }));
 }
 
-function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); closeHistory(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
+function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); closeHistory(); closePracticeHub(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
 function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("notebook-open"); }
 
 function isQuickReference(entry) { return entry.subtype === "quick-reference" || /\|\s*:?-{3,}/.test(entry.content || ""); }
@@ -234,9 +235,9 @@ function renderMistakes() {
 async function loadJournal() {
   const payload = await api("/api/journal"); journalEntries = payload.entries || []; $("#journal-count").textContent = journalEntries.filter((entry) => entry.kind !== "mistake").length; renderJournal(); renderMistakes();
 }
-function openJournal() { closeNotebook(); closeMistakes(); closeTutor(); closeHistory(); $("#journal-drawer").hidden = false; loadJournal(); }
+function openJournal() { closeNotebook(); closeMistakes(); closeTutor(); closeHistory(); closePracticeHub(); $("#journal-drawer").hidden = false; loadJournal(); }
 function closeJournal() { $("#journal-drawer").hidden = true; }
-function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); closeHistory(); $("#mistake-drawer").hidden = false; loadJournal(); }
+function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); closeHistory(); closePracticeHub(); $("#mistake-drawer").hidden = false; loadJournal(); }
 function closeMistakes() { $("#mistake-drawer").hidden = true; }
 
 async function lookupWord(word, context = "") {
@@ -293,7 +294,14 @@ async function loadActivity() {
 function renderHistoryDetail(attempt) {
   const question = attempt.question; const detail = $("#history-detail");
   const source = question.source === "user_imported" ? "导入真题" : String(question.source || "").startsWith("ai") ? "AI生成题" : "精选题";
-  detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>中文解析</b><p>${escapeHtml(attempt.analysis?.explanationZh || "暂无解析")}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(attempt.analysis?.explanationFr || "")}</p></section><section><b>${attempt.correct ? "复盘建议" : "当时错因"}</b><p>${escapeHtml(attempt.analysis?.errorReasonZh || "")}</p></section></div>`;
+  detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>中文解析</b><p>${escapeHtml(attempt.analysis?.explanationZh || "暂无解析")}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(attempt.analysis?.explanationFr || "")}</p></section><section><b>${attempt.correct ? "复盘建议" : "当时错因"}</b><p>${escapeHtml(attempt.analysis?.errorReasonZh || "")}</p></section></div><div class="history-variation"><div><strong>生成类似题目</strong><span>围绕同一考点立即再练一题</span></div><input id="history-variation-request" maxlength="300" placeholder="例如：难一点，换成生活场景，干扰项更接近……"><button id="history-generate-variation">生成并作答 ✦</button></div>`;
+  $("#history-generate-variation").addEventListener("click", () => generateHistoryVariation(attempt));
+}
+
+async function generateHistoryVariation(attempt) {
+  const button = $("#history-generate-variation"); button.disabled = true; button.textContent = "正在生成…";
+  try { const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: attempt.questionId, request: $("#history-variation-request").value }) }); closeHistory(); openPracticeHub(); openBankQuestion(payload.question); state.mode = "ai"; }
+  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成类似题需要先连接 DeepSeek。" : `生成失败：${error.message}`); button.disabled = false; button.textContent = "生成并作答 ✦"; }
 }
 
 function renderHistory() {
@@ -306,8 +314,10 @@ function renderHistory() {
 async function loadHistory() {
   const params = new URLSearchParams({ type: $("#history-type").value, result: $("#history-result").value, source: $("#history-source").value, level: $("#history-level").value }); const payload = await api(`/api/history?${params}`); historyAttempts = payload.attempts; renderHistory();
 }
-function openHistory() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); $("#history-drawer").hidden = false; loadHistory(); }
+function openHistory() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closePracticeHub(); $("#history-drawer").hidden = false; loadHistory(); }
 function closeHistory() { $("#history-drawer").hidden = true; }
+function openPracticeHub() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closeHistory(); $("#practice-hub").hidden = false; }
+function closePracticeHub() { $("#practice-hub").hidden = true; }
 
 async function loadBank(reset = true) {
   if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
@@ -356,7 +366,8 @@ function setCategoryOptions(categories, selected = "all") {
 }
 
 function openBankQuestion(question) {
-  if (!question.answerVerified) return;
+  if (question.answerVerified === false) return;
+  openPracticeHub();
   state.type = question.type; state.activeCategory = question.category || null; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
   if ([...$("#level").options].some((option) => option.value === question.level)) $("#level").value = question.level;
   $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
@@ -451,7 +462,7 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
-function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); closeHistory(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
+function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); closeHistory(); closePracticeHub(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
 function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
@@ -468,6 +479,7 @@ $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook"
 $("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
 $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
+$("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
 document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
@@ -487,7 +499,7 @@ $("#bank-load-more").addEventListener("click", () => loadBank(false));
 $("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });
 $("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
 $("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
-document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") { closePracticeHub(); closeHistory(); closeJournal(); closeMistakes(); closeTutor(); closeNotebook(); return; } if ($("#quiz").hidden || $("#practice-hub").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
 Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics(), loadJournal()]).then(([health]) => { const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库"; $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 本地题库模式"; $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });

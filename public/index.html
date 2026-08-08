@@ -26,7 +26,7 @@
       <div class="brand"><span>lu</span> Lumi Français</div>
       <div class="header-actions"><div id="ai-status" class="status">正在连接…</div></div>
     </header>
-    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a><a href="#practice">开始做题</a></nav>
+    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#practice-entry">连续刷题</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a></nav>
     <section class="hero">
       <div class="knowledge-summary">
         <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
@@ -49,6 +49,10 @@
         <article><span>今日已做生成题</span><strong id="today-generated">0题</strong><small>按不同题目计数</small></article>
       </div>
       <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>真题库总量 <b id="authentic-total">700题</b></span></div>
+    </section>
+    <section id="practice-entry" class="practice-entry">
+      <div><p class="label">连续刷题</p><h2>从简单到困难，一题一题完成</h2><p>选择语法、词汇、阅读或听力；每题作答后立即查看中法解析。</p></div>
+      <button id="open-practice-hub">打开连续刷题窗口 <span>→</span></button>
     </section>
     <section id="ai-center" class="ai-lab">
       <div class="section-heading"><div><p class="label">AI 补缺训练室</p><h2>生成真题没有覆盖，但考试可能考到的题</h2></div><span class="ai-badge">公开考试范围约束</span></div>
@@ -77,7 +81,8 @@
       <div id="bank-list" class="bank-list" aria-live="polite"></div>
       <button id="bank-load-more" class="bank-load-more" hidden>继续加载更多题目 ↓</button>
     </section>
-    <section class="dashboard">
+    <section id="practice-hub" class="dashboard practice-hub" hidden>
+      <button id="close-practice-hub" class="practice-hub-close" aria-label="关闭连续刷题窗口">×</button>
       <aside>
         <p class="label">训练设置</p>
         <div class="toggle legacy-toggle" role="group" aria-label="题目类型">

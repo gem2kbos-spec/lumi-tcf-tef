@@ -257,7 +257,8 @@ const server = http.createServer(async (req, res) => {
       if (!aiEnabled()) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
       const input = await body(req);
       const imported = await loadImportedQuestions();
-      const reference = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
+      const progress = await readProgress();
+      const reference = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId) || [...progress.attempts].reverse().find((attempt) => attempt.questionId === input.questionId)?.question;
       if (!reference) return sendJson(res, 404, { error: "Question not found" });
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
       const generated = await generateQuestions({ type: reference.type, level: reference.level, count: 1, weakSkills: [reference.skill], referenceQuestion: reference, variationRequest: request });
