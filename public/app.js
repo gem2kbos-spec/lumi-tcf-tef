@@ -118,10 +118,12 @@ document.querySelectorAll("[data-exam]").forEach((button) => button.addEventList
 document.querySelectorAll("[data-type]").forEach((button) => button.addEventListener("click", () => selectModule(button.dataset.type)));
 
 async function api(path, options) {
-  const response = await fetch(path, { ...options, headers: { "Content-Type": "application/json" } });
-  const payload = await response.json();
-  if (!response.ok) throw new Error(payload.error || "请求失败");
-  return payload;
+  const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch(path, { ...options, signal: controller.signal, headers: { "Content-Type": "application/json" } });
+    const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "请求失败"); return payload;
+  } catch (error) { if (error.name === "AbortError") throw new Error("请求超过60秒，已自动恢复按钮，请重试"); throw error; }
+  finally { clearTimeout(timeout); }
 }
 
 async function refreshStats() {
@@ -405,14 +407,14 @@ function openBankQuestion(question) {
 }
 
 async function smartGenerate() {
-  const button = $("#smart-generate"); button.disabled = true; button.textContent = "正在分析题库覆盖…";
+  const button = $("#smart-generate"); button.disabled = true; let seconds = 0; button.textContent = "已收到 · 正在审校题目 0秒"; const timer = setInterval(() => { seconds++; button.textContent = `正在生成并审校 ${seconds}秒…`; }, 1000);
   try {
     const payload = await api("/api/smart-generation", { method: "POST", body: JSON.stringify({ mode: $("#ai-mode").value, type: $("#ai-type").value, level: $("#ai-level").value, request: $("#ai-request").value }) });
     openBankQuestion(payload.question); state.mode = "ai";
     $("#notice").hidden = false; $("#notice").textContent = `${payload.reason} · 目标考点：${payload.targetSkill || "综合能力"}`;
   } catch (error) {
     alert(error.message === "AI_KEY_REQUIRED" ? "AI补缺训练需要先配置 DeepSeek 密钥。配置后会根据真题覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
-  } finally { button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
+  } finally { clearInterval(timer); button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
 }
 
 async function start(typeOverride, preserveSequence = false) {
@@ -501,12 +503,13 @@ function askLiliAboutAttempt(selectedIndex, result, analysis) {
   const question = state.questions[state.index]; const selectedAnswer = question.options[selectedIndex] || "未记录"; const correct = question.options[result.answer] || "未记录";
   openTutor(); askTutor(`我没有完全看懂这道题的解析，请结合原句逐步讲清楚，并说明判断顺序和每个干扰项为什么不对。\n\n题目：${question.prompt}\n我的答案：${selectedAnswer}\n正确答案：${correct}\n当前详细中文解析：${analysis.detailedZh || analysis.explanationZh}`);
 }
-function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
+function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; return message; }
 async function askTutor(question) {
-  const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "回答中…";
-  try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); appendTutorMessage("assistant", payload.answer); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; await loadJournal(); }
-  catch (error) { appendTutorMessage("assistant", `暂时无法回答：${error.message}`); }
-  finally { button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
+  const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "已收到";
+  let seconds = 0; const waiting = appendTutorMessage("assistant", "lili已收到，正在思考 0秒…"); waiting.classList.add("waiting"); const timer = setInterval(() => { seconds++; waiting.textContent = `lili正在结合当前题目回答 ${seconds}秒…`; }, 1000);
+  try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); renderTutorRichText(waiting, payload.answer); waiting.classList.remove("waiting"); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; await loadJournal(); }
+  catch (error) { waiting.textContent = `暂时无法回答：${error.message}`; waiting.classList.remove("waiting"); }
+  finally { clearInterval(timer); button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
 }
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);

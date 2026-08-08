@@ -45,3 +45,5 @@ body:has(#practice-hub:not([hidden]), #history-drawer:not([hidden]), .tool-drawe
 .answer-loading strong { color: var(--green); font-size: 13px; }
 .answer-loading p { margin: 3px 0 0!important; font-size: 11px; }
 @keyframes answer-spin { to { transform: rotate(360deg); } }
+.tutor-message.waiting { border: 1px solid #cbd8ae; color: var(--green); animation: waiting-pulse 1.2s ease-in-out infinite alternate; }
+@keyframes waiting-pulse { to { background: #e4edcf; } }
