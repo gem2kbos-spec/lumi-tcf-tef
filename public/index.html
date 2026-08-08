@@ -14,12 +14,13 @@
   <link rel="stylesheet" href="/navigation.css" />
   <link rel="stylesheet" href="/anchors.css" />
   <link rel="stylesheet" href="/tutor.css" />
+  <link rel="stylesheet" href="/journal.css" />
 </head>
 <body>
   <main>
     <header>
       <div class="brand"><span>lu</span> Lumi Français</div>
-      <div class="header-actions"><button id="open-notebook">生词本 <span id="vocab-count">0</span></button><div id="ai-status" class="status">正在连接…</div></div>
+      <div class="header-actions"><button id="open-journal">知识点整理 <span id="journal-count">0</span></button><button id="open-notebook">生词本 <span id="vocab-count">0</span></button><div id="ai-status" class="status">正在连接…</div></div>
     </header>
     <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a><a href="#practice">开始做题</a></nav>
     <section class="hero">
@@ -79,8 +80,9 @@
           <button class="active" data-type="grammar">语法</button>
           <button data-type="vocabulary">词汇</button>
           <button data-type="reading">阅读</button>
+          <button data-type="listening">听力</button>
         </div>
-        <label>目标等级<select id="level"><option>A1</option><option>A2</option><option selected>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+        <label>训练范围<select id="level"><option value="all" selected>全部难度 · 由易到难</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label id="count-label">本组题数<select id="count"><option>1</option></select></label>
         <button id="start" class="primary">开始连续刷题 <span>→</span></button>
         <button id="review" class="secondary">复习错题 <span id="review-count">0</span></button>
@@ -139,6 +141,11 @@
     <div id="lookup-detail" class="lookup-detail"><p>在题目中选择一个法语单词，即可查看中文释义、法语用法、搭配和例句。</p></div>
     <div class="notebook-heading"><strong>已收藏</strong><span id="notebook-summary"></span></div>
     <div id="notebook-list" class="notebook-list"></div>
+  </aside>
+  <aside id="journal-drawer" class="journal-drawer" aria-label="知识点整理" hidden>
+    <header><div><p class="label">自动知识整理</p><h2>我的问题与错因</h2><p>AI提问和做错的题会按时间自动记录。</p></div><button id="close-journal" aria-label="关闭知识点整理">×</button></header>
+    <div class="journal-filters" role="group" aria-label="知识记录筛选"><button class="active" data-journal-filter="all">全部</button><button data-journal-filter="mistake">错因</button><button data-journal-filter="question">提问</button></div>
+    <div id="journal-list" class="journal-list"></div>
   </aside>
   <aside id="knowledge-drawer" class="knowledge-drawer" aria-label="知识点教室" hidden>
     <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>

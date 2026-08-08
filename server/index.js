@@ -13,6 +13,7 @@ import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
 import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxonomy.js";
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
+import { addJournalEntry, listJournalEntries } from "./journal-store.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -127,6 +128,9 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/knowledge") {
       return sendJson(res, 200, { topics: knowledgeTopics.map(({ sections, examples, ...topic }) => topic) });
     }
+    if (req.method === "GET" && url.pathname === "/api/journal") {
+      return sendJson(res, 200, { entries: await listJournalEntries() });
+    }
     if (req.method === "GET" && url.pathname.startsWith("/api/knowledge/")) {
       const topic = getKnowledgeTopic(decodeURIComponent(url.pathname.slice("/api/knowledge/".length)));
       return topic ? sendJson(res, 200, { topic }) : sendJson(res, 404, { error: "Knowledge topic not found" });
@@ -138,6 +142,7 @@ const server = http.createServer(async (req, res) => {
       if (!topic || !question) return sendJson(res, 400, { error: "Topic and question required" });
       const history = Array.isArray(input.history) ? input.history.slice(-8).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1000) })) : [];
       const answer = await completeAi({ instructions: `你是一位严格、耐心的 TCF/TEF 法语教师。当前知识点为：${JSON.stringify(topic)}。必须用中文讲解，法语结构和例句保留法语。只讲与当前问题和该知识点有关的内容；先直接回答，再给对比例句，最后给一道不揭晓答案的快速检查题。如果学习者仍不理解，要换一种角度继续解释，而不是重复原话。`, input: question, history, maxTokens: 2500 });
+      await addJournalEntry({ kind: "question", title: topic.title, question, content: answer, skill: topic.skill });
       return sendJson(res, 200, { answer });
     }
     if (req.method === "POST" && url.pathname === "/api/knowledge/practice") {
@@ -153,11 +158,15 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/tutor/ask") {
       const input = await body(req); const question = typeof input.question === "string" ? input.question.trim().slice(0, 800) : "";
       if (!question) return sendJson(res, 400, { error: "Question required" });
-      if (!aiEnabled()) return sendJson(res, 200, { answer: localTutorAnswer(question), mode: "local", provider: "local" });
+      if (!aiEnabled()) {
+        const answer = localTutorAnswer(question); await addJournalEntry({ kind: "question", title: "AI老师提问", question, content: answer });
+        return sendJson(res, 200, { answer, mode: "local", provider: "local" });
+      }
       const imported = await loadImportedQuestions(); const current = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       const history = Array.isArray(input.history) ? input.history.slice(-10).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1200) })) : [];
       const context = current ? `当前练习题：${JSON.stringify({ type: current.type, level: current.level, passage: current.passage || "", prompt: current.prompt, options: current.options, correctAnswer: current.options[current.answer], explanation: current.explanation })}` : "当前没有打开练习题。";
       const answer = await completeAi({ instructions: `你是 Lumi 法语考试老师，专门辅导 TCF/TEF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。${context}`, input: question, history, maxTokens: 2500 });
+      await addJournalEntry({ kind: "question", title: current ? `${current.type} · ${current.skill}` : "AI老师提问", question, content: answer, skill: current?.skill, questionId: current?.id });
       return sendJson(res, 200, { answer, mode: "ai", provider: getAiConfig().provider });
     }
     if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary() });
@@ -181,7 +190,7 @@ const server = http.createServer(async (req, res) => {
       const input = await body(req);
       const type = ["vocabulary", "grammar", "mixed", "reading", "listening", "review"].includes(input.type) ? input.type : "grammar";
       const exam = ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf";
-      const level = ["A1", "A2", "B1", "B2", "C1", "C2"].includes(input.level) ? input.level : "B1";
+      const level = ["all", "A1", "A2", "B1", "B2", "C1", "C2"].includes(input.level) ? input.level : "all";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
       const category = typeof input.category === "string" ? input.category : "all";
@@ -201,18 +210,18 @@ const server = http.createServer(async (req, res) => {
           mode = "ai";
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
-          const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (category !== "all" || [level, "A2"].includes(item.level)) && (category === "all" || item.category === category));
+          const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
           const unseen = matching.filter((item) => !excludeIds.has(item.id));
           questions = sample(unseen.length ? unseen : matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
-        const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (category !== "all" || [level, "A2"].includes(item.level)) && (category === "all" || item.category === category));
+        const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
         matching.sort((a, b) => a.difficulty - b.difficulty || a.order - b.order);
         const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
-        const nextImported = matching.filter((item) => item.source === "user_imported" && !completedIds.has(item.id)).sort((a, b) => a.order - b.order);
+        const nextImported = matching.filter((item) => item.source === "user_imported" && !completedIds.has(item.id));
         const unseen = matching.filter((item) => !excludeIds.has(item.id));
-        questions = nextImported.length ? nextImported.slice(0, count) : sample(unseen.length ? unseen : matching, count);
+        questions = nextImported.length ? nextImported.slice(0, count) : (unseen.length ? unseen : matching).slice(0, count);
       }
       for (const question of questions) sessions.set(question.id, question);
       return sendJson(res, 200, { mode, notice, questions: questions.map(publicQuestion) });
@@ -261,6 +270,7 @@ const server = http.createServer(async (req, res) => {
         question, analysis
       };
       await addAttempt(attempt);
+      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.label, question: question.prompt, content: `${analysis.errorReasonZh}\n\n${analysis.explanationZh}`, skill: question.skill, questionId: question.id });
       return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;

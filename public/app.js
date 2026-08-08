@@ -11,6 +11,8 @@ let bankLoading = false;
 let bankHasMore = false;
 let bankSearchTimer = null;
 let tutorHistory = [];
+let journalEntries = [];
+let journalFilter = "all";
 
 const catalogs = {
   tcf: {
@@ -150,7 +152,7 @@ async function askKnowledge(event) {
   const button = $("#knowledge-form button"); appendKnowledgeMessage("user", question); input.value = ""; button.disabled = true; button.textContent = "正在讲解…";
   try {
     const payload = await api("/api/knowledge/ask", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, question, history: knowledgeChat }) });
-    knowledgeChat.push({ role: "user", content: question }, { role: "assistant", content: payload.answer }); knowledgeChat = knowledgeChat.slice(-8); appendKnowledgeMessage("assistant", payload.answer);
+    knowledgeChat.push({ role: "user", content: question }, { role: "assistant", content: payload.answer }); knowledgeChat = knowledgeChat.slice(-8); appendKnowledgeMessage("assistant", payload.answer); await loadJournal();
   } catch (error) { appendKnowledgeMessage("assistant", error.message === "AI_KEY_REQUIRED" ? "追问老师需要先配置 DeepSeek 密钥。完整固定讲解仍可直接阅读；配置后我会保留本轮上下文，陪你追问到弄懂为止。" : `讲解暂时失败：${error.message}`); }
   finally { button.disabled = false; button.textContent = "追问老师 →"; input.focus(); }
 }
@@ -180,6 +182,29 @@ async function loadNotebook() {
 
 function openNotebook() { $("#vocab-drawer").hidden = false; document.body.classList.add("drawer-open"); loadNotebook(); }
 function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("drawer-open"); }
+
+function renderJournal() {
+  const entries = journalEntries.filter((entry) => journalFilter === "all" || entry.kind === journalFilter);
+  if (!entries.length) {
+    const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = journalFilter === "all" ? "还没有整理内容。你的错题原因和向 AI 提问的答案会自动出现在这里。" : "这一类暂时没有内容。";
+    $("#journal-list").replaceChildren(empty); return;
+  }
+  $("#journal-list").replaceChildren(...entries.map((entry) => {
+    const card = document.createElement("article"); card.className = `journal-entry ${entry.kind}`;
+    const top = document.createElement("div"); const kind = document.createElement("span"); const time = document.createElement("time");
+    kind.textContent = entry.kind === "mistake" ? "错因" : "提问"; time.textContent = new Date(entry.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); top.append(kind, time);
+    const title = document.createElement("h3"); title.textContent = entry.title;
+    const question = document.createElement("p"); question.className = "journal-question"; question.textContent = entry.question;
+    const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("p"); summary.textContent = "展开整理内容"; content.textContent = entry.content; detail.append(summary, content);
+    card.append(top, title, question, detail); return card;
+  }));
+}
+
+async function loadJournal() {
+  const payload = await api("/api/journal"); journalEntries = payload.entries || []; $("#journal-count").textContent = journalEntries.length; renderJournal();
+}
+function openJournal() { $("#journal-drawer").hidden = false; loadJournal(); }
+function closeJournal() { $("#journal-drawer").hidden = true; }
 
 async function lookupWord(word, context = "") {
   openNotebook(); $("#lookup-word").textContent = word; $("#lookup-detail").innerHTML = "<p>正在查找用法…</p>";
@@ -342,7 +367,7 @@ async function answer(selected, selectedButton) {
     const analysis = result.analysis;
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
     $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · Bravo !" : "错误分析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section><b>中文解析</b><p>${escapeHtml(analysis.explanationZh)}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(analysis.explanationFr)}</p></section><section class="error-reason"><b>${result.correct ? "复盘建议" : "你错在这里"}</b><p>${escapeHtml(analysis.errorReasonZh)}</p></section>${["grammar", "vocabulary"].includes(state.questions[state.index].type) ? `<section class="knowledge-note"><b>相关知识点</b><p>${escapeHtml(analysis.knowledge.note)}</p></section>` : ""}`;
-    $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]);
+    $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), result.correct ? Promise.resolve() : loadJournal()]);
   } catch (error) {
     buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
@@ -376,7 +401,7 @@ function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidde
 function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
   const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "回答中…";
-  try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); appendTutorMessage("assistant", payload.answer); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; }
+  try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); appendTutorMessage("assistant", payload.answer); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; await loadJournal(); }
   catch (error) { appendTutorMessage("assistant", `暂时无法回答：${error.message}`); }
   finally { button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
 }
@@ -385,6 +410,8 @@ $("#start").addEventListener("click", () => start()); $("#review").addEventListe
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
+$("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
+document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);
 document.addEventListener("mouseup", () => setTimeout(captureVocabularySelection, 0));
@@ -404,4 +431,4 @@ $("#bank-type").addEventListener("change", async (event) => { state.activeCatego
 document.addEventListener("keydown", (event) => { if ($("#quiz").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
 
 renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics()]).then(([health]) => { const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库"; $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 本地题库模式"; $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics(), loadJournal()]).then(([health]) => { const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库"; $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 本地题库模式"; $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });

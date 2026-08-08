@@ -3,6 +3,7 @@ node_modules/
 .DS_Store
 server/data/progress.json
 server/data/vocabulary.json
+server/data/knowledge-journal.json
 server/imports/.calibration-checkpoint.json
 server/imports/.refinement-checkpoint.json
 npm-debug.log*
