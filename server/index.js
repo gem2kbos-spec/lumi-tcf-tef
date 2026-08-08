@@ -7,6 +7,7 @@ import { loadImportedQuestions } from "./imported-questions.js";
 import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, sequenceProgress, summarize, weakSkillForType } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
+import { buildDetailedAttemptAnalysis } from "./detailed-analysis.js";
 import { blueprintFor } from "./tcf-blueprint.js";
 import { aiLookup, listVocabulary, localLookup, resolveFrenchLemma, saveVocabulary, toggleMastered } from "./vocabulary-store.js";
 import { getKnowledgeTopic, knowledgeTopics } from "./knowledge-topics.js";
@@ -95,7 +96,7 @@ const server = http.createServer(async (req, res) => {
         (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
         (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
         (level === "all" || attempt.question?.level === level)
-      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: buildAttemptAnalysis(attempt.question, attempt.selected) }));
+      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysis?.detailedZh ? attempt.analysis : buildAttemptAnalysis(attempt.question, attempt.selected) }));
       return sendJson(res, 200, { attempts, total: attempts.length });
     }
     if (req.method === "GET" && url.pathname === "/api/bank") {
@@ -290,7 +291,7 @@ const server = http.createServer(async (req, res) => {
       if (!question || question.answer === null || question.answerVerified === false) return sendJson(res, 409, { error: "ANSWER_PENDING_REVIEW" });
       if (!Number.isInteger(input.selected) || input.selected < 0 || input.selected >= question.options.length) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
-      const analysis = buildAttemptAnalysis(question, input.selected);
+      const analysis = await buildDetailedAttemptAnalysis(question, input.selected);
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
         exam: ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf",

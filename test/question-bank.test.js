@@ -4,7 +4,7 @@ import { questionBank } from "../server/question-bank.js";
 import { blueprintFor } from "../server/tcf-blueprint.js";
 import { validateGeneratedQuestions } from "../server/ai-generator.js";
 import { validateImportedQuestions } from "../server/imported-questions.js";
-import { buildAttemptAnalysis } from "../server/knowledge-base.js";
+import { buildAttemptAnalysis, formatAiAnalysis } from "../server/knowledge-base.js";
 
 test("all bank questions have one valid answer among four options", () => {
   for (const question of questionBank) {
@@ -67,4 +67,18 @@ test("il se peut que analysis explains every distractor in Chinese", () => {
   assert.match(analysis.detailedZh, /si 用于条件句/);
   assert.match(analysis.detailedZh, /il est possible de/);
   assert.doesNotMatch(analysis.detailedZh, /还不稳定/);
+});
+
+test("preposition distractors have concrete local usage instead of filler", () => {
+  const analysis = buildAttemptAnalysis({ type: "grammar", skill: "prepositions", topic: "lieu", prompt: "Elle habite _ Paris.", options: ["à", "dans", "en", "sur"], answer: 0, explanation: "" }, 1);
+  assert.match(analysis.detailedZh, /dans la salle/);
+  assert.match(analysis.detailedZh, /en France/);
+  assert.match(analysis.detailedZh, /sur la table/);
+  assert.doesNotMatch(analysis.detailedZh, /不能填入本题位置；需要检查/);
+});
+
+test("AI analysis is rejected when distractor explanations are filler", () => {
+  const question = { type: "grammar", skill: "prepositions", topic: "lieu", prompt: "Elle habite _ Paris.", options: ["à", "dans"], answer: 0, explanation: "" };
+  const result = formatAiAnalysis(question, 1, { summary: "地点介词", rule: "城市前用 à。", steps: ["看地点"], correctReason: "Paris 是城市。", trap: "不要直译。", options: [{ option: "à", usage: "用于城市名称之前表示地点或方向。", reasonInQuestion: "Paris 是城市名称，因此本题使用 à。", example: "Elle vit à Lyon." }, { option: "dans", usage: "表示位于具有明确边界的空间内部。", reasonInQuestion: "不合适", example: "Elle est dans la salle." }] });
+  assert.doesNotMatch(result.detailedZh, /常见用法：/);
 });

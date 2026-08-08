@@ -29,6 +29,22 @@ const KNOWLEDGE = {
   consigne_orale: ["口头指令", "确定对方要求完成的具体动作、方式和时限。"]
 };
 
+const OPTION_USAGE = {
+  dans: "dans 是介词，核心是进入或位于有边界的内部，也可表示‘从现在起多久以后’：dans la salle、dans deux jours。它后接名词性成分，不能仅因中文可译成‘在’就替代 à、en 或 sur。",
+  en: "en 常用于阴性国家/地区、交通方式、材料、状态或完成动作所需时间：en France、en voiture、en bois、en deux heures。它是否成立取决于后面名词的类别和固定搭配。",
+  sur: "sur 表示在表面上、关于某主题或比例关系：sur la table、un livre sur Paris、trois sur dix。若题目不表达表面接触、主题或比例，就不能使用 sur。",
+  à: "à 可表示地点、方向、时间，也由许多动词固定支配：à Paris、à huit heures、penser à。具体是否使用要看地点类型或前面动词的固定介词。",
+  de: "de 可表示来源、所属、内容或由动词/形容词固定支配：venir de Paris、le livre de Paul、parler de。接完整从句时通常还需要 que，不能把 de 单独当连接词。",
+  pour: "pour 表示目的、受益对象、用途、预定时段等，通常接名词或不定式：pour Marie、pour apprendre、pour deux semaines；接完整从句应使用 pour que。",
+  chez: "chez 后接人、职业群体或机构名称，表示‘在某人家/某类人那里’：chez Paul、chez le médecin。它一般不直接用于普通地点名词。"
+};
+
+function localOptionReason(option, correct, selected) {
+  const usage = OPTION_USAGE[String(option).toLocaleLowerCase("fr")] || `“${option}”有自己的固定搭配、支配形式和语义范围，必须根据完整句法而不是中文直译选择。`;
+  if (correct) return `✓ ${option}：${usage} 本题中它与前后成分构成正确结构，且句意完整。`;
+  return `✗ ${option}${selected ? "（你的选择）" : ""}：${usage} 本题所需关系与上述适用条件不一致，所以即使中文表面上似乎通顺，也不能填入。`;
+}
+
 export function buildAttemptAnalysis(question, selected) {
   const correctOption = question.options[question.answer];
   const selectedOption = question.options[selected];
@@ -47,9 +63,7 @@ export function buildAttemptAnalysis(question, selected) {
       if (/^si$/i.test(option)) return `✗ ${option}：si 用于条件句或间接疑问，如 si j'ai le temps、je ne sais pas s'il vient；它不能组成“il se peut si”这一结构。`;
       if (/^de$/i.test(option)) return `✗ ${option}：de 可以出现在“il est possible de + 不定式”中，但不能在这里直接连接“il pleuve”这个有主语、有变位动词的完整从句。`;
     }
-    if (index === question.answer) return `✓ ${option}：正确。它同时满足本题的句法位置、固定搭配和上下文含义。${sourceZh || note}`;
-    if (index === selected) return `✗ ${option}：这是你的选择。它看似与题意有关，但不能完整满足本题所要求的句法结构或语义关系。`;
-    return `✗ ${option}：不能填入本题位置；需要检查它通常接名词、不定式还是完整从句，以及是否符合当前语境。`;
+    return localOptionReason(option, index === question.answer, index === selected);
   });
   const detailedZh = [
     `【题干理解】${question.prompt}`,
@@ -68,4 +82,21 @@ export function buildAttemptAnalysis(question, selected) {
     selectedOption,
     correctOption
   };
+}
+
+export function formatAiAnalysis(question, selected, payload, base = buildAttemptAnalysis(question, selected)) {
+  if (!payload || !Array.isArray(payload.options) || payload.options.length !== question.options.length) return base;
+  const forbidden = /不能填入本题位置|需要检查|不符合语境|不合适|不正确[。；]?$/;
+  const valid = payload.options.every((item, index) => item.option === question.options[index] && item.usage?.trim().length >= 8 && item.reasonInQuestion?.trim().length >= 10 && item.example?.trim().length >= 5 && !forbidden.test(item.reasonInQuestion.trim()));
+  if (!valid || !payload.rule?.trim() || !payload.correctReason?.trim()) return base;
+  const correctOption = question.options[question.answer]; const selectedOption = question.options[selected];
+  const detailedZh = [
+    `【题干理解】${payload.summary}`,
+    `【核心规则】${payload.rule}`,
+    `【判断步骤】${payload.steps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
+    `【正确答案】${correctOption}。${payload.correctReason}${selected === question.answer ? "\n你本题选择正确。" : `\n你选择了“${selectedOption}”，具体差异见逐项分析。`}`,
+    `【选项逐项分析】\n${payload.options.map((item, index) => `${index === question.answer ? "✓" : "✗"} ${item.option}\n常见用法：${item.usage}\n本题判断：${item.reasonInQuestion}\n正确例句：${item.example}`).join("\n\n")}`,
+    `【易错提醒】${payload.trap}`
+  ].join("\n\n");
+  return { ...base, detailedZh };
 }
