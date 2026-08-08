@@ -18,15 +18,33 @@ const commonLemmas = {
   envahissait: "envahir", "m'envahissait": "envahir"
 };
 
+const stripElision = (word) => {
+  const match = word.match(/^(?:l|d|j|m|t|s|c|n|qu)['’](.+)$/i);
+  return match?.[1]?.length >= 2 ? match[1] : word;
+};
+
+const stem = (word) => word.replace(/(?:aient|ions|iez|ant|ées|és|ée|er|ir|re|ait|ais|ent|ons|ez|es|e|s|x)$/i, "");
+
+export function isPlausibleLemma(selected, lemma) {
+  const source = stripElision(String(selected || "").toLocaleLowerCase("fr").replace(/’/g, "'"));
+  const candidate = String(lemma || "").toLocaleLowerCase("fr").trim().replace(/’/g, "'");
+  if (!candidate || !/^[a-zà-ÿœæ'-]+$/i.test(candidate) || candidate.includes(" ")) return false;
+  if (source === candidate || commonLemmas[source] === candidate) return true;
+  const sourceStem = stem(source); const candidateStem = stem(candidate);
+  return sourceStem.length >= 3 && candidateStem.length >= 3 && (sourceStem.startsWith(candidateStem) || candidateStem.startsWith(sourceStem) || sourceStem.slice(0, 4) === candidateStem.slice(0, 4));
+}
+
 export async function resolveFrenchLemma(word, context = "") {
-  const normalized = String(word || "").toLocaleLowerCase("fr").trim().replace(/^[^a-zà-ÿœæ'-]+|[^a-zà-ÿœæ'-]+$/gi, "");
+  const selected = String(word || "").toLocaleLowerCase("fr").trim().replace(/’/g, "'").replace(/^[^a-zà-ÿœæ'-]+|[^a-zà-ÿœæ'-]+$/gi, "");
+  const normalized = stripElision(selected);
   if (!normalized) return "";
   if (commonLemmas[normalized]) return commonLemmas[normalized];
   if (!aiEnabled()) return normalized;
   try {
     const schema = { type: "object", additionalProperties: false, required: ["lemma"], properties: { lemma: { type: "string" } } };
     const output = await completeAi({ instructions: "Tu es un lemmatiseur français strict. Donne uniquement la forme canonique du mot sélectionné selon le contexte : infinitif pour un verbe, masculin singulier pour un adjectif, singulier correctement orthographié pour un nom. Ne traduis pas et ne change pas de lexème.", input: `Forme sélectionnée : ${normalized}\nContexte : ${context || "non fourni"}\nRéponds uniquement en JSON.`, schema, schemaName: "french_lemma", maxTokens: 80 });
-    return JSON.parse(output)?.lemma?.toLocaleLowerCase("fr").trim() || normalized;
+    const lemma = JSON.parse(output)?.lemma?.toLocaleLowerCase("fr").trim();
+    return isPlausibleLemma(normalized, lemma) ? lemma : normalized;
   } catch { return normalized; }
 }
 

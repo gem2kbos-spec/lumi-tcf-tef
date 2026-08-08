@@ -288,7 +288,7 @@ function showVocabularyTools({ word, range, element }, point = null) {
   const context = question?.passage || question?.prompt || contextElement?.textContent.trim().slice(0, 800) || "";
   selectedVocabulary = { word: word.replace(/^[^A-Za-zÀ-ÿŒœ'-]+|[^A-Za-zÀ-ÿŒœ'-]+$/g, ""), context, questionId: question?.id || null }; if (!selectedVocabulary.word) return false;
   const rect = range?.getBoundingClientRect(); const x = point?.x ?? rect?.left ?? 10; const y = point?.y ?? rect?.bottom ?? 10;
-  const tools = $("#selection-tools"); tools.style.left = `${Math.min(window.innerWidth - 230, Math.max(10, x))}px`; tools.style.top = `${Math.min(window.innerHeight - 60, Math.max(10, y + 8))}px`; tools.hidden = false; return true;
+  const tools = $("#selection-tools"); $("#save-selection").textContent = `＋ “${selectedVocabulary.word}”`; tools.style.left = `${Math.min(window.innerWidth - 230, Math.max(10, x))}px`; tools.style.top = `${Math.min(window.innerHeight - 60, Math.max(10, y + 8))}px`; tools.hidden = false; return true;
 }
 
 function captureVocabularySelection() {
