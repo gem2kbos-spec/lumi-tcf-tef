@@ -43,7 +43,7 @@ export function buildAttemptAnalysis(question, selected) {
     explanationFr: bilingual ? bilingual[2].trim() : question.explanation,
     explanationZh: bilingual ? bilingual[1].trim() : `正确答案是“${correctOption}”。本题考查【${label}】。${note}`,
     errorReasonZh,
-    knowledge: { label, note },
+    knowledge: { label, note, title: `${label}：${String(correctOption).slice(0, 70)}` },
     selectedOption,
     correctOption
   };

@@ -58,4 +58,5 @@ test("attempt analysis pairs French explanation with Chinese diagnosis", () => {
   assert.match(analysis.explanationZh, /正确答案/);
   assert.match(analysis.errorReasonZh, /虚拟式/);
   assert.equal(analysis.knowledge.label, "虚拟式");
+  assert.match(analysis.knowledge.title, /^虚拟式：/);
 });

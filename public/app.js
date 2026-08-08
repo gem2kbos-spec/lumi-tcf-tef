@@ -1,6 +1,24 @@
 const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
+const richInline = (value) => escapeHtml(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`(.+?)`/g, "<code>$1</code>");
+
+function renderTutorRichText(container, content) {
+  const lines = String(content || "").split(/\r?\n/); const fragment = document.createDocumentFragment();
+  for (let index = 0; index < lines.length;) {
+    const line = lines[index].trim(); if (!line) { index++; continue; }
+    if (line.includes("|") && index + 1 < lines.length && /^\s*\|?\s*:?-{3,}/.test(lines[index + 1])) {
+      const rows = []; const cells = (text) => text.trim().replace(/^\||\|$/g, "").split("|").map((cell) => cell.trim());
+      rows.push(cells(line)); index += 2; while (index < lines.length && lines[index].includes("|")) rows.push(cells(lines[index++]));
+      const wrap = document.createElement("div"); wrap.className = "tutor-table-wrap"; const table = document.createElement("table");
+      rows.forEach((row, rowIndex) => { const tr = document.createElement("tr"); row.forEach((cell) => { const element = document.createElement(rowIndex ? "td" : "th"); element.innerHTML = richInline(cell); tr.append(element); }); table.append(tr); }); wrap.append(table); fragment.append(wrap); continue;
+    }
+    const heading = line.match(/^(#{1,3})\s+(.+)/); if (heading) { const element = document.createElement(heading[1].length === 1 ? "h3" : "h4"); element.innerHTML = richInline(heading[2]); fragment.append(element); index++; continue; }
+    if (/^[-*]\s+/.test(line)) { const list = document.createElement("ul"); while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) { const item = document.createElement("li"); item.innerHTML = richInline(lines[index].replace(/^\s*[-*]\s+/, "")); list.append(item); index++; } fragment.append(list); continue; }
+    const paragraph = document.createElement("p"); const parts = [line]; index++; while (index < lines.length && lines[index].trim() && !lines[index].includes("|") && !/^(#{1,3}|\s*[-*])\s+/.test(lines[index])) parts.push(lines[index++].trim()); paragraph.innerHTML = parts.map(richInline).join("<br>"); fragment.append(paragraph);
+  }
+  container.replaceChildren(fragment);
+}
 let selectedVocabulary = null;
 let knowledgeTopics = [];
 let currentKnowledgeId = "y-en-prepositions";
@@ -194,9 +212,10 @@ function renderJournal() {
     const top = document.createElement("div"); const kind = document.createElement("span"); const time = document.createElement("time");
     kind.textContent = entry.kind === "mistake" ? "错因" : "提问"; time.textContent = new Date(entry.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); top.append(kind, time);
     const title = document.createElement("h3"); title.textContent = entry.title;
-    const question = document.createElement("p"); question.className = "journal-question"; question.textContent = entry.question;
-    const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("p"); summary.textContent = "展开整理内容"; content.textContent = entry.content; detail.append(summary, content);
-    card.append(top, title, question, detail); return card;
+    const meta = document.createElement("div"); meta.className = "journal-meta"; [entry.meta?.category, entry.meta?.level, entry.meta?.type === "reading" ? "阅读" : entry.meta?.type === "vocabulary" ? "词汇" : entry.meta?.type === "grammar" ? "语法" : entry.meta?.type === "listening" ? "听力" : ""].filter(Boolean).forEach((text) => { const chip = document.createElement("span"); chip.textContent = text; meta.append(chip); });
+    const question = document.createElement("p"); question.className = "journal-question"; question.textContent = `${entry.kind === "question" ? "我的提问" : "原题回看"}：${entry.question}`;
+    const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("div"); content.className = "journal-content"; summary.textContent = "展开整理内容"; renderTutorRichText(content, entry.content); detail.append(summary, content);
+    card.append(top, title); if (meta.children.length) card.append(meta); card.append(question, detail); return card;
   }));
 }
 
@@ -401,7 +420,7 @@ function showProduction() {
 
 function openTutor() { $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
-function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
+function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
   const text = String(question || "").trim(); if (!text) return; const button = $("#tutor-form button"); appendTutorMessage("user", text); $("#tutor-question").value = ""; button.disabled = true; button.textContent = "回答中…";
   try { const payload = await api("/api/tutor/ask", { method: "POST", body: JSON.stringify({ question: text, questionId: state.questions[state.index]?.id || null, history: tutorHistory }) }); tutorHistory.push({ role: "user", content: text }, { role: "assistant", content: payload.answer }); tutorHistory = tutorHistory.slice(-10); appendTutorMessage("assistant", payload.answer); const label = payload.provider === "deepseek" ? "DeepSeek" : payload.provider === "openai" ? "OpenAI" : "本地知识库"; $("#tutor-mode").textContent = payload.mode === "ai" ? `${label} 已连接 · 保留本轮上下文` : "本地知识库 · 配置密钥后支持任意问题"; await loadJournal(); }

@@ -35,6 +35,20 @@ function publicQuestion(question) {
   return safe;
 }
 
+function categoryLabelFor(question) {
+  const id = categoryFor(question);
+  return QUESTION_CATEGORIES.find((item) => item.id === id)?.label || question.topic || "综合考点";
+}
+
+function tutorJournalTitle(question, current) {
+  if (current) return `lili答疑：${categoryLabelFor(current)}`;
+  if (/时间.*(引导词|介词)|depuis|il y a/i.test(question)) return "lili答疑：时间引导词与时态";
+  if (/\by\b.*\ben\b|\ben\b.*\by\b/i.test(question)) return "lili答疑：代词 y 与 en";
+  if (/虚拟式|subjonctif/i.test(question)) return "lili答疑：虚拟式触发结构";
+  if (/阅读|主旨|推断/.test(question)) return "lili答疑：阅读理解方法";
+  return "lili答疑：法语知识解析";
+}
+
 function sample(items, count) {
   return [...items].sort(() => Math.random() - 0.5).slice(0, count)
     .sort((a, b) => ({ A1: 0, A2: 1, B1: 2, B2: 3, C1: 4, C2: 5 }[a.level] - ({ A1: 0, A2: 1, B1: 2, B2: 3, C1: 4, C2: 5 }[b.level])));
@@ -165,8 +179,8 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions(); const current = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       const history = Array.isArray(input.history) ? input.history.slice(-10).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1200) })) : [];
       const context = current ? `当前练习题：${JSON.stringify({ type: current.type, level: current.level, passage: current.passage || "", prompt: current.prompt, options: current.options, correctAnswer: current.options[current.answer], explanation: current.explanation })}` : "当前没有打开练习题。";
-      const answer = await completeAi({ instructions: `你是 Lumi 法语考试老师，专门辅导 TCF/TEF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。${context}`, input: question, history, maxTokens: 2500 });
-      await addJournalEntry({ kind: "question", title: current ? `${current.type} · ${current.skill}` : "AI老师提问", question, content: answer, skill: current?.skill, questionId: current?.id });
+      const answer = await completeAi({ instructions: `你是 lili老师，专门辅导 TCF/TEF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。用户要求速查表、对比表或整理表时，必须输出标准 Markdown 表格，表头简短、单元格内容完整，不要用纯文本模拟表格。${context}`, input: question, history, maxTokens: 2500 });
+      await addJournalEntry({ kind: "question", title: tutorJournalTitle(question, current), question, content: answer, skill: current?.skill, questionId: current?.id, meta: current ? { type: current.type, level: current.level, source: current.source, category: categoryLabelFor(current) } : null });
       return sendJson(res, 200, { answer, mode: "ai", provider: getAiConfig().provider });
     }
     if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary() });
@@ -274,7 +288,7 @@ const server = http.createServer(async (req, res) => {
         question, analysis
       };
       await addAttempt(attempt);
-      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.label, question: question.prompt, content: `错误原因\n${analysis.errorReasonZh}\n\n中文解析\n${analysis.explanationZh}\n\nExplication française\n${analysis.explanationFr}\n\n相关知识点\n${analysis.knowledge.note}`, skill: question.skill, questionId: question.id });
+      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: `错误原因\n${analysis.errorReasonZh}\n\n中文解析\n${analysis.explanationZh}\n\nExplication française\n${analysis.explanationFr}\n\n相关知识点\n${analysis.knowledge.note}`, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } });
       return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;

@@ -20,6 +20,7 @@ export async function addJournalEntry(entry) {
     question: String(entry.question || "").slice(0, 1000),
     content: String(entry.content || "").slice(0, 5000),
     skill: String(entry.skill || "").slice(0, 100), questionId: entry.questionId || null,
+    meta: entry.meta && typeof entry.meta === "object" ? { type: String(entry.meta.type || ""), level: String(entry.meta.level || ""), source: String(entry.meta.source || ""), category: String(entry.meta.category || "").slice(0, 120) } : null,
     createdAt: new Date().toISOString()
   };
   journal.entries.unshift(saved);
