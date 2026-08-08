@@ -89,6 +89,15 @@ const server = http.createServer(async (req, res) => {
       const progress = await readProgress(); const imported = await loadImportedQuestions();
       return sendJson(res, 200, activitySummary(progress.attempts, imported));
     }
+    if (req.method === "GET" && url.pathname === "/api/history") {
+      const progress = await readProgress(); const type = url.searchParams.get("type") || "all"; const result = url.searchParams.get("result") || "all"; const source = url.searchParams.get("source") || "all"; const level = url.searchParams.get("level") || "all";
+      const attempts = [...progress.attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter((attempt) =>
+        (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
+        (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
+        (level === "all" || attempt.question?.level === level)
+      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysis }));
+      return sendJson(res, 200, { attempts, total: attempts.length });
+    }
     if (req.method === "GET" && url.pathname === "/api/bank") {
       const imported = await loadImportedQuestions();
       const progress = await readProgress();

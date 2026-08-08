@@ -11,7 +11,7 @@ test("summarize calculates accuracy and ranks weak skills", () => {
   ]);
   assert.equal(stats.accuracy, 25);
   assert.equal(stats.wrongCount, 3);
-  assert.deepEqual(stats.weakSkills[0], { type: "grammar", skill: "subjonctif", count: 2 });
+  assert.deepEqual(stats.weakSkills[0], { type: "grammar", skill: "subjonctif", count: 2, total: 3, latestReason: "", latestTitle: "", errorRate: 67 });
 });
 
 test("weak skills keep grammar and reading mistakes separate", () => {

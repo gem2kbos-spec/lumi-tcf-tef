@@ -31,6 +31,7 @@ let bankSearchTimer = null;
 let tutorHistory = [];
 let journalEntries = [];
 let journalFilter = "all";
+let historyAttempts = [];
 
 const catalogs = {
   tcf: {
@@ -130,7 +131,7 @@ async function refreshStats() {
   const weak = stats.weakSkills.slice(0, 3); $("#weak-card").hidden = weak.length === 0;
   const weakLabels = { collocation: "固定搭配", verb_tenses: "动词时态", connecteurs: "逻辑连接词", prepositions: "介词", pronouns: "代词", information_explicite: "阅读信息定位", idee_principale: "阅读主旨", inference: "阅读推断", synonymes: "近义词辨析", sens_en_contexte: "语境词义" };
   const typeLabels = { grammar: "语法", vocabulary: "词汇", reading: "阅读", listening: "听力" };
-  $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); const label = weakLabels[item.skill] || item.skill.replaceAll("_", " "); row.innerHTML = `<span>${typeLabels[item.type] || "综合"} · ${escapeHtml(label)}</span><b>${item.count}</b>`; return row; }));
+  $("#weak-skills").replaceChildren(...weak.map((item) => { const row = document.createElement("div"); row.className = "weak-skill-row"; const label = item.latestTitle || weakLabels[item.skill] || item.skill.replaceAll("_", " "); row.innerHTML = `<div><strong>${typeLabels[item.type] || "综合"} · ${escapeHtml(label)}</strong><span>错 ${item.count}/${item.total} · 错误率 ${item.errorRate}%</span></div>${item.latestReason ? `<p>${escapeHtml(item.latestReason)}</p>` : ""}`; return row; }));
 }
 
 function showKnowledgePreview(topic) {
@@ -198,7 +199,7 @@ async function loadNotebook() {
   }));
 }
 
-function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
+function openNotebook() { $("#journal-drawer").hidden = true; $("#mistake-drawer").hidden = true; closeTutor(); closeHistory(); $("#vocab-drawer").hidden = false; document.body.classList.add("notebook-open"); loadNotebook(); }
 function closeNotebook() { $("#vocab-drawer").hidden = true; document.body.classList.remove("notebook-open"); }
 
 function isQuickReference(entry) { return entry.subtype === "quick-reference" || /\|\s*:?-{3,}/.test(entry.content || ""); }
@@ -233,9 +234,9 @@ function renderMistakes() {
 async function loadJournal() {
   const payload = await api("/api/journal"); journalEntries = payload.entries || []; $("#journal-count").textContent = journalEntries.filter((entry) => entry.kind !== "mistake").length; renderJournal(); renderMistakes();
 }
-function openJournal() { closeNotebook(); closeMistakes(); closeTutor(); $("#journal-drawer").hidden = false; loadJournal(); }
+function openJournal() { closeNotebook(); closeMistakes(); closeTutor(); closeHistory(); $("#journal-drawer").hidden = false; loadJournal(); }
 function closeJournal() { $("#journal-drawer").hidden = true; }
-function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); $("#mistake-drawer").hidden = false; loadJournal(); }
+function openMistakes() { closeNotebook(); closeJournal(); closeTutor(); closeHistory(); $("#mistake-drawer").hidden = false; loadJournal(); }
 function closeMistakes() { $("#mistake-drawer").hidden = true; }
 
 async function lookupWord(word, context = "") {
@@ -288,6 +289,25 @@ async function loadActivity() {
   $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.authenticTotal}题`;
   $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
 }
+
+function renderHistoryDetail(attempt) {
+  const question = attempt.question; const detail = $("#history-detail");
+  const source = question.source === "user_imported" ? "导入真题" : String(question.source || "").startsWith("ai") ? "AI生成题" : "精选题";
+  detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>中文解析</b><p>${escapeHtml(attempt.analysis?.explanationZh || "暂无解析")}</p></section><section><b>Explication en français</b><p lang="fr">${escapeHtml(attempt.analysis?.explanationFr || "")}</p></section><section><b>${attempt.correct ? "复盘建议" : "当时错因"}</b><p>${escapeHtml(attempt.analysis?.errorReasonZh || "")}</p></section></div>`;
+}
+
+function renderHistory() {
+  $("#history-count").textContent = `共 ${historyAttempts.length} 次作答 · 最新在前`;
+  if (!historyAttempts.length) { const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = "没有符合筛选条件的记录。"; $("#history-list").replaceChildren(empty); $("#history-detail").innerHTML = "<p>调整筛选条件后查看。</p>"; return; }
+  const cards = historyAttempts.map((attempt, index) => { const card = document.createElement("button"); card.className = `history-card${index === 0 ? " active" : ""}`; card.innerHTML = `<div><b class="${attempt.correct ? "correct" : "wrong"}">${attempt.correct ? "✓ 正确" : "✕ 错误"}</b><time>${new Date(attempt.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div><p>${escapeHtml(attempt.question.prompt)}</p><small>${escapeHtml(attempt.question.level)} · ${escapeHtml(attempt.question.categoryLabel || attempt.question.topic || "综合考点")}</small>`; card.addEventListener("click", () => { document.querySelectorAll(".history-card").forEach((item) => item.classList.toggle("active", item === card)); renderHistoryDetail(attempt); }); return card; });
+  $("#history-list").replaceChildren(...cards); renderHistoryDetail(historyAttempts[0]);
+}
+
+async function loadHistory() {
+  const params = new URLSearchParams({ type: $("#history-type").value, result: $("#history-result").value, source: $("#history-source").value, level: $("#history-level").value }); const payload = await api(`/api/history?${params}`); historyAttempts = payload.attempts; renderHistory();
+}
+function openHistory() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); $("#history-drawer").hidden = false; loadHistory(); }
+function closeHistory() { $("#history-drawer").hidden = true; }
 
 async function loadBank(reset = true) {
   if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
@@ -431,7 +451,7 @@ function showProduction() {
   $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
 }
 
-function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
+function openTutor() { closeNotebook(); closeJournal(); closeMistakes(); closeHistory(); $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
 function appendTutorMessage(role, content) { const message = document.createElement("div"); message.className = `tutor-message ${role}`; if (role === "assistant") renderTutorRichText(message, content); else message.textContent = content; $("#tutor-messages").append(message); $("#tutor-messages").scrollTop = $("#tutor-messages").scrollHeight; }
 async function askTutor(question) {
@@ -447,6 +467,8 @@ $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-kn
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
 $("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
 $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
+$("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
+for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
 document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
 $("#save-selection").addEventListener("click", saveSelectedWord);

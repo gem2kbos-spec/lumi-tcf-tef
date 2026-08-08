@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="/journal-refine.css" />
   <link rel="stylesheet" href="/fullscreen.css" />
   <link rel="stylesheet" href="/study-tools.css" />
+  <link rel="stylesheet" href="/history.css" />
 </head>
 <body>
   <main>
@@ -40,7 +41,7 @@
       <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
     <section id="activity-center" class="activity-panel">
-      <div class="activity-heading"><div><p class="label">训练记录</p><h2>真题与生成题进度</h2></div><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div></div>
+      <div class="activity-heading"><div><p class="label">训练记录</p><h2>真题与生成题进度</h2></div><div class="activity-actions"><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div><button id="open-history">查看做题历史 →</button></div></div>
       <div class="activity-metrics">
         <article><span>历史已做真题</span><strong id="history-authentic">0 / 700</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 真题进度</small></article>
         <article><span>历史已做生成题</span><strong id="history-generated">0题</strong><small>AI补缺与举一反三</small></article>
@@ -154,6 +155,16 @@
     <header><div><p class="label">自动错因复盘</p><h2>错题本</h2><p>按具体考点整理错误原因、中法解析和原题。</p></div><button id="close-mistakes" aria-label="关闭错题本">×</button></header>
     <div class="mistake-summary"><strong id="mistake-count">0</strong><span>个待复盘考点</span></div>
     <div id="mistake-list" class="journal-list"></div>
+  </aside>
+  <aside id="history-drawer" class="history-drawer" aria-label="做题历史" hidden>
+    <header><div><p class="label">从新到旧</p><h2>做题历史</h2><p>筛选并重新打开每一次作答，查看当时选择和完整解析。</p></div><button id="close-history" aria-label="关闭做题历史">×</button></header>
+    <div class="history-filters">
+      <select id="history-type" aria-label="历史题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
+      <select id="history-result" aria-label="历史对错"><option value="all">全部结果</option><option value="wrong">仅错题</option><option value="correct">仅正确</option></select>
+      <select id="history-source" aria-label="历史来源"><option value="all">全部来源</option><option value="authentic">真题</option><option value="generated">AI生成题</option></select>
+      <select id="history-level" aria-label="历史等级"><option value="all">全部等级</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+    </div>
+    <div class="history-layout"><div><div id="history-count" class="history-count"></div><div id="history-list" class="history-list"></div></div><div id="history-detail" class="history-detail"><p>选择左侧记录查看完整题目。</p></div></div>
   </aside>
   <aside id="knowledge-drawer" class="knowledge-drawer" aria-label="知识点教室" hidden>
     <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>

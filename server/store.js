@@ -26,10 +26,11 @@ export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai"
   const total = attempts.length;
   const correct = attempts.filter((item) => item.correct).length;
   const wrongBySkill = {};
-  for (const item of attempts.filter((entry) => !entry.correct)) {
+  for (const item of attempts) {
     const key = `${item.type || "unknown"}:${item.skill}`;
-    wrongBySkill[key] ||= { type: item.type || "unknown", skill: item.skill, count: 0 };
-    wrongBySkill[key].count++;
+    wrongBySkill[key] ||= { type: item.type || "unknown", skill: item.skill, count: 0, total: 0, latestReason: "", latestTitle: "" };
+    wrongBySkill[key].total++;
+    if (!item.correct) { const correctOption = item.question?.options?.[item.question?.answer]; wrongBySkill[key].count++; wrongBySkill[key].latestReason = item.analysis?.errorReasonZh || wrongBySkill[key].latestReason; wrongBySkill[key].latestTitle = item.analysis?.knowledge?.title || (correctOption ? `${item.analysis?.knowledge?.label || item.question?.topic || "具体考点"}：${correctOption}` : wrongBySkill[key].latestTitle); }
   }
   const byType = Object.fromEntries(["grammar", "vocabulary", "reading", "listening"].map((type) => {
     const entries = attempts.filter((item) => item.type === type);
@@ -55,7 +56,7 @@ export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai"
     pendingReview: reviewQuestions(attempts, Number.MAX_SAFE_INTEGER).length,
     streak,
     byType,
-    weakSkills: Object.values(wrongBySkill).sort((a, b) => b.count - a.count)
+    weakSkills: Object.values(wrongBySkill).filter((item) => item.count > 0).map((item) => ({ ...item, errorRate: Math.round(item.count / item.total * 100) })).sort((a, b) => b.count - a.count || b.errorRate - a.errorRate)
   };
 }
 
