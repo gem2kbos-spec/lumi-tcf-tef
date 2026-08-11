@@ -444,7 +444,7 @@ function render() {
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
-  $("#next").firstChild.textContent = currentSource === "authentic" ? "下一道同考点真题 " : currentSource === "review" ? "下一道错题 " : "下一道随机题 ";
+  $("#next").firstChild.textContent = currentSource === "authentic" ? "直接练下一道同考点真题 " : currentSource === "review" ? "直接练下一道错题 " : "直接练下一题 ";
 }
 
 function playAudio() {
@@ -484,9 +484,12 @@ async function variation() {
   } finally { button.disabled = false; button.textContent = "生成变式题 ✦"; }
 }
 
-function next() {
+async function next() {
+  if (state.submitting || $("#next").disabled) return;
+  $("#next").disabled = true;
   state.continuousNumber++;
-  start(state.mode === "review" ? "review" : state.type, true);
+  try { await start(state.mode === "review" ? "review" : state.type, true); }
+  finally { $("#next").disabled = false; }
 }
 
 function showProduction() {
