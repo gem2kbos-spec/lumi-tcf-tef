@@ -318,7 +318,8 @@ async function loadActivity() {
   const activity = await api("/api/activity");
   $("#history-authentic").textContent = `${activity.historicAuthentic} / ${activity.authenticTotal}`;
   $("#history-generated").textContent = `${activity.historicGenerated}题`; $("#today-authentic").textContent = `${activity.todayAuthentic}题`; $("#today-generated").textContent = `${activity.todayGenerated}题`;
-  $("#history-authentic-percent").textContent = `${activity.authenticPercentage}% 真题进度`; $("#authentic-progress-bar").style.width = `${activity.authenticPercentage}%`;
+  const authenticRemaining = Math.max(0, activity.authenticTotal - activity.historicAuthentic);
+  $("#history-authentic-percent").textContent = `${activity.authenticPercentage}% · 剩余 ${authenticRemaining} 题`; $("#authentic-progress-bar").style.width = `${activity.authenticPercentage}%`;
   $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.authenticTotal}题`;
   $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
 }

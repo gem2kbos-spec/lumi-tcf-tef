@@ -85,3 +85,15 @@ test("activitySummary separates authentic and generated history for today", () =
   assert.equal(result.todayAuthentic, 1); assert.equal(result.todayGenerated, 1);
   assert.equal(result.todayTotal, 3); assert.equal(result.todayAccuracy, 67); assert.equal(result.authenticPercentage, 50);
 });
+
+test("activitySummary excludes removed authentic questions from current-bank progress", () => {
+  const attempts = [
+    { questionId: "kept-1", correct: true, createdAt: "2026-08-07T01:00:00.000Z", question: { source: "user_imported" } },
+    { questionId: "removed-1", correct: true, createdAt: "2026-08-07T02:00:00.000Z", question: { source: "user_imported" } }
+  ];
+  const result = activitySummary(attempts, [{ id: "kept-1" }, { id: "kept-2" }], new Date("2026-08-07T04:00:00.000Z"), "Asia/Shanghai");
+  assert.equal(result.historicAuthentic, 1);
+  assert.equal(result.todayAuthentic, 1);
+  assert.equal(result.authenticPercentage, 50);
+  assert.equal(result.todayTotal, 2, "历史记录本身仍应保留");
+});

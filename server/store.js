@@ -97,7 +97,10 @@ export function activitySummary(attempts, importedQuestions, now = new Date(), t
   const dateKey = (value) => new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(value));
   const todayKey = dateKey(now); const todayAttempts = attempts.filter((attempt) => attempt.createdAt && dateKey(attempt.createdAt) === todayKey);
   const uniqueIds = (entries, predicate) => new Set(entries.filter(predicate).map((attempt) => attempt.questionId)).size;
-  const authentic = (attempt) => authenticIds.has(attempt.questionId) || attempt.question?.source === "user_imported";
+  // Progress is defined against the current cleaned bank. Historical attempts
+  // for questions removed during quality audits remain in history, but must not
+  // inflate the current-bank completion numerator.
+  const authentic = (attempt) => authenticIds.has(attempt.questionId);
   const generated = (attempt) => String(attempt.question?.source || "").startsWith("ai");
   const todayCorrect = todayAttempts.filter((attempt) => attempt.correct).length;
   const historicAuthentic = uniqueIds(attempts, authentic);
