@@ -2,7 +2,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { aiEnabled, completeAi } from "./ai-client.js";
 
-const file = path.resolve("server/data/vocabulary.json");
+const dataDir = path.resolve("server/data");
+const notebookFile = (storageKey = "legacy") => storageKey === "legacy" ? path.join(dataDir, "vocabulary.json") : path.join(dataDir, "users", String(storageKey).replace(/[^a-z0-9-]/gi, ""), "vocabulary.json");
 
 const commonLemmas = {
   suis: "être", es: "être", est: "être", sommes: "être", êtes: "être", sont: "être", étais: "être", était: "être", étaient: "être",
@@ -59,30 +60,30 @@ const lexicon = {
   temporaire: { meaningZh: "临时的、暂时的", partOfSpeech: "形容词", usageFr: "Qui ne dure que pendant une période limitée.", usageZh: "与 permanent 相对；可形容工作、展览、措施或住所。", examples: ["Il cherche un logement temporaire.", "Cette mesure est temporaire."], collocations: ["emploi temporaire", "mesure temporaire", "exposition temporaire"] }
 };
 
-async function readNotebook() {
-  try { return JSON.parse(await readFile(file, "utf8")); }
+async function readNotebook(storageKey = "legacy") {
+  try { return JSON.parse(await readFile(notebookFile(storageKey), "utf8")); }
   catch (error) { if (error.code === "ENOENT") return { entries: [] }; throw error; }
 }
 
-export async function listVocabulary() { return (await readNotebook()).entries; }
+export async function listVocabulary(storageKey = "legacy") { return (await readNotebook(storageKey)).entries; }
 
-export async function saveVocabulary(entry) {
-  const notebook = await readNotebook();
+export async function saveVocabulary(entry, storageKey = "legacy") {
+  const notebook = await readNotebook(storageKey);
   const normalized = entry.word.toLocaleLowerCase("fr").trim();
   const existing = notebook.entries.find((item) => item.normalized === normalized);
   if (existing) {
     existing.contexts = [...new Set([...existing.contexts, entry.context].filter(Boolean))].slice(-5);
     existing.updatedAt = new Date().toISOString();
   } else notebook.entries.unshift({ id: crypto.randomUUID(), normalized, word: entry.word.trim(), contexts: [entry.context].filter(Boolean), questionId: entry.questionId || null, mastered: false, createdAt: new Date().toISOString() });
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(notebook, null, 2));
+  const target = notebookFile(storageKey); await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, JSON.stringify(notebook, null, 2));
   return notebook.entries.find((item) => item.normalized === normalized);
 }
 
-export async function toggleMastered(id) {
-  const notebook = await readNotebook(); const entry = notebook.entries.find((item) => item.id === id);
+export async function toggleMastered(id, storageKey = "legacy") {
+  const notebook = await readNotebook(storageKey); const entry = notebook.entries.find((item) => item.id === id);
   if (!entry) return null; entry.mastered = !entry.mastered; entry.updatedAt = new Date().toISOString();
-  await writeFile(file, JSON.stringify(notebook, null, 2)); return entry;
+  await writeFile(notebookFile(storageKey), JSON.stringify(notebook, null, 2)); return entry;
 }
 
 export function localLookup(word) { return lexicon[word.toLocaleLowerCase("fr").trim()] || null; }

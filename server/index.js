@@ -15,13 +15,18 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
+import { adminOverview, authenticate, createOrder, ensureAdminFromEnv, login, logout, ordersForUser, plans, register, reviewOrder, updateMember } from "./member-store.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
 const sessions = new Map();
+const loginAttempts = new Map();
+const cookieToken = (req) => String(req.headers.cookie || "").split(";").map((item) => item.trim()).find((item) => item.startsWith("lumi_session="))?.slice("lumi_session=".length) || "";
+const sessionCookie = (token, clear = false) => `lumi_session=${clear ? "" : token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${clear ? 0 : 2592000}${process.env.NODE_ENV === "production" ? "; Secure" : ""}`;
+const storageKeyFor = (user) => user.role === "admin" ? "legacy" : user.id;
 
 function sendJson(res, status, value) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
   res.end(JSON.stringify(value));
 }
 
@@ -81,17 +86,46 @@ const server = http.createServer(async (req, res) => {
       const ai = getAiConfig();
       return sendJson(res, 200, { ok: true, aiEnabled: ai.enabled, aiProvider: ai.provider, aiModel: ai.model });
     }
+    if (req.method === "GET" && url.pathname === "/api/plans") return sendJson(res, 200, { plans });
+    if (req.method === "POST" && url.pathname === "/api/auth/register") {
+      try { const input = await body(req); const user = await register(input); const signedIn = await login(input.email, input.password); res.setHeader("Set-Cookie", sessionCookie(signedIn.token)); return sendJson(res, 201, { user }); }
+      catch (error) { return sendJson(res, 400, { error: error.message }); }
+    }
+    if (req.method === "POST" && url.pathname === "/api/auth/login") {
+      const clientKey = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+      const recent = (loginAttempts.get(clientKey) || []).filter((time) => Date.now() - time < 15 * 60000);
+      if (recent.length >= 10) return sendJson(res, 429, { error: "登录尝试过多，请 15 分钟后再试" });
+      try { const input = await body(req); const result = await login(input.email, input.password); loginAttempts.delete(clientKey); res.setHeader("Set-Cookie", sessionCookie(result.token)); return sendJson(res, 200, { user: result.user }); }
+      catch (error) { recent.push(Date.now()); loginAttempts.set(clientKey, recent); return sendJson(res, 401, { error: error.message }); }
+    }
+    if (req.method === "POST" && url.pathname === "/api/auth/logout") {
+      await logout(cookieToken(req)); res.setHeader("Set-Cookie", sessionCookie("", true)); return sendJson(res, 200, { ok: true });
+    }
+    const auth = await authenticate(cookieToken(req));
+    if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth }) : sendJson(res, 401, { error: "AUTH_REQUIRED" });
+    if (url.pathname.startsWith("/api/")) {
+      if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
+      if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, { user: auth, orders: await ordersForUser(auth.id), plans, paymentQrUrl: process.env.PAYMENT_QR_URL || "" });
+      if (req.method === "POST" && url.pathname === "/api/orders") { const input = await body(req); return sendJson(res, 201, { order: await createOrder(auth.id, input) }); }
+      if (url.pathname === "/api/admin/overview" && req.method === "GET") return auth.role === "admin" ? sendJson(res, 200, await adminOverview()) : sendJson(res, 403, { error: "ADMIN_REQUIRED" });
+      if (url.pathname === "/api/admin/orders/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); const input = await body(req); return sendJson(res, 200, await reviewOrder(auth.id, input.orderId, input.action)); }
+      if (url.pathname === "/api/admin/members/update" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); const input = await body(req); return sendJson(res, 200, { user: await updateMember(auth.id, input.userId, input.action, input.days) }); }
+      if (!auth.hasAccess) return sendJson(res, 403, { error: "MEMBERSHIP_REQUIRED", user: auth });
+    }
+    const storageKey = auth ? storageKeyFor(auth) : "legacy";
+    const rememberQuestion = (question) => sessions.set(question.id, { question, userId: auth.id, createdAt: Date.now() });
+    const recalledQuestion = (id) => { const saved = sessions.get(id); return saved?.userId === auth.id ? saved.question : null; };
     if (req.method === "GET" && url.pathname === "/api/stats") {
-      const progress = await readProgress();
+      const progress = await readProgress(storageKey);
       const imported = await loadImportedQuestions();
       return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported) });
     }
     if (req.method === "GET" && url.pathname === "/api/activity") {
-      const progress = await readProgress(); const imported = await loadImportedQuestions();
+      const progress = await readProgress(storageKey); const imported = await loadImportedQuestions();
       return sendJson(res, 200, activitySummary(progress.attempts, imported));
     }
     if (req.method === "GET" && url.pathname === "/api/history") {
-      const progress = await readProgress(); const type = url.searchParams.get("type") || "all"; const result = url.searchParams.get("result") || "all"; const source = url.searchParams.get("source") || "all"; const level = url.searchParams.get("level") || "all";
+      const progress = await readProgress(storageKey); const type = url.searchParams.get("type") || "all"; const result = url.searchParams.get("result") || "all"; const source = url.searchParams.get("source") || "all"; const level = url.searchParams.get("level") || "all";
       const attempts = [...progress.attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter((attempt) =>
         (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
         (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
@@ -101,7 +135,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/bank") {
       const imported = await loadImportedQuestions();
-      const progress = await readProgress();
+      const progress = await readProgress(storageKey);
       const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
       const merged = [...imported.map((question) => normalizedQuestion(question, "user_imported")), ...questionBank.map((question) => normalizedQuestion(question, "curated"))];
       const type = url.searchParams.get("type") || "all";
@@ -131,7 +165,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/categories") {
       const type = ["grammar", "vocabulary", "reading", "listening"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : "grammar";
-      const imported = await loadImportedQuestions(); const progress = await readProgress();
+      const imported = await loadImportedQuestions(); const progress = await readProgress(storageKey);
       const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
       const merged = [...imported.map((question) => normalizedQuestion(question, "user_imported")), ...questionBank.map((question) => normalizedQuestion(question, "curated"))];
       const categories = categoriesFor(type).map((category) => {
@@ -143,7 +177,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/api/insights") {
       const imported = await loadImportedQuestions();
-      const progress = await readProgress();
+      const progress = await readProgress(storageKey);
       const stats = summarize(progress.attempts);
       const types = ["grammar", "vocabulary", "reading", "listening"];
       const gaps = types.flatMap((type) => coverageGaps(imported, type, blueprintFor(type, "B1").skills).map((skill) => ({ type, skill })));
@@ -153,7 +187,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { topics: knowledgeTopics.map(({ sections, examples, ...topic }) => topic) });
     }
     if (req.method === "GET" && url.pathname === "/api/journal") {
-      return sendJson(res, 200, { entries: await listJournalEntries() });
+      return sendJson(res, 200, { entries: await listJournalEntries(storageKey) });
     }
     if (req.method === "GET" && url.pathname.startsWith("/api/knowledge/")) {
       const topic = getKnowledgeTopic(decodeURIComponent(url.pathname.slice("/api/knowledge/".length)));
@@ -166,7 +200,7 @@ const server = http.createServer(async (req, res) => {
       if (!topic || !question) return sendJson(res, 400, { error: "Topic and question required" });
       const history = Array.isArray(input.history) ? input.history.slice(-8).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1000) })) : [];
       const answer = await completeAi({ instructions: `你是一位严格、耐心的 TCF/TEF 法语教师。当前知识点为：${JSON.stringify(topic)}。必须用中文讲解，法语结构和例句保留法语。只讲与当前问题和该知识点有关的内容；先直接回答，再给对比例句，最后给一道不揭晓答案的快速检查题。如果学习者仍不理解，要换一种角度继续解释，而不是重复原话。`, input: question, history, maxTokens: 2500 });
-      await addJournalEntry({ kind: "question", title: topic.title, question, content: answer, skill: topic.skill });
+      await addJournalEntry({ kind: "question", title: topic.title, question, content: answer, skill: topic.skill }, storageKey);
       return sendJson(res, 200, { answer });
     }
     if (req.method === "POST" && url.pathname === "/api/knowledge/practice") {
@@ -176,24 +210,24 @@ const server = http.createServer(async (req, res) => {
       const level = ["A2", "B1"].includes(input.level) ? input.level : (topic.level.includes("B1") ? "B1" : "A2");
       const generated = await generateQuestions({ type: topic.type, level, count: 1, weakSkills: [topic.skill], variationRequest: `Évalue exclusivement le point « ${topic.title} » (${topic.skill}). La question doit être probable et fidèle au mode d'évaluation TCF/TEF.` });
       const question = { ...generated[0], source: "ai_knowledge", knowledgeTopicId: topic.id };
-      sessions.set(question.id, question);
+      rememberQuestion(question);
       return sendJson(res, 201, { question: publicQuestion(question) });
     }
     if (req.method === "POST" && url.pathname === "/api/tutor/ask") {
       const input = await body(req); const question = typeof input.question === "string" ? input.question.trim().slice(0, 800) : "";
       if (!question) return sendJson(res, 400, { error: "Question required" });
       if (!aiEnabled()) {
-        const answer = localTutorAnswer(question); await addJournalEntry({ kind: "question", title: "AI老师提问", question, content: answer });
+        const answer = localTutorAnswer(question); await addJournalEntry({ kind: "question", title: "AI老师提问", question, content: answer }, storageKey);
         return sendJson(res, 200, { answer, mode: "local", provider: "local" });
       }
-      const imported = await loadImportedQuestions(); const current = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
+      const imported = await loadImportedQuestions(); const current = recalledQuestion(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       const history = Array.isArray(input.history) ? input.history.slice(-10).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1200) })) : [];
       const context = current ? `当前练习题：${JSON.stringify({ type: current.type, level: current.level, passage: current.passage || "", prompt: current.prompt, options: current.options, correctAnswer: current.options[current.answer], explanation: current.explanation })}` : "当前没有打开练习题。";
       const answer = await completeAi({ instructions: `你是 lili老师，专门辅导 TCF/TEF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。用户要求速查表、对比表或整理表时，必须输出标准 Markdown 表格，表头简短、单元格内容完整，不要用纯文本模拟表格。${context}`, input: question, history, maxTokens: 2500 });
-      await addJournalEntry({ kind: "question", title: tutorJournalTitle(question, current), question, content: answer, skill: current?.skill, questionId: current?.id, meta: current ? { type: current.type, level: current.level, source: current.source, category: categoryLabelFor(current) } : null });
+      await addJournalEntry({ kind: "question", title: tutorJournalTitle(question, current), question, content: answer, skill: current?.skill, questionId: current?.id, meta: current ? { type: current.type, level: current.level, source: current.source, category: categoryLabelFor(current) } : null }, storageKey);
       return sendJson(res, 200, { answer, mode: "ai", provider: getAiConfig().provider });
     }
-    if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary() });
+    if (req.method === "GET" && url.pathname === "/api/vocabulary") return sendJson(res, 200, { entries: await listVocabulary(storageKey) });
     if (req.method === "GET" && url.pathname === "/api/vocabulary/lookup") {
       const word = (url.searchParams.get("word") || "").trim().slice(0, 80);
       if (!word) return sendJson(res, 400, { error: "Word required" });
@@ -205,10 +239,10 @@ const server = http.createServer(async (req, res) => {
       const input = await body(req); const word = typeof input.word === "string" ? input.word.trim().slice(0, 80) : "";
       if (!word) return sendJson(res, 400, { error: "Word required" });
       const context = String(input.context || "").slice(0, 500); const lemma = await resolveFrenchLemma(word, context);
-      return sendJson(res, 201, { entry: await saveVocabulary({ word: lemma || word, context, questionId: input.questionId }), selectedForm: word, lemma: lemma || word });
+      return sendJson(res, 201, { entry: await saveVocabulary({ word: lemma || word, context, questionId: input.questionId }, storageKey), selectedForm: word, lemma: lemma || word });
     }
     if (req.method === "POST" && url.pathname === "/api/vocabulary/mastered") {
-      const input = await body(req); const entry = await toggleMastered(input.id);
+      const input = await body(req); const entry = await toggleMastered(input.id, storageKey);
       return entry ? sendJson(res, 200, { entry }) : sendJson(res, 404, { error: "Entry not found" });
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
@@ -219,7 +253,7 @@ const server = http.createServer(async (req, res) => {
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
       const category = typeof input.category === "string" ? input.category : "all";
-      const progress = await readProgress();
+      const progress = await readProgress(storageKey);
       const imported = await loadImportedQuestions();
       const mergedBank = [...questionBank.map((question) => normalizedQuestion(question, "curated")), ...imported.map((question) => normalizedQuestion(question, "user_imported"))];
       const weakSkills = summarize(progress.attempts).weakSkills.slice(0, 3).map((item) => item.skill);
@@ -251,20 +285,20 @@ const server = http.createServer(async (req, res) => {
         questions = nextImported.length ? nextImported.slice(0, count) : (unseen.length ? unseen : matching).slice(0, count);
         sequence = sequenceProgress(progress.attempts, importedMatching);
       }
-      for (const question of questions) sessions.set(question.id, question);
+      for (const question of questions) rememberQuestion(question);
       return sendJson(res, 200, { mode, notice, sequence, questions: questions.map(publicQuestion) });
     }
     if (req.method === "POST" && url.pathname === "/api/variations") {
       if (!aiEnabled()) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
       const input = await body(req);
       const imported = await loadImportedQuestions();
-      const progress = await readProgress();
-      const reference = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId) || [...progress.attempts].reverse().find((attempt) => attempt.questionId === input.questionId)?.question;
+      const progress = await readProgress(storageKey);
+      const reference = recalledQuestion(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId) || [...progress.attempts].reverse().find((attempt) => attempt.questionId === input.questionId)?.question;
       if (!reference) return sendJson(res, 404, { error: "Question not found" });
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
       const generated = await generateQuestions({ type: reference.type, level: reference.level, count: 1, weakSkills: [reference.skill], referenceQuestion: reference, variationRequest: request });
       const variation = { ...generated[0], source: "ai_variation", parentQuestionId: reference.id };
-      sessions.set(variation.id, variation);
+      rememberQuestion(variation);
       return sendJson(res, 201, { question: publicQuestion(variation) });
     }
     if (req.method === "POST" && url.pathname === "/api/smart-generation") {
@@ -273,7 +307,7 @@ const server = http.createServer(async (req, res) => {
       const type = ["grammar", "vocabulary", "reading", "listening"].includes(input.type) ? input.type : "grammar";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const imported = await loadImportedQuestions();
-      const progress = await readProgress();
+      const progress = await readProgress(storageKey);
       const stats = summarize(progress.attempts);
       const gap = coverageGaps(imported, type, blueprintFor(type, level).skills)[0];
       const weak = weakSkillForType(stats.weakSkills, type);
@@ -281,13 +315,13 @@ const server = http.createServer(async (req, res) => {
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
       const generated = await generateQuestions({ type, level, count: 1, weakSkills: targetSkill ? [targetSkill] : [], variationRequest: request });
       const question = { ...generated[0], source: "ai_supplement", targetReason: input.mode === "weak" ? "重点考点强化" : "真题覆盖缺口" };
-      sessions.set(question.id, question);
+      rememberQuestion(question);
       return sendJson(res, 201, { question: publicQuestion(question), targetSkill, reason: question.targetReason });
     }
     if (req.method === "POST" && url.pathname === "/api/attempts") {
       const input = await body(req);
       const imported = await loadImportedQuestions();
-      const question = sessions.get(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
+      const question = recalledQuestion(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       if (!question || question.answer === null || question.answerVerified === false) return sendJson(res, 409, { error: "ANSWER_PENDING_REVIEW" });
       if (!Number.isInteger(input.selected) || input.selected < 0 || input.selected >= question.options.length) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
@@ -298,8 +332,8 @@ const server = http.createServer(async (req, res) => {
         skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
         question, analysis
       };
-      await addAttempt(attempt);
-      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: analysis.detailedZh, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } });
+      await addAttempt(attempt, storageKey);
+      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: analysis.detailedZh, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } }, storageKey);
       return sendJson(res, 201, { correct, answer: question.answer, analysis });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
@@ -307,7 +341,7 @@ const server = http.createServer(async (req, res) => {
     if (!filePath.startsWith(publicDir)) return sendJson(res, 403, { error: "Forbidden" });
     const content = await readFile(filePath);
     const contentType = filePath.endsWith(".css") ? "text/css" : filePath.endsWith(".js") ? "text/javascript" : "text/html";
-    res.writeHead(200, { "Content-Type": `${contentType}; charset=utf-8` });
+    res.writeHead(200, { "Content-Type": `${contentType}; charset=utf-8`, "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
     res.end(content);
   } catch (error) {
     if (error.code === "ENOENT") return sendJson(res, 404, { error: "Not found" });
@@ -316,4 +350,5 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+await ensureAdminFromEnv();
 server.listen(port, () => console.log(`Lumi TCF is ready at http://localhost:${port}`));

@@ -3,23 +3,27 @@ import path from "node:path";
 import { examDiagnostic } from "./exam-diagnostics.js";
 
 const dataDir = path.resolve("server/data");
-const progressFile = path.join(dataDir, "progress.json");
 const emptyProgress = { attempts: [] };
 
-export async function readProgress() {
+function progressFile(storageKey = "legacy") {
+  return storageKey === "legacy" ? path.join(dataDir, "progress.json") : path.join(dataDir, "users", String(storageKey).replace(/[^a-z0-9-]/gi, ""), "progress.json");
+}
+
+export async function readProgress(storageKey = "legacy") {
   try {
-    return JSON.parse(await readFile(progressFile, "utf8"));
+    return JSON.parse(await readFile(progressFile(storageKey), "utf8"));
   } catch (error) {
     if (error.code === "ENOENT") return structuredClone(emptyProgress);
     throw error;
   }
 }
 
-export async function addAttempt(attempt) {
-  const progress = await readProgress();
+export async function addAttempt(attempt, storageKey = "legacy") {
+  const progress = await readProgress(storageKey);
   progress.attempts.push(attempt);
-  await mkdir(dataDir, { recursive: true });
-  await writeFile(progressFile, JSON.stringify(progress, null, 2));
+  const target = progressFile(storageKey);
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, JSON.stringify(progress, null, 2));
   return attempt;
 }
 

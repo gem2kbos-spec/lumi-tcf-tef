@@ -20,12 +20,30 @@
   <link rel="stylesheet" href="/study-tools.css" />
   <link rel="stylesheet" href="/history.css" />
   <link rel="stylesheet" href="/tutor-context.css" />
+  <link rel="stylesheet" href="/account.css" />
 </head>
 <body>
+  <section id="account-gate" class="account-gate" hidden>
+    <div class="account-card">
+      <div class="account-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF / TEF 智能训练系统</small></div></div>
+      <div class="account-tabs"><button id="show-login" class="active">登录</button><button id="show-register">注册</button></div>
+      <form id="account-form">
+        <label id="name-field" hidden>称呼<input id="account-name" autocomplete="name" /></label>
+        <label>邮箱<input id="account-email" type="email" autocomplete="email" required /></label>
+        <label>密码<input id="account-password" type="password" minlength="8" autocomplete="current-password" required /></label>
+        <p id="account-error" class="account-error"></p><button id="account-submit" class="account-primary">登录并进入</button>
+      </form>
+      <p class="account-note">每个账号拥有独立的做题记录、生词本、错题本和知识整理。</p>
+    </div>
+  </section>
+  <section id="membership-gate" class="account-gate" hidden>
+    <div class="account-card membership-card"><p class="account-kicker">训练权限</p><h1>账号已创建，等待开通</h1><p>选择套餐并扫码付款后提交订单。管理员在后台确认后，你无需重新注册即可开始练习。</p><div id="plan-list" class="plan-list"></div><div class="payment-box"><div id="payment-qr" class="payment-qr">在此放置<br>收款二维码</div><label>付款备注 / 转账单号后四位<input id="payment-note" maxlength="120" placeholder="便于管理员核对" /></label></div><button id="submit-order" class="account-primary">我已付款，提交审核</button><div id="order-status"></div><button id="membership-logout" class="account-link">退出当前账号</button></div>
+  </section>
+  <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><h3>待审核付款</h3><div id="admin-orders"></div><h3>全部用户</h3><div id="admin-users"></div></div></section>
   <main>
     <header>
       <div class="brand"><span>lu</span> Lumi Français</div>
-      <div class="header-actions"><div id="ai-status" class="status">正在连接…</div></div>
+      <div class="header-actions"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号</button></div>
     </header>
     <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#practice-entry">连续刷题</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a></nav>
     <section class="hero">
@@ -191,6 +209,7 @@
     <div id="tutor-messages" class="tutor-messages"><div class="tutor-message assistant">可以问我语法、词汇、阅读方法，也可以让我生成清晰可见的速查表。</div></div>
     <form id="tutor-form"><textarea id="tutor-question" rows="3" maxlength="800" placeholder="输入你的问题……"></textarea><button>发送 →</button></form>
   </aside>
+  <script type="module" src="/account.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

@@ -1,19 +1,20 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const journalFile = path.resolve("server/data/knowledge-journal.json");
+const dataDir = path.resolve("server/data");
+const journalFile = (storageKey = "legacy") => storageKey === "legacy" ? path.join(dataDir, "knowledge-journal.json") : path.join(dataDir, "users", String(storageKey).replace(/[^a-z0-9-]/gi, ""), "knowledge-journal.json");
 
-async function readJournal() {
-  try { return JSON.parse(await readFile(journalFile, "utf8")); }
+async function readJournal(storageKey = "legacy") {
+  try { return JSON.parse(await readFile(journalFile(storageKey), "utf8")); }
   catch (error) { if (error.code === "ENOENT") return { entries: [] }; throw error; }
 }
 
-export async function listJournalEntries() {
-  return (await readJournal()).entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+export async function listJournalEntries(storageKey = "legacy") {
+  return (await readJournal(storageKey)).entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-export async function addJournalEntry(entry) {
-  const journal = await readJournal();
+export async function addJournalEntry(entry, storageKey = "legacy") {
+  const journal = await readJournal(storageKey);
   const saved = {
     id: crypto.randomUUID(), kind: entry.kind === "mistake" ? "mistake" : "question",
     title: String(entry.title || "法语知识点").slice(0, 120),
@@ -25,7 +26,7 @@ export async function addJournalEntry(entry) {
     createdAt: new Date().toISOString()
   };
   journal.entries.unshift(saved);
-  await mkdir(path.dirname(journalFile), { recursive: true });
-  await writeFile(journalFile, JSON.stringify(journal, null, 2));
+  const target = journalFile(storageKey); await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, JSON.stringify(journal, null, 2));
   return saved;
 }

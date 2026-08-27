@@ -5,6 +5,8 @@ logs/
 server/data/progress.json
 server/data/vocabulary.json
 server/data/knowledge-journal.json
+server/data/members.json
+server/data/users/
 server/imports/.calibration-checkpoint.json
 server/imports/.refinement-checkpoint.json
 npm-debug.log*
