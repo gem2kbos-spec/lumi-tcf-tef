@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env --watch server/index.js",
     "start": "node --env-file-if-exists=.env server/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "audit:questions": "node scripts/audit-question-bank.js",
+    "clean:questions": "node scripts/audit-question-bank.js --apply"
   },
   "engines": { "node": ">=20" }
 }

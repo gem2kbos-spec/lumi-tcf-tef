@@ -1,0 +1,661 @@
+{
+  "generatedAt": "2026-08-27T01:38:07.850Z",
+  "before": 700,
+  "after": 593,
+  "removed": 107,
+  "byReason": {
+    "duplicate": 26,
+    "incomplete": 69,
+    "unreliable": 12
+  },
+  "remainingByType": {
+    "grammar": 224,
+    "vocabulary": 220,
+    "reading": 149,
+    "listening": 0
+  },
+  "removals": [
+    {
+      "id": "auth-grammar-016",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "语境同时支持‘正在下雨’和‘刚下过雨’，答案不唯一"
+    },
+    {
+      "id": "auth-grammar-092",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "puisque、car 和 parce que 在现有语境中均可成立"
+    },
+    {
+      "id": "auth-grammar-179",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "题干已经含 C'est，正确选项会形成 C'est C'est incroyable"
+    },
+    {
+      "id": "auth-vocab-048",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "se résigner à 和 s'obliger à 在现有语境中均可成立"
+    },
+    {
+      "id": "auth-vocab-077",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "garer 和 stationner 均可与 voiture 搭配"
+    },
+    {
+      "id": "auth-vocab-080",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "四个形容词均可合法修饰 pull，缺少唯一判据"
+    },
+    {
+      "id": "auth-vocab-083",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "多个形容词均可合法修饰 pantalon，缺少唯一判据"
+    },
+    {
+      "id": "auth-vocab-101",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "题干明确标注选项缺失，现有选项无法补成规范句子"
+    },
+    {
+      "id": "auth-vocab-118",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-075 重复"
+    },
+    {
+      "id": "auth-vocab-139",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-103 重复"
+    },
+    {
+      "id": "auth-vocab-175",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "应填 minci，但选项中没有正确答案"
+    },
+    {
+      "id": "auth-vocab-201",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-021 重复"
+    },
+    {
+      "id": "auth-vocab-202",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-022 重复"
+    },
+    {
+      "id": "auth-vocab-203",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-023 重复"
+    },
+    {
+      "id": "auth-vocab-204",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-024 重复"
+    },
+    {
+      "id": "auth-vocab-205",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-025 重复"
+    },
+    {
+      "id": "auth-vocab-206",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-026 重复"
+    },
+    {
+      "id": "auth-vocab-207",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-027 重复"
+    },
+    {
+      "id": "auth-vocab-208",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-028 重复"
+    },
+    {
+      "id": "auth-vocab-209",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-029 重复"
+    },
+    {
+      "id": "auth-vocab-210",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-030 重复"
+    },
+    {
+      "id": "auth-vocab-211",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-031 重复"
+    },
+    {
+      "id": "auth-vocab-212",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-032 重复"
+    },
+    {
+      "id": "auth-vocab-213",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-033 重复"
+    },
+    {
+      "id": "auth-vocab-214",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-034 重复"
+    },
+    {
+      "id": "auth-vocab-215",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-035 重复"
+    },
+    {
+      "id": "auth-reading-037",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-035 重复"
+    },
+    {
+      "id": "auth-reading-038",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-036 重复"
+    },
+    {
+      "id": "auth-reading-067",
+      "type": "reading",
+      "reason": "unreliable",
+      "detail": "原图表缺失，无法根据占位文字判断正确图表"
+    },
+    {
+      "id": "auth-reading-096",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-095 重复"
+    },
+    {
+      "id": "auth-reading-098",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-099",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-100",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-101",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-102",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-103",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-104",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-105",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-106",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-107",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "题干缺少同义改写任务说明"
+    },
+    {
+      "id": "auth-reading-118",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-050 重复"
+    },
+    {
+      "id": "auth-reading-120",
+      "type": "reading",
+      "reason": "unreliable",
+      "detail": "原文没有说明课程免费，正确选项缺乏文本依据"
+    },
+    {
+      "id": "auth-reading-122",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-025 重复"
+    },
+    {
+      "id": "auth-reading-123",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-048 重复"
+    },
+    {
+      "id": "auth-reading-128",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-129",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-130",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-131",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-132",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-133",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-134",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-135",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-136",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-137",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "排序题没有说明需要重排句子"
+    },
+    {
+      "id": "auth-reading-139",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-140",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-141",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-142",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-143",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-144",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-145",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-146",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-147",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-148",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-149",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-150",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-151",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-152",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-153",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-154",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-155",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-156",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-157",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-158",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-159",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-160",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-161",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-162",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-171",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-172",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-173",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-174",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-175",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-176",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-177",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-178",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-179",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-180",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "完形文章含多个空，但题干没有标明当前作答空位"
+    },
+    {
+      "id": "auth-reading-191",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-192",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-193",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-194",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-195",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-196",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-197",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-198",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-199",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-200",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-201",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-202",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-203",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-204",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-205",
+      "type": "reading",
+      "reason": "incomplete",
+      "detail": "文章含多个 Question 标记，但题干没有标明当前插入位置"
+    },
+    {
+      "id": "auth-reading-226",
+      "type": "reading",
+      "reason": "unreliable",
+      "detail": "原文未说明人物是记者，正确选项缺乏文本依据"
+    },
+    {
+      "id": "auth-vocab-177",
+      "type": "vocabulary",
+      "reason": "duplicate",
+      "detail": "与 auth-vocab-107 重复"
+    },
+    {
+      "id": "auth-reading-218",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-169 重复"
+    },
+    {
+      "id": "auth-reading-219",
+      "type": "reading",
+      "reason": "duplicate",
+      "detail": "与 auth-reading-170 重复"
+    }
+  ]
+}
