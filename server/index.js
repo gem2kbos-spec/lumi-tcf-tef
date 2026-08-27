@@ -15,7 +15,7 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
-import { adminOverview, aiUsageForUser, authenticate, consumeAiQuota, createOrder, ensureAdminFromEnv, login, logout, ordersForUser, plans, register, reviewOrder, updateMember } from "./member-store.js";
+import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, reviewOrder, updateMember } from "./member-store.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -121,6 +121,21 @@ const server = http.createServer(async (req, res) => {
     const storageKey = auth ? storageKeyFor(auth) : "legacy";
     const rememberQuestion = (question) => sessions.set(question.id, { question, userId: auth.id, createdAt: Date.now() });
     const recalledQuestion = (id) => { const saved = sessions.get(id); return saved?.userId === auth.id ? saved.question : null; };
+    if (url.pathname.startsWith("/api/comments/")) {
+      const questionId = decodeURIComponent(url.pathname.slice("/api/comments/".length)).slice(0, 120);
+      if (!questionId) return sendJson(res, 400, { error: "缺少题目标识" });
+      if (req.method === "GET") return sendJson(res, 200, { comments: await questionComments(questionId, auth) });
+      if (req.method === "POST") {
+        const imported = await loadImportedQuestions(); const known = recalledQuestion(questionId) || questionBank.find((item) => item.id === questionId) || imported.find((item) => item.id === questionId);
+        if (!known) return sendJson(res, 404, { error: "题目不存在或本次生成题已失效" });
+        try { const input = await body(req); await addQuestionComment(auth.id, questionId, input.content); return sendJson(res, 201, { comments: await questionComments(questionId, auth) }); }
+        catch (error) { return sendJson(res, 409, { error: error.message }); }
+      }
+    }
+    if (req.method === "DELETE" && url.pathname === "/api/comments") {
+      try { const input = await body(req); await deleteQuestionComment(auth, input.commentId); return sendJson(res, 200, { ok: true }); }
+      catch (error) { return sendJson(res, 403, { error: error.message }); }
+    }
     if (req.method === "GET" && url.pathname === "/api/stats") {
       const progress = await readProgress(storageKey);
       const imported = await loadImportedQuestions();

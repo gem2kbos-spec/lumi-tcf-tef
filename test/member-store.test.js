@@ -18,6 +18,12 @@ test("member orders cannot be duplicated and admin approval grants access", asyn
   assert.equal((await store.consumeAiQuota(member.id, 2)).allowed, true);
   assert.equal((await store.consumeAiQuota(member.id, 2)).remaining, 0);
   assert.equal((await store.consumeAiQuota(member.id, 2)).allowed, false);
+  const comment = await store.addQuestionComment(member.id, "question-1", "我认为这里应先判断介词。 ");
+  await assert.rejects(() => store.addQuestionComment(member.id, "question-1", "我认为这里应先判断介词。"), /相同评论/);
+  const comments = await store.questionComments("question-1", member);
+  assert.equal(comments.length, 1); assert.equal(comments[0].canDelete, true); assert.equal(comments[0].author.name, "学员");
+  await store.deleteQuestionComment(member, comment.id);
+  assert.equal((await store.questionComments("question-1", member)).length, 0);
 });
 
 test("payment note is required for manual verification", async () => {

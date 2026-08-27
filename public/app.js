@@ -434,6 +434,25 @@ async function start(typeOverride, preserveSequence = false) {
   finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始连续刷题 "; }
 }
 
+async function loadQuestionComments() {
+  const question = state.questions[state.index]; if (!question) return;
+  const list = $("#comment-list"); const questionId = question.id; list.innerHTML = "<p>正在加载讨论…</p>";
+  try {
+    const payload = await api(`/api/comments/${encodeURIComponent(questionId)}`);
+    if (state.questions[state.index]?.id !== questionId) return;
+    $("#comment-count").textContent = `${payload.comments.length}条`;
+    list.innerHTML = payload.comments.length ? payload.comments.map((comment) => `<article class="comment-item"><div class="comment-meta"><strong>${escapeHtml(comment.author.name)}</strong>${comment.author.role === "admin" ? '<span class="comment-admin">管理员</span>' : ""}<time>${new Date(comment.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>${comment.canDelete ? `<button class="comment-delete" data-comment-id="${escapeHtml(comment.id)}">删除</button>` : ""}</div><p>${escapeHtml(comment.content)}</p></article>`).join("") : "<p>还没有讨论。你可以提出疑问，或分享自己的判断方法。</p>";
+  } catch (error) { list.innerHTML = `<p>讨论加载失败：${escapeHtml(error.message)}</p>`; }
+}
+
+async function submitQuestionComment(event) {
+  event.preventDefault(); const question = state.questions[state.index]; const content = $("#comment-content").value.trim(); if (!question || !content) return;
+  const button = $("#comment-form button"); button.disabled = true; button.textContent = "正在发表…"; $("#comment-hint").textContent = "正在提交";
+  try { await api(`/api/comments/${encodeURIComponent(question.id)}`, { method: "POST", body: JSON.stringify({ content }) }); $("#comment-content").value = ""; $("#comment-hint").textContent = "发表成功"; await loadQuestionComments(); }
+  catch (error) { $("#comment-hint").textContent = error.message; }
+  finally { button.disabled = false; button.textContent = "发表评论"; }
+}
+
 function render() {
   const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
   $("#selection-tools").hidden = true;
@@ -444,6 +463,7 @@ function render() {
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
+  $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "authentic" ? "直接练下一道同考点真题 " : currentSource === "review" ? "直接练下一道错题 " : "直接练下一题 ";
 }
@@ -469,7 +489,7 @@ async function answer(selected, selectedButton) {
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
     $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · 详细解析" : "错误 · 详细中文解析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section class="detailed-analysis"><p>${escapeHtml(analysis.detailedZh || analysis.explanationZh)}</p></section><button id="ask-lili-analysis" class="ask-lili-analysis"><span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small></button>`;
     $("#ask-lili-analysis").addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis));
-    $("#feedback").hidden = false; $("#answer-actions").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), result.correct ? Promise.resolve() : loadJournal()]);
+    $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), loadQuestionComments(), result.correct ? Promise.resolve() : loadJournal()]);
   } catch (error) {
     selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
@@ -540,6 +560,8 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("#options button") && window.getSelection()?.toString().trim()) { event.preventDefault(); event.stopImmediatePropagation(); }
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
+$("#comment-form").addEventListener("submit", submitQuestionComment); $("#refresh-comments").addEventListener("click", loadQuestionComments);
+$("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { alert(error.message); button.disabled = false; } });
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
 document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
 for (const selector of ["#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });

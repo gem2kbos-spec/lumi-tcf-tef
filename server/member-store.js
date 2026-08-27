@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 
 const scrypt = promisify(crypto.scrypt);
 const file = path.resolve(process.env.LUMI_MEMBER_FILE || "server/data/members.json");
-const empty = { users: [], sessions: [], orders: [], audit: [], aiUsage: [] };
+const empty = { users: [], sessions: [], orders: [], audit: [], aiUsage: [], comments: [] };
 
 async function readData() {
   try { return { ...structuredClone(empty), ...JSON.parse(await readFile(file, "utf8")) }; }
@@ -119,6 +119,34 @@ export async function consumeAiQuota(userId, limit = Number(process.env.AI_DAILY
   if (!record) { record = { userId, date, count: 0 }; data.aiUsage.push(record); }
   if (record.count >= limit) return { allowed: false, date, used: record.count, limit, remaining: 0 };
   record.count++; await writeData(data); return { allowed: true, date, used: record.count, limit, remaining: limit - record.count };
+}
+
+export async function questionComments(questionId, viewer) {
+  const data = await readData();
+  return data.comments.filter((item) => item.questionId === questionId && !item.deletedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((item) => {
+    const author = data.users.find((user) => user.id === item.userId);
+    return { id: item.id, questionId: item.questionId, content: item.content, createdAt: item.createdAt, author: { name: author?.name || "已注销用户", role: author?.role || "member" }, canDelete: viewer.role === "admin" || viewer.id === item.userId };
+  });
+}
+
+export async function addQuestionComment(userId, questionId, content) {
+  content = String(content || "").trim().replace(/\s{3,}/g, "  ").slice(0, 500);
+  if (content.length < 2) throw new Error("评论至少需要 2 个字");
+  const data = await readData(); const since = Date.now() - 24 * 60 * 60 * 1000;
+  if (data.comments.filter((item) => item.userId === userId && new Date(item.createdAt).getTime() > since && !item.deletedAt).length >= 30) throw new Error("今天发表评论较多，请明天继续");
+  const duplicate = data.comments.find((item) => item.userId === userId && item.questionId === questionId && item.content === content && Date.now() - new Date(item.createdAt).getTime() < 10 * 60 * 1000 && !item.deletedAt);
+  if (duplicate) throw new Error("相同评论已经发表，请勿重复提交");
+  const comment = { id: crypto.randomUUID(), questionId, userId, content, createdAt: new Date().toISOString(), deletedAt: null, deletedBy: null };
+  data.comments.push(comment); await writeData(data); return comment;
+}
+
+export async function deleteQuestionComment(actor, commentId) {
+  const data = await readData(); const comment = data.comments.find((item) => item.id === commentId && !item.deletedAt);
+  if (!comment) throw new Error("评论不存在");
+  if (actor.role !== "admin" && actor.id !== comment.userId) throw new Error("无权删除这条评论");
+  comment.deletedAt = new Date().toISOString(); comment.deletedBy = actor.id;
+  data.audit.unshift({ id: crypto.randomUUID(), adminId: actor.role === "admin" ? actor.id : null, action: "comment.delete", targetId: commentId, createdAt: new Date().toISOString() });
+  await writeData(data); return { ok: true };
 }
 
 export async function adminOverview() {
