@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/history.css" />
   <link rel="stylesheet" href="/tutor-context.css" />
   <link rel="stylesheet" href="/account.css" />
+  <link rel="stylesheet" href="/account-refine.css" />
 </head>
 <body>
   <section id="account-gate" class="account-gate" hidden>
@@ -37,9 +38,9 @@
     </div>
   </section>
   <section id="membership-gate" class="account-gate" hidden>
-    <div class="account-card membership-card"><p class="account-kicker">训练权限</p><h1>账号已创建，等待开通</h1><p>选择套餐并扫码付款后提交订单。管理员在后台确认后，你无需重新注册即可开始练习。</p><div id="plan-list" class="plan-list"></div><div class="payment-box"><div id="payment-qr" class="payment-qr">在此放置<br>收款二维码</div><label>付款备注 / 转账单号后四位<input id="payment-note" maxlength="120" placeholder="便于管理员核对" /></label></div><button id="submit-order" class="account-primary">我已付款，提交审核</button><div id="order-status"></div><button id="membership-logout" class="account-link">退出当前账号</button></div>
+    <div class="account-card membership-card"><p class="account-kicker">训练权限</p><h1>账号已创建，等待开通</h1><p>选择套餐并扫码付款后提交订单。管理员确认后，页面会自动进入训练，无需重新登录。</p><div id="plan-list" class="plan-list"></div><div class="payment-box"><div id="payment-qr" class="payment-qr">在此放置<br>收款二维码</div><label>付款备注 / 转账单号后四位<input id="payment-note" maxlength="120" placeholder="便于管理员核对" /></label></div><button id="submit-order" class="account-primary">我已付款，提交审核</button><div id="order-status"></div><button id="refresh-membership" class="account-secondary">刷新审核状态</button><button id="membership-logout" class="account-link">退出当前账号</button></div>
   </section>
-  <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><h3>待审核付款</h3><div id="admin-orders"></div><h3>全部用户</h3><div id="admin-users"></div></div></section>
+  <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><h3>待审核付款</h3><div id="admin-orders"></div><div class="admin-user-heading"><h3>全部用户</h3><input id="admin-search" type="search" placeholder="搜索称呼或邮箱" /></div><div id="admin-users"></div></div></section>
   <main>
     <header>
       <div class="brand"><span>lu</span> Lumi Français</div>

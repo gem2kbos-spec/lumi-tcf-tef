@@ -1,0 +1,6 @@
+.account-primary:disabled { opacity: .5; cursor: not-allowed; }
+.account-secondary { width: 100%; border: 1px solid #cad5cd; border-radius: 12px; background: white; color: #194c3b; padding: 11px; font-weight: 700; margin-top: 8px; }
+.admin-user-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.admin-user-heading input { border: 1px solid #d7ddd5; border-radius: 11px; padding: 10px 12px; min-width: 240px; }
+.admin-days { width: 66px !important; padding: 7px !important; border: 1px solid #ccd5cd !important; border-radius: 9px !important; }
+@media (max-width: 700px) { .admin-user-heading { align-items: stretch; flex-direction: column; } .admin-user-heading input { min-width: 0; } }

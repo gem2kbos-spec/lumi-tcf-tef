@@ -19,3 +19,5 @@ services:
         sync: false
       - key: PAYMENT_QR_URL
         sync: false
+      - key: AI_DAILY_LIMIT
+        value: 100

@@ -15,7 +15,7 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
-import { adminOverview, authenticate, createOrder, ensureAdminFromEnv, login, logout, ordersForUser, plans, register, reviewOrder, updateMember } from "./member-store.js";
+import { adminOverview, aiUsageForUser, authenticate, consumeAiQuota, createOrder, ensureAdminFromEnv, login, logout, ordersForUser, plans, register, reviewOrder, updateMember } from "./member-store.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -32,8 +32,10 @@ function sendJson(res, status, value) {
 
 async function body(req) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}");
+  let size = 0;
+  for await (const chunk of req) { size += chunk.length; if (size > 1024 * 1024) { const error = new Error("请求内容过大"); error.statusCode = 413; throw error; } chunks.push(chunk); }
+  try { return JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"); }
+  catch { const error = new Error("请求格式不正确"); error.statusCode = 400; throw error; }
 }
 
 function publicQuestion(question) {
@@ -102,15 +104,19 @@ const server = http.createServer(async (req, res) => {
       await logout(cookieToken(req)); res.setHeader("Set-Cookie", sessionCookie("", true)); return sendJson(res, 200, { ok: true });
     }
     const auth = await authenticate(cookieToken(req));
-    if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth }) : sendJson(res, 401, { error: "AUTH_REQUIRED" });
+    if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth, aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) }) : sendJson(res, 401, { error: "AUTH_REQUIRED" });
     if (url.pathname.startsWith("/api/")) {
       if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
-      if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, { user: auth, orders: await ordersForUser(auth.id), plans, paymentQrUrl: process.env.PAYMENT_QR_URL || "" });
-      if (req.method === "POST" && url.pathname === "/api/orders") { const input = await body(req); return sendJson(res, 201, { order: await createOrder(auth.id, input) }); }
+      if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, { user: auth, orders: await ordersForUser(auth.id), plans, paymentQrUrl: process.env.PAYMENT_QR_URL || "", aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) });
+      if (req.method === "POST" && url.pathname === "/api/orders") { try { const input = await body(req); return sendJson(res, 201, { order: await createOrder(auth.id, input) }); } catch (error) { return sendJson(res, 409, { error: error.message }); } }
       if (url.pathname === "/api/admin/overview" && req.method === "GET") return auth.role === "admin" ? sendJson(res, 200, await adminOverview()) : sendJson(res, 403, { error: "ADMIN_REQUIRED" });
-      if (url.pathname === "/api/admin/orders/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); const input = await body(req); return sendJson(res, 200, await reviewOrder(auth.id, input.orderId, input.action)); }
-      if (url.pathname === "/api/admin/members/update" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); const input = await body(req); return sendJson(res, 200, { user: await updateMember(auth.id, input.userId, input.action, input.days) }); }
+      if (url.pathname === "/api/admin/orders/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await reviewOrder(auth.id, input.orderId, input.action)); } catch (error) { return sendJson(res, 409, { error: error.message }); } }
+      if (url.pathname === "/api/admin/members/update" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, { user: await updateMember(auth.id, input.userId, input.action, input.days) }); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
       if (!auth.hasAccess) return sendJson(res, 403, { error: "MEMBERSHIP_REQUIRED", user: auth });
+      const aiRoutes = new Set(["/api/knowledge/ask", "/api/knowledge/practice", "/api/tutor/ask", "/api/variations", "/api/smart-generation"]);
+      if (auth.role !== "admin" && aiEnabled() && (aiRoutes.has(url.pathname) || (req.method === "POST" && ["/api/questions", "/api/attempts"].includes(url.pathname)) || (req.method === "GET" && url.pathname === "/api/vocabulary/lookup"))) {
+        const quota = await consumeAiQuota(auth.id); if (!quota.allowed) return sendJson(res, 429, { error: `今日 AI 使用次数已达 ${quota.limit} 次，请明天继续；普通题库练习不受影响`, quota });
+      }
     }
     const storageKey = auth ? storageKeyFor(auth) : "legacy";
     const rememberQuestion = (question) => sessions.set(question.id, { question, userId: auth.id, createdAt: Date.now() });
@@ -345,6 +351,7 @@ const server = http.createServer(async (req, res) => {
     res.end(content);
   } catch (error) {
     if (error.code === "ENOENT") return sendJson(res, 404, { error: "Not found" });
+    if (error.statusCode) return sendJson(res, error.statusCode, { error: error.message });
     console.error(error);
     sendJson(res, 500, { error: error.message });
   }

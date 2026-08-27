@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
 const scrypt = promisify(crypto.scrypt);
-const file = path.resolve("server/data/members.json");
-const empty = { users: [], sessions: [], orders: [], audit: [] };
+const file = path.resolve(process.env.LUMI_MEMBER_FILE || "server/data/members.json");
+const empty = { users: [], sessions: [], orders: [], audit: [], aiUsage: [] };
 
 async function readData() {
   try { return { ...structuredClone(empty), ...JSON.parse(await readFile(file, "utf8")) }; }
@@ -14,7 +14,9 @@ async function readData() {
 
 async function writeData(data) {
   await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(data, null, 2));
+  const temporary = `${file}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
+  await writeFile(temporary, JSON.stringify(data, null, 2));
+  await rename(temporary, file);
 }
 
 const normalizeEmail = (value) => String(value || "").trim().toLocaleLowerCase("en");
@@ -92,11 +94,32 @@ export async function logout(token) {
 
 export async function createOrder(userId, input) {
   const plan = plans.find((item) => item.id === input.planId); if (!plan) throw new Error("请选择有效套餐");
-  const data = await readData(); const order = { id: `LUMI-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`, userId, planId: plan.id, planName: plan.name, days: plan.days, amountCny: plan.priceCny, paymentMethod: ["wechat", "alipay"].includes(input.paymentMethod) ? input.paymentMethod : "wechat", paymentNote: String(input.paymentNote || "").trim().slice(0, 120), status: "pending", createdAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null };
+  const data = await readData();
+  const pending = data.orders.find((item) => item.userId === userId && item.status === "pending");
+  if (pending) throw new Error(`已有待审核订单：${pending.id}，请勿重复提交`);
+  const paymentNote = String(input.paymentNote || "").trim().slice(0, 120);
+  if (paymentNote.length < 2) throw new Error("请填写付款备注或转账单号后四位，方便管理员核对");
+  const order = { id: `LUMI-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`, userId, planId: plan.id, planName: plan.name, days: plan.days, amountCny: plan.priceCny, paymentMethod: ["wechat", "alipay"].includes(input.paymentMethod) ? input.paymentMethod : "wechat", paymentNote, status: "pending", createdAt: new Date().toISOString(), reviewedAt: null, reviewedBy: null };
   data.orders.unshift(order); await writeData(data); return order;
 }
 
 export async function ordersForUser(userId) { return (await readData()).orders.filter((item) => item.userId === userId); }
+
+function usageDate(now = new Date()) { return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit" }).format(now); }
+
+export async function aiUsageForUser(userId, limit = Number(process.env.AI_DAILY_LIMIT) || 100) {
+  const data = await readData(); const date = usageDate(); const record = data.aiUsage.find((item) => item.userId === userId && item.date === date);
+  const used = record?.count || 0; return { date, used, limit, remaining: Math.max(0, limit - used) };
+}
+
+export async function consumeAiQuota(userId, limit = Number(process.env.AI_DAILY_LIMIT) || 100) {
+  const data = await readData(); const date = usageDate();
+  data.aiUsage = data.aiUsage.filter((item) => item.date >= date);
+  let record = data.aiUsage.find((item) => item.userId === userId && item.date === date);
+  if (!record) { record = { userId, date, count: 0 }; data.aiUsage.push(record); }
+  if (record.count >= limit) return { allowed: false, date, used: record.count, limit, remaining: 0 };
+  record.count++; await writeData(data); return { allowed: true, date, used: record.count, limit, remaining: limit - record.count };
+}
 
 export async function adminOverview() {
   const data = await readData();
