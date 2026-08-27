@@ -44,6 +44,17 @@ PAYMENT_QR_URL=你的微信或支付宝收款码图片公网地址
 
 会员与学习数据默认保存在 `server/data`。本地服务器可直接持久保存；正式收费部署必须使用持久磁盘或数据库。Render 免费实例的本地文件会在重建时丢失，不能作为正式收费环境的数据存储。切换数据库前，可先用本地版完整验证收款与开通流程。
 
+### Supabase 持久化
+
+在 Supabase SQL Editor 执行 [`supabase/schema.sql`](supabase/schema.sql)，随后配置服务器专用环境变量：
+
+```dotenv
+SUPABASE_URL=https://你的项目.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=仅服务端使用的service_role密钥
+```
+
+密钥配置完成后运行 `npm run migrate:supabase`。脚本会迁移会员、订单、评论、AI用量以及每个用户的训练进度、生词本和知识整理，并在写入后重新读取验证。本地文件不会删除，会继续作为迁移前备份。浏览器端永远不会获得 `service_role` 密钥；数据库表启用 RLS 且不向匿名用户开放。
+
 ## 第一版范围
 
 - TCF 风格的词汇与语法四选一练习

@@ -1,12 +1,11 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { readDocument, writeDocument } from "./persistence.js";
 
 const dataDir = path.resolve("server/data");
 const journalFile = (storageKey = "legacy") => storageKey === "legacy" ? path.join(dataDir, "knowledge-journal.json") : path.join(dataDir, "users", String(storageKey).replace(/[^a-z0-9-]/gi, ""), "knowledge-journal.json");
 
 async function readJournal(storageKey = "legacy") {
-  try { return JSON.parse(await readFile(journalFile(storageKey), "utf8")); }
-  catch (error) { if (error.code === "ENOENT") return { entries: [] }; throw error; }
+  return readDocument(`journal:${storageKey}`, { entries: [] }, journalFile(storageKey));
 }
 
 export async function listJournalEntries(storageKey = "legacy") {
@@ -26,7 +25,6 @@ export async function addJournalEntry(entry, storageKey = "legacy") {
     createdAt: new Date().toISOString()
   };
   journal.entries.unshift(saved);
-  const target = journalFile(storageKey); await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, JSON.stringify(journal, null, 2));
+  await writeDocument(`journal:${storageKey}`, journal, journalFile(storageKey));
   return saved;
 }

@@ -1,6 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { aiEnabled, completeAi } from "./ai-client.js";
+import { readDocument, writeDocument } from "./persistence.js";
 
 const dataDir = path.resolve("server/data");
 const notebookFile = (storageKey = "legacy") => storageKey === "legacy" ? path.join(dataDir, "vocabulary.json") : path.join(dataDir, "users", String(storageKey).replace(/[^a-z0-9-]/gi, ""), "vocabulary.json");
@@ -61,8 +61,7 @@ const lexicon = {
 };
 
 async function readNotebook(storageKey = "legacy") {
-  try { return JSON.parse(await readFile(notebookFile(storageKey), "utf8")); }
-  catch (error) { if (error.code === "ENOENT") return { entries: [] }; throw error; }
+  return readDocument(`vocabulary:${storageKey}`, { entries: [] }, notebookFile(storageKey));
 }
 
 export async function listVocabulary(storageKey = "legacy") { return (await readNotebook(storageKey)).entries; }
@@ -75,15 +74,14 @@ export async function saveVocabulary(entry, storageKey = "legacy") {
     existing.contexts = [...new Set([...existing.contexts, entry.context].filter(Boolean))].slice(-5);
     existing.updatedAt = new Date().toISOString();
   } else notebook.entries.unshift({ id: crypto.randomUUID(), normalized, word: entry.word.trim(), contexts: [entry.context].filter(Boolean), questionId: entry.questionId || null, mastered: false, createdAt: new Date().toISOString() });
-  const target = notebookFile(storageKey); await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, JSON.stringify(notebook, null, 2));
+  await writeDocument(`vocabulary:${storageKey}`, notebook, notebookFile(storageKey));
   return notebook.entries.find((item) => item.normalized === normalized);
 }
 
 export async function toggleMastered(id, storageKey = "legacy") {
   const notebook = await readNotebook(storageKey); const entry = notebook.entries.find((item) => item.id === id);
   if (!entry) return null; entry.mastered = !entry.mastered; entry.updatedAt = new Date().toISOString();
-  await writeFile(notebookFile(storageKey), JSON.stringify(notebook, null, 2)); return entry;
+  await writeDocument(`vocabulary:${storageKey}`, notebook, notebookFile(storageKey)); return entry;
 }
 
 export function localLookup(word) { return lexicon[word.toLocaleLowerCase("fr").trim()] || null; }

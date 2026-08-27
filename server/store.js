@@ -1,6 +1,6 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { examDiagnostic } from "./exam-diagnostics.js";
+import { readDocument, writeDocument } from "./persistence.js";
 
 const dataDir = path.resolve("server/data");
 const emptyProgress = { attempts: [] };
@@ -10,20 +10,13 @@ function progressFile(storageKey = "legacy") {
 }
 
 export async function readProgress(storageKey = "legacy") {
-  try {
-    return JSON.parse(await readFile(progressFile(storageKey), "utf8"));
-  } catch (error) {
-    if (error.code === "ENOENT") return structuredClone(emptyProgress);
-    throw error;
-  }
+  return readDocument(`progress:${storageKey}`, emptyProgress, progressFile(storageKey));
 }
 
 export async function addAttempt(attempt, storageKey = "legacy") {
   const progress = await readProgress(storageKey);
   progress.attempts.push(attempt);
-  const target = progressFile(storageKey);
-  await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, JSON.stringify(progress, null, 2));
+  await writeDocument(`progress:${storageKey}`, progress, progressFile(storageKey));
   return attempt;
 }
 

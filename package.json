@@ -9,7 +9,8 @@
     "start": "node --env-file-if-exists=.env server/index.js",
     "test": "node --test",
     "audit:questions": "node scripts/audit-question-bank.js",
-    "clean:questions": "node scripts/audit-question-bank.js --apply"
+    "clean:questions": "node scripts/audit-question-bank.js --apply",
+    "migrate:supabase": "node --env-file-if-exists=.env scripts/migrate-to-supabase.js"
   },
   "engines": { "node": ">=20" }
 }

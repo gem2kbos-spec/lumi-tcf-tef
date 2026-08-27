@@ -1,22 +1,18 @@
 import crypto from "node:crypto";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+import { readDocument, writeDocument } from "./persistence.js";
 
 const scrypt = promisify(crypto.scrypt);
 const file = path.resolve(process.env.LUMI_MEMBER_FILE || "server/data/members.json");
 const empty = { users: [], sessions: [], orders: [], audit: [], aiUsage: [], comments: [] };
 
 async function readData() {
-  try { return { ...structuredClone(empty), ...JSON.parse(await readFile(file, "utf8")) }; }
-  catch (error) { if (error.code === "ENOENT") return structuredClone(empty); throw error; }
+  return { ...structuredClone(empty), ...await readDocument("members", empty, file) };
 }
 
 async function writeData(data) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.${crypto.randomBytes(4).toString("hex")}.tmp`;
-  await writeFile(temporary, JSON.stringify(data, null, 2));
-  await rename(temporary, file);
+  await writeDocument("members", data, file);
 }
 
 const normalizeEmail = (value) => String(value || "").trim().toLocaleLowerCase("en");
