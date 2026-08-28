@@ -94,6 +94,15 @@ function renderCatalog() {
   }));
 }
 
+function revealPractice({ smooth = true } = {}) {
+  const practice = $("#practice"); const hub = $("#practice-hub");
+  requestAnimationFrame(() => {
+    if (window.matchMedia("(max-width: 700px)").matches && !hub.hidden) {
+      hub.scrollTo({ top: Math.max(0, practice.offsetTop - 8), behavior: smooth ? "smooth" : "auto" });
+    } else practice.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  });
+}
+
 function selectModule(type) {
   state.type = type;
   state.activeCategory = null;
@@ -107,7 +116,7 @@ function selectModule(type) {
     $("#welcome p").textContent = "设置等级和题数，然后开始专项训练。";
   }
   openPracticeHub();
-  $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
+  revealPractice();
 }
 
 document.querySelectorAll("[data-exam]").forEach((button) => button.addEventListener("click", () => {
@@ -404,7 +413,6 @@ function openBankQuestion(question) {
   state.type = question.type; state.activeCategory = question.category || null; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
   if ([...$("#level").options].some((option) => option.value === question.level)) $("#level").value = question.level;
   $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
-  $("#practice").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function smartGenerate() {
@@ -466,6 +474,7 @@ function render() {
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "authentic" ? "直接练下一道同考点真题 " : currentSource === "review" ? "直接练下一道错题 " : "直接练下一题 ";
+  revealPractice({ smooth: state.continuousNumber > 1 });
 }
 
 function playAudio() {

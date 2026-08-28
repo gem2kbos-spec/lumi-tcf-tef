@@ -1,0 +1,167 @@
+/* Mobile is a separate interaction layout, not a scaled-down desktop page. */
+@media (max-width: 700px) {
+  html { overflow-x: hidden; scroll-padding-top: 8px; }
+  body { overflow-x: hidden; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  body:has(#practice-hub:not([hidden])),
+  body:has(#history-drawer:not([hidden])),
+  body:has(.tool-drawer:not([hidden])),
+  body:has(#knowledge-drawer:not([hidden])),
+  body:has(#tutor-drawer:not([hidden])) { overflow: hidden; }
+
+  main { padding: 12px 12px calc(88px + env(safe-area-inset-bottom)); }
+  header { padding-bottom: 12px; }
+  .brand { font-size: 17px; }
+  .header-actions { gap: 6px; }
+  .header-actions > button, .account-header-button { min-height: 40px; padding: 8px 10px; }
+
+  .quick-nav {
+    top: 6px; width: 100%; margin: 0 0 12px; padding: 5px;
+    border-radius: 12px; overscroll-behavior-x: contain;
+    scrollbar-width: none; box-shadow: 0 4px 14px #1833260d;
+  }
+  .quick-nav::-webkit-scrollbar { display: none; }
+  .quick-nav a { min-height: 38px; display: grid; place-items: center; padding: 7px 12px; }
+
+  .hero { padding: 12px 0 16px !important; }
+  .knowledge-summary { padding: 18px; gap: 14px; border-radius: 16px; }
+  .knowledge-summary h1 { font-size: 25px !important; margin: 6px 0 8px !important; }
+  .knowledge-summary p:last-child { font-size: 13px; line-height: 1.55; }
+  .knowledge-summary button { width: 100%; min-height: 44px; }
+
+  .exam-hub, .activity-panel, .practice-entry, .ai-lab, .bank-browser {
+    border-radius: 16px; margin-bottom: 12px; padding: 16px;
+  }
+  .exam-hub { gap: 14px; }
+  .exam-tabs { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .exam-tabs button { min-height: 70px; padding: 12px; }
+  .exam-tabs strong { font-size: 18px; }
+  .hub-heading { margin-bottom: 10px; }
+  .hub-heading h2, .activity-heading h2, .practice-entry h2, .section-heading h2 { font-size: 22px; }
+  .module-grid { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; }
+  .module-card, .module-card:last-child { flex: 0 0 78%; min-height: 118px; grid-column: auto; scroll-snap-align: start; }
+
+  .activity-heading { display: grid; gap: 10px; }
+  .activity-heading > div:last-child { text-align: left; }
+  .activity-metrics { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .activity-metrics article { padding: 13px; }
+  .activity-metrics strong { font-size: 21px; }
+  .today-summary { grid-template-columns: 1fr 1fr; gap: 7px 12px; }
+
+  .practice-entry { gap: 14px; }
+  .practice-entry button { width: 100%; min-height: 48px; display: flex; justify-content: space-between; align-items: center; }
+  .ai-lab-grid { margin-top: 14px; }
+  .ai-lab-grid label { margin: 4px 0; }
+  .ai-lab-grid input, .ai-lab-grid select, .ai-lab-grid button,
+  .bank-toolbar input, .bank-toolbar select { min-height: 46px; font-size: 16px; }
+  .coverage-gaps { max-height: 104px; overflow-y: auto; }
+  .category-grid { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px; scroll-snap-type: x proximity; }
+  .category-card { flex: 0 0 84%; min-height: 128px; scroll-snap-align: start; }
+  .bank-list { max-height: none; overflow: visible; padding-right: 0; }
+  .bank-card { min-height: 0; padding: 15px; }
+
+  /* Fixed tools become a thumb-friendly bottom dock and never cover questions. */
+  .study-tools {
+    left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index: 1250; flex-direction: row; justify-content: space-around; gap: 4px;
+    padding: 5px 7px; border: 1px solid #ffffff4d; border-radius: 18px;
+    background: #173d31f2; box-shadow: 0 8px 30px #10271e45;
+  }
+  .tool-ball, .study-tools .tutor-launch {
+    width: 54px; height: 48px; border: 0 !important; border-radius: 13px !important;
+    background: transparent !important; box-shadow: none; touch-action: manipulation;
+  }
+  .tool-ball b { right: 1px; top: -2px; }
+  body:has(#practice-hub:not([hidden]), #history-drawer:not([hidden]), .tool-drawer:not([hidden]), #knowledge-drawer:not([hidden]), #tutor-drawer:not([hidden])) .study-tools { display: none; }
+
+  /* Every complex workspace gets one scroll container using the real mobile viewport. */
+  .practice-hub, .history-drawer, .tutor-drawer, .tool-drawer, .knowledge-drawer {
+    position: fixed; inset: 0 !important; transform: none !important;
+    width: 100vw !important; height: 100dvh !important; max-height: none;
+    border: 0; border-radius: 0; box-shadow: none; overscroll-behavior: contain;
+  }
+  .practice-hub { display: block; padding: 58px 10px calc(18px + env(safe-area-inset-bottom)); overflow-y: auto; }
+  .practice-hub[hidden] { display: none; }
+  .practice-hub-close { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 10px; width: 42px; height: 42px; }
+  .practice-hub > aside { padding: 13px; margin-bottom: 10px; border-radius: 15px; }
+  .practice-hub > aside > .label { margin-bottom: 8px; }
+  .practice-hub .legacy-toggle { grid-template-columns: repeat(4, 1fr) !important; margin-bottom: 8px; }
+  .practice-hub .legacy-toggle button { min-height: 42px; padding: 7px 3px; }
+  .practice-hub aside label { margin: 9px 0; }
+  .practice-hub aside select { min-height: 44px; font-size: 16px; }
+  .practice-hub .stats { grid-template-columns: repeat(4, 1fr) !important; margin-top: 13px; padding-top: 12px; }
+  .practice-hub .stats strong { font-size: 17px; }
+  .practice-hub .weak-card { margin-top: 12px; padding-top: 12px; }
+  .practice-hub .practice { min-height: 0; padding: 20px 14px 28px; border-radius: 15px; }
+  .practice-hub .practice h2 { font-size: 21px; overflow-wrap: anywhere; }
+  .practice-hub .progress-bar { margin: 10px 0 24px; }
+  .options button { min-height: 52px; padding: 11px 12px; touch-action: manipulation; }
+  .next-question-button { bottom: 8px; min-height: 54px; padding: 12px 14px !important; }
+  .next-question-button small { display: none; }
+  .variation-bar { padding: 11px; }
+  .variation-bar input { min-height: 45px; font-size: 16px; }
+  .passage, .history-passage { font-size: 15px; line-height: 1.72; overflow-wrap: anywhere; }
+  .question-comments textarea { font-size: 16px; }
+
+  .history-drawer { padding: calc(16px + env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)); overflow-y: auto; }
+  .history-drawer > header { padding-bottom: 12px; }
+  .history-drawer h2 { font-size: 25px; }
+  .history-filters { position: sticky; top: -1px; z-index: 2; grid-template-columns: 1fr 1fr; padding: 8px; }
+  .history-filters select { min-width: 0; min-height: 42px; font-size: 14px; }
+  .history-layout { display: block; height: auto; }
+  .history-list { max-height: 220px; margin-bottom: 10px; }
+  .history-detail { padding: 15px; overflow: visible; }
+  .history-detail h3 { font-size: 20px; overflow-wrap: anywhere; }
+
+  .tutor-drawer { display: grid; grid-template-rows: auto auto minmax(0,1fr) auto; }
+  .tutor-drawer[hidden] { display: none; }
+  .tutor-drawer header { padding: calc(16px + env(safe-area-inset-top)) 16px 14px; }
+  .tutor-drawer header h2 { font-size: 25px; }
+  .tutor-starters { padding: 10px 12px; }
+  .tutor-messages { min-height: 0; padding: 14px 12px; }
+  .tutor-message { max-width: 96%; padding: 12px 13px; }
+  .tutor-drawer form { grid-template-columns: 1fr auto; padding: 10px 10px calc(10px + env(safe-area-inset-bottom)); }
+  .tutor-drawer textarea { min-height: 48px; max-height: 120px; font-size: 16px; }
+  .tutor-drawer form button { min-width: 68px; padding: 10px; }
+  .tutor-table-wrap table, .journal-content table { min-width: 480px; }
+
+  .tool-drawer, .knowledge-drawer {
+    padding: calc(18px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+  }
+  .journal-drawer h2, .knowledge-drawer h2, .vocab-drawer h2 { font-size: 25px; }
+  .journal-filters { overflow-x: auto; }
+  .journal-filters button { flex: 0 0 auto; min-height: 40px; }
+  .knowledge-practice-card, .knowledge-chat { padding: 14px; }
+  .knowledge-chat textarea { font-size: 16px; }
+
+  .vocab-drawer { width: 100vw; padding: 16px 14px calc(18px + env(safe-area-inset-bottom)); }
+  .notebook-open main { width: 100%; padding-right: 12px; }
+  .notebook-open .vocab-drawer { height: min(44dvh, 390px); }
+  body.notebook-open { padding-bottom: min(44dvh, 390px); }
+  .notebook-open .lookup-detail { max-height: 290px; }
+
+  .account-gate, .admin-panel { padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom)); backdrop-filter: none; }
+  .account-card, .admin-shell { max-height: 100%; padding: 22px 17px; border-radius: 18px; box-shadow: none; }
+  .account-brand { margin-bottom: 16px; }
+  .account-tabs { margin-bottom: 15px; }
+  .account-card input { min-height: 48px; font-size: 16px; }
+
+  /* Large blur and animated shadows are the main GPU cost on mid-range phones. */
+  body:after, .knowledge-drawer-open:after, .drawer-open:after { backdrop-filter: none !important; }
+  .metric-progress i, .progress-bar i { transition-duration: .12s; }
+  .bank-card, .category-card, .options button { content-visibility: auto; contain-intrinsic-size: 1px 180px; }
+}
+
+@media (max-width: 390px) {
+  .activity-metrics { grid-template-columns: 1fr; }
+  .today-summary { grid-template-columns: 1fr; }
+  .module-card { flex-basis: 88%; }
+  .practice-hub .stats strong { font-size: 15px; }
+  .practice-hub .stats span { font-size: 9px; }
+  .history-filters { grid-template-columns: 1fr; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  button:hover { transform: none !important; }
+  button, select, input, textarea { -webkit-tap-highlight-color: transparent; }
+}
