@@ -87,13 +87,17 @@ export function buildAttemptAnalysis(question, selected) {
 export function formatAiAnalysis(question, selected, payload, base = buildAttemptAnalysis(question, selected)) {
   if (!payload || !Array.isArray(payload.options) || payload.options.length !== question.options.length) return base;
   const forbidden = /不能填入本题位置|需要检查|不符合语境|不合适|不正确[。；]?$/;
-  const valid = payload.options.every((item, index) => item.option === question.options[index] && item.usage?.trim().length >= 8 && item.reasonInQuestion?.trim().length >= 10 && item.example?.trim().length >= 5 && !forbidden.test(item.reasonInQuestion.trim()));
-  if (!valid || !payload.rule?.trim() || !payload.correctReason?.trim()) return base;
+  const valid = payload.options.every((item, index) => item && item.option === question.options[index] && item.usage?.trim().length >= 8 && item.reasonInQuestion?.trim().length >= 10 && item.example?.trim().length >= 5 && !forbidden.test(item.reasonInQuestion.trim()));
+  if (!valid || !payload.summary?.trim() || !payload.rule?.trim() || !payload.correctReason?.trim() || !payload.trap?.trim()) return base;
+  const suppliedSteps = Array.isArray(payload.steps) ? payload.steps.filter((step) => typeof step === "string" && step.trim().length >= 4) : [];
+  const steps = suppliedSteps.length >= 2 ? suppliedSteps : question.type === "reading"
+    ? ["先确认题干问的是主旨、细节、目的还是推断。", "回到原文定位决定答案的完整句，并核对否定、时间和范围限制。", "逐项比较：只有被原文完整支持的选项才能保留。"]
+    : ["先判断空格需要的词性、句法功能或固定结构。", "检查前后成分对介词、时态、语式和配合的要求。", "把每个选项代回原句，同时核对语法成立和句意自然。"];
   const correctOption = question.options[question.answer]; const selectedOption = question.options[selected];
   const detailedZh = [
     `【题干理解】${payload.summary}`,
     `【核心规则】${payload.rule}`,
-    `【判断步骤】${payload.steps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
+    `【判断步骤】${steps.map((step, index) => `${index + 1}. ${step}`).join("\n")}`,
     `【正确答案】${correctOption}。${payload.correctReason}${selected === question.answer ? "\n你本题选择正确。" : `\n你选择了“${selectedOption}”，具体差异见逐项分析。`}`,
     `【选项逐项分析】\n${payload.options.map((item, index) => `${index === question.answer ? "✓" : "✗"} ${item.option}\n常见用法：${item.usage}\n本题判断：${item.reasonInQuestion}\n正确例句：${item.example}`).join("\n\n")}`,
     `【易错提醒】${payload.trap}`

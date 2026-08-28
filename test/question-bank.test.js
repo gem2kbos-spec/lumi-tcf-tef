@@ -90,3 +90,10 @@ test("AI analysis is rejected when distractor explanations are filler", () => {
   const result = formatAiAnalysis(question, 1, { summary: "地点介词", rule: "城市前用 à。", steps: ["看地点"], correctReason: "Paris 是城市。", trap: "不要直译。", options: [{ option: "à", usage: "用于城市名称之前表示地点或方向。", reasonInQuestion: "Paris 是城市名称，因此本题使用 à。", example: "Elle vit à Lyon." }, { option: "dans", usage: "表示位于具有明确边界的空间内部。", reasonInQuestion: "不合适", example: "Elle est dans la salle." }] });
   assert.doesNotMatch(result.detailedZh, /常见用法：/);
 });
+
+test("AI analysis remains usable when provider omits optional reasoning steps", () => {
+  const question = { type: "grammar", skill: "prepositions", topic: "lieu", prompt: "Elle habite _ Paris.", options: ["à", "dans"], answer: 0, explanation: "" };
+  const result = formatAiAnalysis(question, 0, { summary: "本题要求选择城市名称前的地点介词。", rule: "表达居住在某个城市时，城市名称前通常使用介词 à。", correctReason: "Paris 是城市名，因此应说 habiter à Paris。", trap: "不要把中文的‘在’一律翻译成 dans。", options: [{ option: "à", usage: "用于城市名称之前表示所在地或方向。", reasonInQuestion: "Paris 是城市名称，habiter à Paris 是规范搭配。", example: "Elle travaille à Lyon." }, { option: "dans", usage: "表示处于一个有明确边界的空间内部。", reasonInQuestion: "Paris 在这里作为城市名，不表示某个封闭空间内部。", example: "Elle attend dans la salle." }] });
+  assert.match(result.detailedZh, /【判断步骤】/);
+  assert.match(result.detailedZh, /常见用法：用于城市名称/);
+});
