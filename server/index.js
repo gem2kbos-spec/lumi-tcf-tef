@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { questionBank } from "./question-bank.js";
 import { loadImportedQuestions } from "./imported-questions.js";
-import { activitySummary, addAttempt, importedProgress, readProgress, reviewQuestions, sequenceProgress, summarize, weakSkillForType } from "./store.js";
+import { activitySummary, addAttempt, attachAttemptAnalysis, importedProgress, readProgress, reviewQuestions, sequenceProgress, summarize, weakSkillForType } from "./store.js";
 import { generateQuestions } from "./ai-generator.js";
 import { buildAttemptAnalysis } from "./knowledge-base.js";
 import { buildDetailedAttemptAnalysis } from "./detailed-analysis.js";
@@ -16,6 +16,7 @@ import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
 import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, reviewOrder, updateMember } from "./member-store.js";
+import { cacheAnalysis, readCachedAnalysis } from "./analysis-cache.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
@@ -113,8 +114,8 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === "/api/admin/orders/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await reviewOrder(auth.id, input.orderId, input.action)); } catch (error) { return sendJson(res, 409, { error: error.message }); } }
       if (url.pathname === "/api/admin/members/update" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, { user: await updateMember(auth.id, input.userId, input.action, input.days) }); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
       if (!auth.hasAccess) return sendJson(res, 403, { error: "MEMBERSHIP_REQUIRED", user: auth });
-      const aiRoutes = new Set(["/api/knowledge/ask", "/api/knowledge/practice", "/api/tutor/ask", "/api/variations", "/api/smart-generation"]);
-      if (auth.role !== "admin" && aiEnabled() && (aiRoutes.has(url.pathname) || (req.method === "POST" && ["/api/questions", "/api/attempts"].includes(url.pathname)) || (req.method === "GET" && url.pathname === "/api/vocabulary/lookup"))) {
+      const aiRoutes = new Set(["/api/knowledge/ask", "/api/knowledge/practice", "/api/tutor/ask", "/api/variations", "/api/smart-generation", "/api/attempt-analysis"]);
+      if (auth.role !== "admin" && aiEnabled() && (aiRoutes.has(url.pathname) || (req.method === "POST" && url.pathname === "/api/questions") || (req.method === "GET" && url.pathname === "/api/vocabulary/lookup"))) {
         const quota = await consumeAiQuota(auth.id); if (!quota.allowed) return sendJson(res, 429, { error: `今日 AI 使用次数已达 ${quota.limit} 次，请明天继续；普通题库练习不受影响`, quota });
       }
     }
@@ -151,7 +152,7 @@ const server = http.createServer(async (req, res) => {
         (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
         (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
         (level === "all" || attempt.question?.level === level)
-      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysis?.detailedZh ? attempt.analysis : buildAttemptAnalysis(attempt.question, attempt.selected) }));
+      ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysisVersion === 2 ? attempt.analysis : null }));
       return sendJson(res, 200, { attempts, total: attempts.length });
     }
     if (req.method === "GET" && url.pathname === "/api/bank") {
@@ -339,6 +340,13 @@ const server = http.createServer(async (req, res) => {
       rememberQuestion(question);
       return sendJson(res, 201, { question: publicQuestion(question), targetSkill, reason: question.targetReason });
     }
+    if (req.method === "POST" && url.pathname === "/api/check-answer") {
+      const input = await body(req); const imported = await loadImportedQuestions();
+      const question = recalledQuestion(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
+      if (!question || question.answer === null || question.answerVerified === false) return sendJson(res, 409, { error: "ANSWER_PENDING_REVIEW" });
+      if (!Number.isInteger(input.selected) || input.selected < 0 || input.selected >= question.options.length) return sendJson(res, 400, { error: "Invalid attempt" });
+      return sendJson(res, 200, { correct: input.selected === question.answer, answer: question.answer });
+    }
     if (req.method === "POST" && url.pathname === "/api/attempts") {
       const input = await body(req);
       const imported = await loadImportedQuestions();
@@ -346,16 +354,27 @@ const server = http.createServer(async (req, res) => {
       if (!question || question.answer === null || question.answerVerified === false) return sendJson(res, 409, { error: "ANSWER_PENDING_REVIEW" });
       if (!Number.isInteger(input.selected) || input.selected < 0 || input.selected >= question.options.length) return sendJson(res, 400, { error: "Invalid attempt" });
       const correct = input.selected === question.answer;
-      const analysis = await buildDetailedAttemptAnalysis(question, input.selected);
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
         exam: ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf",
         skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
-        question, analysis
+        question, analysis: null, analysisVersion: 2
       };
       await addAttempt(attempt, storageKey);
-      if (!correct) await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: question.prompt, content: analysis.detailedZh, skill: question.skill, questionId: question.id, meta: { type: question.type, level: question.level, source: question.source, category: categoryLabelFor(question) } }, storageKey);
-      return sendJson(res, 201, { correct, answer: question.answer, analysis });
+      return sendJson(res, 201, { correct, answer: question.answer, attemptId: attempt.id });
+    }
+    if (req.method === "POST" && url.pathname === "/api/attempt-analysis") {
+      const input = await body(req); const progress = await readProgress(storageKey);
+      const attempt = progress.attempts.find((item) => item.id === input.attemptId && item.questionId === input.questionId);
+      if (!attempt) return sendJson(res, 404, { error: "Attempt not found" });
+      if (attempt.analysisVersion === 2 && attempt.analysis?.detailedZh) return sendJson(res, 200, { analysis: attempt.analysis, cached: true });
+      let analysis = (await readCachedAnalysis(attempt.questionId, attempt.selected))?.analysis;
+      if (!analysis) { analysis = await buildDetailedAttemptAnalysis(attempt.question, attempt.selected); await cacheAnalysis(attempt.questionId, attempt.selected, analysis); }
+      const updated = await attachAttemptAnalysis(attempt.id, analysis, storageKey);
+      if (!updated.correct && !updated.analysisJournaled) {
+        await addJournalEntry({ kind: "mistake", title: analysis.knowledge.title, question: updated.question.prompt, content: analysis.detailedZh, skill: updated.question.skill, questionId: updated.question.id, meta: { type: updated.question.type, level: updated.question.level, source: updated.question.source, category: categoryLabelFor(updated.question), analysisVersion: 2 } }, storageKey);
+      }
+      return sendJson(res, 200, { analysis, cached: Boolean((await readCachedAnalysis(attempt.questionId, attempt.selected))?.analysis) });
     }
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
     const filePath = path.join(publicDir, requested);

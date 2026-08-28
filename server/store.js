@@ -20,6 +20,15 @@ export async function addAttempt(attempt, storageKey = "legacy") {
   return attempt;
 }
 
+export async function attachAttemptAnalysis(attemptId, analysis, storageKey = "legacy") {
+  const progress = await readProgress(storageKey);
+  const attempt = progress.attempts.find((item) => item.id === attemptId);
+  if (!attempt) return null;
+  attempt.analysis = analysis; attempt.analysisVersion = 2;
+  await writeDocument(`progress:${storageKey}`, progress, progressFile(storageKey));
+  return attempt;
+}
+
 export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai") {
   const total = attempts.length;
   const correct = attempts.filter((item) => item.correct).length;

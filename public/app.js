@@ -246,7 +246,7 @@ function renderJournal() {
 }
 
 function renderMistakes() {
-  const mistakes = journalEntries.filter((entry) => entry.kind === "mistake"); $("#mistake-count").textContent = mistakes.length; $("#mistake-ball-count").textContent = mistakes.length;
+  const mistakes = journalEntries.filter((entry) => entry.kind === "mistake" && entry.meta?.analysisVersion === 2); $("#mistake-count").textContent = mistakes.length; $("#mistake-ball-count").textContent = mistakes.length;
   if (!mistakes.length) { const empty = document.createElement("p"); empty.className = "journal-empty"; empty.textContent = "还没有错题。做错后会自动按具体考点整理到这里。"; $("#mistake-list").replaceChildren(empty); return; }
   $("#mistake-list").replaceChildren(...mistakes.map(createJournalCard));
 }
@@ -336,7 +336,7 @@ async function loadActivity() {
 function renderHistoryDetail(attempt) {
   const question = attempt.question; const detail = $("#history-detail");
   const source = question.source === "user_imported" ? "导入真题" : String(question.source || "").startsWith("ai") ? "AI生成题" : "精选题";
-  detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>详细中文解析</b><p>${escapeHtml(attempt.analysis?.detailedZh || attempt.analysis?.explanationZh || "暂无解析")}</p></section></div><div class="history-variation"><div><strong>生成类似题目</strong><span>围绕同一考点立即再练一题</span></div><input id="history-variation-request" maxlength="300" placeholder="例如：难一点，换成生活场景，干扰项更接近……"><button id="history-generate-variation">生成并作答 ✦</button></div>`;
+  detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>${attempt.analysis ? "新版详细中文解析" : "旧解析已撤下"}</b><p>${escapeHtml(attempt.analysis?.detailedZh || "这次历史作答没有新版解析。重新作答后会先立即显示正确答案，再生成逐项详细解析。")}</p></section></div><div class="history-variation"><div><strong>生成类似题目</strong><span>围绕同一考点立即再练一题</span></div><input id="history-variation-request" maxlength="300" placeholder="例如：难一点，换成生活场景，干扰项更接近……"><button id="history-generate-variation">生成并作答 ✦</button></div>`;
   $("#history-generate-variation").addEventListener("click", () => generateHistoryVariation(attempt));
 }
 
@@ -488,17 +488,27 @@ async function answer(selected, selectedButton) {
   if (state.answered || state.submitting) return; state.submitting = true;
   const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); $("#options").setAttribute("aria-busy", "true");
   selectedButton.classList.add("checking");
-  $("#feedback").className = "feedback-loading"; $("#feedback").innerHTML = `<div class="answer-loading"><i></i><div><strong>已收到你的答案：${String.fromCharCode(65 + selected)}</strong><p>正在核对正确答案，并生成每个选项的详细中文解析…</p></div></div>`; $("#feedback").hidden = false;
+  $("#feedback").className = "feedback-loading"; $("#feedback").innerHTML = `<div class="answer-loading"><i></i><div><strong>已收到你的答案：${String.fromCharCode(65 + selected)}</strong><p>正在核对正确答案…</p></div></div>`; $("#feedback").hidden = false;
   try {
-    const result = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected, exam: state.exam }) });
+    const result = await api("/api/check-answer", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected }) });
+    const answeredQuestion = state.questions[state.index]; const answeredQuestionId = answeredQuestion.id;
     state.answered = true; selectedButton.classList.remove("checking"); buttons[result.answer].classList.add("correct");
     if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
-    const analysis = result.analysis;
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
-    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "正确 · 详细解析" : "错误 · 详细中文解析"}</strong><span>${escapeHtml(analysis.knowledge.label)}</span></div><section class="detailed-analysis"><p>${escapeHtml(analysis.detailedZh || analysis.explanationZh)}</p></section><button id="ask-lili-analysis" class="ask-lili-analysis"><span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small></button>`;
-    $("#ask-lili-analysis").addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis));
-    $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false; await Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), loadQuestionComments(), result.correct ? Promise.resolve() : loadJournal()]);
+    const correctOption = answeredQuestion.options[result.answer]; const completedSentence = answeredQuestion.prompt.replace(/_+|…+|\.{3,}/, correctOption);
+    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "✓ 回答正确" : "✕ 回答错误"}</strong><span>正确答案：${String.fromCharCode(65 + result.answer)}</span></div><section class="instant-answer"><b>${escapeHtml(correctOption)}</b><p>${escapeHtml(completedSentence)}</p></section><section id="analysis-pending" class="analysis-pending"><div class="answer-loading"><i></i><div><strong>正在生成新版详细解析</strong><p>将说明决定性规则，并逐项解释每个选项；你现在可以直接练下一题。</p></div></div></section>`;
+    $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false;
+    const savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) });
+    const analysisPromise = api("/api/attempt-analysis", { method: "POST", body: JSON.stringify({ attemptId: savedAttempt.attemptId, questionId: answeredQuestionId }) });
+    Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), loadQuestionComments()]).catch(() => {});
+    analysisPromise.then((payload) => {
+      if (state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
+      const analysis = payload.analysis; const pending = $("#analysis-pending"); if (!pending) return;
+      pending.className = "detailed-analysis"; pending.innerHTML = `<p>${escapeHtml(analysis.detailedZh)}</p>`;
+      const ask = document.createElement("button"); ask.id = "ask-lili-analysis"; ask.className = "ask-lili-analysis"; ask.innerHTML = "<span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small>"; ask.addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis)); $("#feedback").append(ask);
+      if (!result.correct) loadJournal();
+    }).catch((error) => { const pending = $("#analysis-pending"); if (pending && state.questions[state.index]?.id === answeredQuestionId) pending.innerHTML = `<p>新版解析暂时生成失败：${escapeHtml(error.message)}。正确答案已显示，可继续下一题或稍后重做。</p>`; });
   } catch (error) {
     selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
