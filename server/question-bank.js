@@ -1,3 +1,5 @@
+import { mockGrammarBatch001 } from "./mock-grammar-batch-001.js";
+
 export const questionBank = [
   {
     id: "vocab-001", type: "vocabulary", level: "A2", topic: "vie quotidienne",
@@ -262,5 +264,6 @@ export const questionBank = [
     prompt: "Que doit faire le client ?",
     options: ["Commander un autre produit", "Contacter directement le transporteur", "Compléter rapidement son adresse", "Récupérer le colis au magasin"], answer: 2,
     explanation: "Le client doit ajouter le numéro de l'appartement avant ce soir.", skill: "consigne_orale"
-  }
+  },
+  ...mockGrammarBatch001
 ];

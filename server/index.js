@@ -176,7 +176,9 @@ const server = http.createServer(async (req, res) => {
         (category === "all" || question.category === category) &&
         (answerStatus === "all" || (answerStatus === "ready" ? question.answerVerified : !question.answerVerified)) &&
         (!query || [question.prompt, question.passage, question.topic, question.categoryLabel].some((value) => String(value || "").toLocaleLowerCase("fr").includes(query)))
-      ).sort((a, b) => (priority.get(a.category) ?? 99) - (priority.get(b.category) ?? 99) || a.difficulty - b.difficulty || a.order - b.order)
+      ).sort((a, b) => source === "mock"
+        ? a.difficulty - b.difficulty || a.order - b.order
+        : (priority.get(a.category) ?? 99) - (priority.get(b.category) ?? 99) || a.difficulty - b.difficulty || a.order - b.order)
         .map((question, index) => ({ ...publicQuestion(question), number: index + 1, completed: completedIds.has(question.id) }))
         .filter((question) => status === "all" || (status === "completed" ? question.completed : !question.completed));
       const questions = filtered.slice(offset, offset + limit);
@@ -192,8 +194,8 @@ const server = http.createServer(async (req, res) => {
       const merged = [...imported.map((question) => normalizedQuestion(question, "user_imported")), ...questionBank.map((question) => normalizedQuestion(question, "curated"))];
       const categories = categoriesFor(type).map((category) => {
         const items = merged.filter((question) => question.type === type && question.category === category.id);
-        const authentic = items.filter((question) => question.source === "user_imported");
-        return { ...category, total: items.length, completed: items.filter((question) => completedIds.has(question.id)).length, readyTotal: items.filter((question) => question.answerVerified).length, pendingTotal: items.filter((question) => !question.answerVerified).length, authenticTotal: authentic.length, authenticCompleted: authentic.filter((question) => completedIds.has(question.id)).length };
+        const authentic = items.filter((question) => question.source === "user_imported"); const mock = items.filter((question) => question.source === "mock"); const curated = items.filter((question) => question.source === "curated");
+        return { ...category, total: items.length, completed: items.filter((question) => completedIds.has(question.id)).length, readyTotal: items.filter((question) => question.answerVerified).length, pendingTotal: items.filter((question) => !question.answerVerified).length, authenticTotal: authentic.length, authenticCompleted: authentic.filter((question) => completedIds.has(question.id)).length, mockTotal: mock.length, mockCompleted: mock.filter((question) => completedIds.has(question.id)).length, curatedTotal: curated.length };
       });
       return sendJson(res, 200, { type, categories });
     }

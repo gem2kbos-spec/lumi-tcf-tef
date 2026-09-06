@@ -375,7 +375,7 @@ async function loadBank(reset = true) {
     }
     const cards = payload.questions.map((question) => {
     const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
-    const source = question.source === "user_imported" ? "真题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
+    const source = question.source === "user_imported" ? "真题" : question.source === "mock" ? "TCF模拟题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
     card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
@@ -389,12 +389,12 @@ async function loadBank(reset = true) {
 async function loadCategories(type = $("#category-type").value) {
   const payload = await api(`/api/categories?type=${encodeURIComponent(type)}`); categoryCatalog = payload.categories;
   const sourceFilter = $("#bank-source").value;
-  const visibleCategories = payload.categories.filter((category) => sourceFilter === "user_imported" ? category.authenticTotal > 0 : sourceFilter === "curated" ? category.readyTotal - category.authenticTotal > 0 : category.readyTotal > 0);
+  const visibleCategories = payload.categories.filter((category) => sourceFilter === "user_imported" ? category.authenticTotal > 0 : sourceFilter === "mock" ? category.mockTotal > 0 : sourceFilter === "curated" ? category.curatedTotal > 0 : category.readyTotal > 0);
   $("#category-grid").replaceChildren(...visibleCategories.map((category) => {
     const progress = category.authenticTotal ? Math.round(category.authenticCompleted / category.authenticTotal * 100) : 0;
-    const curatedTotal = Math.max(0, category.readyTotal - category.authenticTotal);
+    const curatedTotal = category.curatedTotal; const mockTotal = category.mockTotal;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
-    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span>${curatedTotal ? `<span>精选 ${curatedTotal}题</span>` : ""}</div><div class="category-progress"><i style="width:${progress}%"></i></div><small>点击查看并刷题 · 真题进度 ${progress}%</small>`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span>${mockTotal ? `<span>模拟 ${mockTotal}题</span>` : ""}${curatedTotal ? `<span>精选 ${curatedTotal}题</span>` : ""}</div><div class="category-progress"><i style="width:${progress}%"></i></div><small>点击查看并刷题 · 真题进度 ${progress}%</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
@@ -465,8 +465,8 @@ function render() {
   const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
   $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
-  const currentSource = question.source === "user_imported" ? "authentic" : question.source?.startsWith("ai") ? "ai" : state.mode;
-  $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : "精选题库";
+  const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
+  $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : currentSource === "mock" ? "TCF模拟题" : "精选题库";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
