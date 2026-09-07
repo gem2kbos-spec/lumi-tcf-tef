@@ -30,6 +30,7 @@ export async function attachAttemptAnalysis(attemptId, analysis, storageKey = "l
 }
 
 export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai") {
+  attempts = attempts.filter((item) => ["grammar", "vocabulary", "reading"].includes(item.type));
   const total = attempts.length;
   const correct = attempts.filter((item) => item.correct).length;
   const wrongBySkill = {};
@@ -40,7 +41,7 @@ export function summarize(attempts, now = new Date(), timeZone = "Asia/Shanghai"
     wrongBySkill[key].total++;
     if (!item.correct) { wrongBySkill[key].count++; wrongBySkill[key].latestReason = item.analysis?.errorReasonZh || wrongBySkill[key].latestReason; wrongBySkill[key].errorType = diagnostic.errorType; wrongBySkill[key].action = diagnostic.action; }
   }
-  const byType = Object.fromEntries(["grammar", "vocabulary", "reading", "listening"].map((type) => {
+  const byType = Object.fromEntries(["grammar", "vocabulary", "reading"].map((type) => {
     const entries = attempts.filter((item) => item.type === type);
     const right = entries.filter((item) => item.correct).length;
     return [type, { total: entries.length, accuracy: entries.length ? Math.round(right / entries.length * 100) : 0 }];

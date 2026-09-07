@@ -74,10 +74,10 @@ function localTutorAnswer(question) {
   const aliases = [
     ["y-en-prepositions", [" y ", " en ", "代词", "介词"]], ["past-timeline", ["过去时", "passé composé", "imparfait", "愈过去"]],
     ["reading-main-idea", ["主旨", "阅读", "idée principale"]], ["connectors-structure", ["连接词", "malgré", "bien que", "parce que"]],
-    ["listening-distractors", ["听力", "录音", "干扰项"]], ["si-condition", [" si ", "条件句", "conditionnel"]]
+    ["si-condition", [" si ", "条件句", "conditionnel"]]
   ];
   const match = aliases.map(([id, words]) => ({ topic: getKnowledgeTopic(id), score: words.filter((word) => ` ${text} `.includes(word)).length })).sort((a, b) => b.score - a.score)[0];
-  if (!match?.score) return "我现在处于本地知识库模式。你可以问 y/en、过去时、连接词、si 条件句、阅读主旨题或听力干扰项。要回答任意自由问题，需要配置 DeepSeek 密钥。";
+  if (!match?.score) return "我现在处于本地知识库模式。你可以问 y/en、过去时、连接词、si 条件句或阅读主旨题。要回答任意自由问题，需要配置 DeepSeek 密钥。";
   const topic = match.topic;
   return `先记住：${topic.title}。\n\n${topic.summary}\n\n${topic.sections.slice(0, 3).map(([title, content]) => `${title}\n${content}`).join("\n\n")}\n\n如果你告诉我具体卡在哪一句，我可以继续按这个知识点解释。`;
 }
@@ -158,7 +158,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/history") {
       const progress = await readProgress(storageKey); const type = url.searchParams.get("type") || "all"; const result = url.searchParams.get("result") || "all"; const source = url.searchParams.get("source") || "all"; const level = url.searchParams.get("level") || "all";
       const attempts = [...progress.attempts].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).filter((attempt) =>
-        (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
+        ["grammar", "vocabulary", "reading"].includes(attempt.type) && (type === "all" || attempt.type === type) && (result === "all" || (result === "correct" ? attempt.correct : !attempt.correct)) &&
         (source === "all" || (source === "authentic" ? attempt.question?.source === "user_imported" : String(attempt.question?.source || "").startsWith("ai"))) &&
         (level === "all" || attempt.question?.level === level)
       ).slice(0, 500).map((attempt) => ({ id: attempt.id, questionId: attempt.questionId, createdAt: attempt.createdAt, correct: attempt.correct, selected: attempt.selected, selectedOption: attempt.question?.options?.[attempt.selected] || "", correctOption: attempt.question?.options?.[attempt.question?.answer] || "", question: publicQuestion(normalizedQuestion(attempt.question, attempt.question?.source)), analysis: attempt.analysisVersion === 2 ? attempt.analysis : null }));
@@ -197,7 +197,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
     if (req.method === "GET" && url.pathname === "/api/categories") {
-      const type = ["grammar", "vocabulary", "reading", "listening"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : "grammar";
+      const type = ["grammar", "vocabulary", "reading"].includes(url.searchParams.get("type")) ? url.searchParams.get("type") : "grammar";
       const imported = await loadImportedQuestions(); const progress = await readProgress(storageKey);
       const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
       const merged = [...imported.map((question) => normalizedQuestion(question, "user_imported")), ...questionBank.map((question) => normalizedQuestion(question, "curated"))];
@@ -212,7 +212,7 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions();
       const progress = await readProgress(storageKey);
       const stats = summarize(progress.attempts);
-      const types = ["grammar", "vocabulary", "reading", "listening"];
+      const types = ["grammar", "vocabulary", "reading"];
       const gaps = types.flatMap((type) => coverageGaps(imported, type, blueprintFor(type, "B1").skills).map((skill) => ({ type, skill })));
       return sendJson(res, 200, { weakSkills: stats.weakSkills.slice(0, 5), coverageGaps: gaps.slice(0, 12), imported: importedProgress(progress.attempts, imported), recommendedToday: Math.max(10, Math.min(30, 10 + stats.pendingReview * 2)) });
     }
@@ -280,7 +280,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
-      const type = ["vocabulary", "grammar", "mixed", "reading", "listening", "review"].includes(input.type) ? input.type : "grammar";
+      const type = ["vocabulary", "grammar", "mixed", "reading", "review"].includes(input.type) ? input.type : "grammar";
       const exam = ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf";
       const level = ["all", "A1", "A2", "B1", "B2", "C1", "C2"].includes(input.level) ? input.level : "all";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
@@ -336,7 +336,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/smart-generation") {
       if (!aiEnabled()) return sendJson(res, 503, { error: "AI_KEY_REQUIRED" });
       const input = await body(req);
-      const type = ["grammar", "vocabulary", "reading", "listening"].includes(input.type) ? input.type : "grammar";
+      const type = ["grammar", "vocabulary", "reading"].includes(input.type) ? input.type : "grammar";
       const level = ["A2", "B1"].includes(input.level) ? input.level : "B1";
       const imported = await loadImportedQuestions();
       const progress = await readProgress(storageKey);

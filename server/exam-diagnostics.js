@@ -58,7 +58,7 @@ function grammarDiagnostic(attempt, text, answer) {
 }
 
 function comprehensionDiagnostic(attempt) {
-  const type = attempt.type === "listening" ? "听力" : "阅读";
+  const type = "阅读";
   const skill = attempt.skill || "comprehension";
   const map = {
     information_explicite: ["明确事实与条件定位", "回到原文定位人、时间、地点、条件和否定词，不凭印象作答"],
@@ -69,7 +69,7 @@ function comprehensionDiagnostic(attempt) {
     inference: ["有证据的推断", "找出支持推断的原文依据，排除合理但文中无证据的选项"],
     cause_consequence: ["因果链与逻辑关系", "分别圈出原因、结果及转折标记，再核对方向"]
   };
-  const [title, action] = map[skill] || [`${type}中的${clean(attempt.question?.topic) || "信息理解"}`, "先定位原文或音频证据，再判断选项是否完整且没有扩大含义"];
+  const [title, action] = map[skill] || [`${type}中的${clean(attempt.question?.topic) || "信息理解"}`, "先定位原文证据，再判断选项是否完整且没有扩大含义"];
   return {
     id: `${attempt.type}:${skill}:${normalized(attempt.question?.topic) || "general"}`,
     examAbility: `TCF / TEF · ${type}理解`, title,
@@ -82,7 +82,7 @@ export function examDiagnostic(attempt) {
   const answer = optionText(attempt);
   const question = attempt.question || {};
   const text = normalized([question.prompt, question.passage, question.audioText, question.topic, answer, ...(question.options || [])].join(" "));
-  const base = attempt.type === "reading" || attempt.type === "listening"
+  const base = attempt.type === "reading"
     ? comprehensionDiagnostic(attempt)
     : attempt.type === "vocabulary" ? lexicalDiagnostic(attempt, text, answer) : grammarDiagnostic(attempt, text, answer);
   return { ...base, category: question.category || null };

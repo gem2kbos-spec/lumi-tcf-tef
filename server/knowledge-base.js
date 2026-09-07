@@ -19,14 +19,7 @@ const KNOWLEDGE = {
   cause_consequence: ["因果关系", "区分事情发生的原因与产生的结果，重点关注 parce que、donc、grâce à、c'est pourquoi 等信号。"],
   inference: ["推断", "推断必须由文中至少两个线索共同支持，不能加入常识上可能但原文没有依据的信息。"],
   intention_auteur: ["作者意图", "结合建议、评价和结论性表达判断作者想让读者相信或采取什么行动。"],
-  consigne: ["指令理解", "找出必须执行的动作、截止时间和条件；建议与强制要求要分开。"],
-  information_orale: ["听力信息定位", "优先抓人物、时间、地点、数字和动作变化；听到相同词不等于选项正确。"],
-  intention_orale: ["听力交际意图", "判断说话人打电话或发言的目的，而不是只复述谈话主题。"],
-  idee_principale_orale: ["听力主旨", "关注开头提出的问题和结尾的决定，选择覆盖整段意思的选项。"],
-  point_de_vue_oral: ["听力观点", "区分说话人自己的立场与其转述的他人观点，注意 pourtant、mais 等转折。"],
-  information_detaillee_orale: ["听力细节", "答案常由限定条件决定。数字、时间或否定信息只播放一次，需要避免凭印象作答。"],
-  cause_orale: ["听力因果", "找出真正促成变化的原因，不要把背景信息或结果当作原因。"],
-  consigne_orale: ["口头指令", "确定对方要求完成的具体动作、方式和时限。"]
+  consigne: ["指令理解", "找出必须执行的动作、截止时间和条件；建议与强制要求要分开。"]
 };
 
 const OPTION_USAGE = {
@@ -54,7 +47,6 @@ export function buildAttemptAnalysis(question, selected) {
   const sourceZh = bilingual ? bilingual[1].trim() : "";
   let errorReasonZh = "本题作答正确。建议仍然确认决定答案的关键线索，避免只是猜对。";
   if (!correct && question.type === "reading") errorReasonZh = `你选择了“${selectedOption}”，但这个选项没有被原文完整支持。你的错误更接近“${label}”环节：可能抓到了局部相似词，却没有核对题干要求和决定性限定条件。`;
-  else if (!correct && question.type === "listening") errorReasonZh = `你选择了“${selectedOption}”。这个干扰项可能复用了录音中的词，但没有准确表达说话人的完整意思。需要加强“${label}”。`;
   else if (!correct) errorReasonZh = `你选择了“${selectedOption}”，说明“${label}”还不稳定。不要只看单词是否眼熟，应先判断句法位置、固定搭配或逻辑关系，再排除干扰项。`;
   const optionAnalysis = question.options.map((option, index) => {
     if (/il se peut\s+_+/i.test(question.prompt)) {

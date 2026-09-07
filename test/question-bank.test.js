@@ -21,12 +21,8 @@ test("reading bank covers the full CEFR progression and always includes a docume
   assert.ok(reading.every((question) => question.passage && question.passage.split(/\s+/).length >= 8));
 });
 
-test("listening bank has playable scripts and exam coverage", () => {
-  const listening = questionBank.filter((question) => question.type === "listening");
-  assert.ok(listening.length >= 8);
-  assert.ok(listening.every((question) => question.audioText.split(/\s+/).length >= 10));
-  assert.ok(listening.some((question) => question.exam === "tcf"));
-  assert.ok(listening.some((question) => question.exam === "tef"));
+test("question bank contains no listening section", () => {
+  assert.equal(questionBank.some((question) => question.type === "listening"), false);
 });
 
 test("blueprint defines bounded reading skills and length for each level", () => {

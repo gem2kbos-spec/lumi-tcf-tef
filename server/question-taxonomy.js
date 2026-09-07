@@ -14,9 +14,7 @@ export const QUESTION_CATEGORIES = [
   { id: "collocations", type: "vocabulary", label: "词语搭配与固定表达", description: "高频动宾搭配和习惯表达", skills: ["collocation"] },
   { id: "reading-explicit", type: "reading", label: "信息定位与指令", description: "定位明确事实、时间、条件和操作要求", skills: ["information_explicite", "consigne", "information_detaillee"] },
   { id: "reading-purpose", type: "reading", label: "主旨、目的与作者意图", description: "识别文本核心、交际目的和作者立场", skills: ["idee_principale", "but_du_message", "intention_auteur"] },
-  { id: "reading-inference", type: "reading", label: "推断与逻辑关系", description: "推断隐含信息、原因、结果和态度", skills: ["inference", "cause_consequence"] },
-  { id: "listening-explicit", type: "listening", label: "听力信息定位", description: "抓取时间、地点、人物、指令和具体信息", skills: ["information_orale", "information_detaillee_orale", "consigne_orale"] },
-  { id: "listening-purpose", type: "listening", label: "听力主旨、意图与观点", description: "判断说话目的、中心意思和态度", skills: ["intention_orale", "idee_principale_orale", "point_de_vue_oral", "cause_orale"] }
+  { id: "reading-inference", type: "reading", label: "推断与逻辑关系", description: "推断隐含信息、原因、结果和态度", skills: ["inference", "cause_consequence"] }
 ];
 
 export function categoryFor(question) {

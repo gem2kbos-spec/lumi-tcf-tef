@@ -1,4 +1,4 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], audioPlayed: false, productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const richInline = (value) => escapeHtml(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`(.+?)`/g, "<code>$1</code>");
@@ -23,7 +23,7 @@ function restorePreferences() {
   try {
     const saved = JSON.parse(localStorage.getItem(userStorageKey("preferences")) || "null"); if (!saved) return;
     if (saved.exam && catalogs[saved.exam]) state.exam = saved.exam;
-    if (saved.type) state.type = saved.type;
+    if (["grammar", "vocabulary", "reading"].includes(saved.type)) state.type = saved.type;
     if (saved.level && [...$("#level").options].some((option) => option.value === saved.level)) $("#level").value = saved.level;
     if (saved.bankType) $("#bank-type").value = saved.bankType;
     if (saved.bankLevel) $("#bank-level").value = saved.bankLevel;
@@ -33,7 +33,7 @@ function restorePreferences() {
 }
 function prepareResume() {
   const saved = readPracticeSession(); const button = $("#open-practice-hub"); if (!saved) return;
-  const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读", listening: "听力" };
+  const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读" };
   button.classList.add("has-resume"); button.innerHTML = `<span><small>继续上次训练</small>${labels[saved.type] || "机经"} · ${escapeHtml(saved.question.level || "综合")} · 第 ${saved.continuousNumber || 1} 题</span><b>继续 →</b>`;
   button.onclick = () => {
     Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
@@ -86,19 +86,17 @@ function activateWorkspace(viewId, { updateHash = true } = {}) {
 
 const catalogs = {
   tcf: {
-    title: "TCF 预签证 / DAP", note: "必考：三项 QCM + 书面表达",
+    title: "TCF 重点训练", note: "语法、词汇、阅读与书面表达",
     modules: [
-      ["listening", "听力理解", "29题 · 25分钟", "一次播放，难度递进", "CO"],
       ["grammar", "语言结构", "18题 · 15分钟", "语法、词汇与语域", "MSL"],
       ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"],
       ["writing", "书面表达", "3项 · 60分钟", "信息、叙述与观点比较", "EE"]
     ]
   },
   tef: {
-    title: "TEF 全题型训练", note: "报考版本决定实际必考组合",
+    title: "TEF 重点训练", note: "阅读、词汇结构与表达",
     modules: [
       ["reading", "阅读理解", "40题 · 60分钟", "四选一，可自由导航", "CE"],
-      ["listening", "听力理解", "40题 · 40分钟", "一次播放，不可返回", "CO"],
       ["mixed", "词汇与结构", "40题 · 30分钟", "TEF Études 等版本使用", "LS"],
       ["writing", "书面表达", "2项 · 60分钟", "续写事件与论证观点", "EE"],
       ["speaking", "口语表达", "2项 · 15分钟", "询问信息与说服", "EO"]
@@ -194,7 +192,7 @@ async function refreshStats() {
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
   $("#authentic-progress").textContent = `${stats.bank.completed}/${stats.bank.total}`;
   $("#dashboard-accuracy").textContent = stats.total ? `${stats.accuracy}%` : "暂无"; $("#dashboard-streak").textContent = stats.streak; $("#dashboard-remaining").textContent = stats.bank.remaining;
-  const abilityLabels = { listening: "听力", grammar: "语言结构", reading: "阅读" };
+  const abilityLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读" };
   $("#ability-overview").replaceChildren(...Object.entries(abilityLabels).map(([type, label]) => { const item = stats.byType[type] || { total: 0, accuracy: 0 }; const row = document.createElement("div"); row.innerHTML = `<span>${label}<small>${item.total ? `${item.total}题` : "暂无数据"}</small></span><i><b style="width:${item.total ? item.accuracy : 0}%"></b></i><strong>${item.total ? `${item.accuracy}%` : "—"}</strong>`; return row; }));
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 4); $("#weak-card").hidden = weak.length === 0;
@@ -230,7 +228,7 @@ function refreshKnowledge() {
 async function openKnowledge(topicId = currentKnowledgeId) {
   const payload = await api(`/api/knowledge/${encodeURIComponent(topicId)}`); const topic = payload.topic;
   currentKnowledgeId = topic.id; knowledgeChat = []; showKnowledgePreview(topic);
-  $("#lesson-title").textContent = topic.title; $("#lesson-meta").textContent = `${topic.level} · ${topic.type === "grammar" ? "语言结构" : topic.type === "reading" ? "阅读理解" : "听力理解"} · ${topic.skill.replaceAll("_", " ")}`;
+  $("#lesson-title").textContent = topic.title; $("#lesson-meta").textContent = `${topic.level} · ${topic.type === "grammar" ? "语言结构" : topic.type === "reading" ? "阅读理解" : "词汇"} · ${topic.skill.replaceAll("_", " ")}`;
   $("#lesson-content").innerHTML = `${topic.sections.map(([title, content], index) => `<article class="lesson-rule"><span>${index + 1}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(content)}</p></article>`).join("")}<section class="lesson-examples"><h3>对比例句</h3>${topic.examples.map(([example, note]) => `<div class="lesson-example"><strong lang="fr">${escapeHtml(example)}</strong><p>${escapeHtml(note)}</p></div>`).join("")}</section>`;
   $("#knowledge-topics").replaceChildren(...knowledgeTopics.map((item) => { const button = document.createElement("button"); button.textContent = item.title; button.classList.toggle("active", item.id === topic.id); button.addEventListener("click", () => openKnowledge(item.id)); return button; }));
   $("#knowledge-messages").innerHTML = '<p class="chat-hint">例如：为什么 penser à quelqu’un 不能用 y？请换一种方式讲数量为什么要保留。</p>';
@@ -286,7 +284,7 @@ function createJournalCard(entry) {
   const top = document.createElement("div"); const kind = document.createElement("span"); const time = document.createElement("time");
   kind.textContent = entry.kind === "mistake" ? "错题考点" : isQuickReference(entry) ? "速查表" : "答疑整理"; time.textContent = new Date(entry.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }); top.append(kind, time);
   const title = document.createElement("h3"); title.textContent = entry.title;
-  const meta = document.createElement("div"); meta.className = "journal-meta"; [entry.meta?.category, entry.meta?.level, entry.meta?.type === "reading" ? "阅读" : entry.meta?.type === "vocabulary" ? "词汇" : entry.meta?.type === "grammar" ? "语法" : entry.meta?.type === "listening" ? "听力" : ""].filter(Boolean).forEach((text) => { const chip = document.createElement("span"); chip.textContent = text; meta.append(chip); });
+  const meta = document.createElement("div"); meta.className = "journal-meta"; [entry.meta?.category, entry.meta?.level, entry.meta?.type === "reading" ? "阅读" : entry.meta?.type === "vocabulary" ? "词汇" : entry.meta?.type === "grammar" ? "语法" : ""].filter(Boolean).forEach((text) => { const chip = document.createElement("span"); chip.textContent = text; meta.append(chip); });
   const question = document.createElement("p"); question.className = "journal-question"; question.textContent = `${entry.kind === "question" ? "我的提问" : "原题回看"}：${entry.question}`;
   const detail = document.createElement("details"); const summary = document.createElement("summary"); const content = document.createElement("div"); content.className = "journal-content"; summary.textContent = entry.kind === "mistake" ? "展开错因与解析" : "展开整理内容"; renderTutorRichText(content, entry.content); detail.append(summary, content);
   card.append(top, title); if (meta.children.length) card.append(meta); card.append(question, detail); return card;
@@ -369,7 +367,7 @@ function captureVocabularySelection() {
 async function loadInsights() {
   const insights = await api("/api/insights");
   $("#daily-recommendation").textContent = `建议 ${insights.recommendedToday} 题`;
-  const typeLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读", listening: "听力" };
+  const typeLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读" };
   const skillLabels = {
     technologie: "科技主题", culture: "文化主题", médias: "媒体主题", société: "社会主题",
     "identifier l'intention": "判断说话意图", "comprendre l'idée principale": "理解主旨",
@@ -442,9 +440,9 @@ async function loadBank(reset = true) {
     const cards = payload.questions.map((question) => {
     const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
     const source = "机经";
-    const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
+    const preview = question.passage ? question.passage.slice(0, 105) : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3>${question.passage || question.type === "listening" ? `<p>${escapeHtml(preview)}</p>` : ""}<div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3>${question.passage ? `<p>${escapeHtml(preview)}</p>` : ""}<div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
     if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
     });
     if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
@@ -529,13 +527,12 @@ async function submitQuestionComment(event) {
 }
 
 function render() {
-  const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false; $("#practice-hub").classList.add("is-answering"); $("#practice-hub").classList.remove("show-settings");
+  const question = state.questions[state.index]; state.answered = false; state.submitting = false; $("#practice-hub").classList.add("is-answering"); $("#practice-hub").classList.remove("show-settings");
   $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
   $("#source").textContent = currentSource === "review" ? "错题复习" : "机经";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
-  $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
@@ -543,13 +540,6 @@ function render() {
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
   savePreferences(); savePracticeSession();
   revealPractice({ smooth: state.continuousNumber > 1 });
-}
-
-function playAudio() {
-  if (state.audioPlayed) return; const question = state.questions[state.index]; if (!question?.audioText) return;
-  state.audioPlayed = true; $("#play-audio").disabled = true; $("#play-audio").textContent = "正在播放…";
-  const speech = new SpeechSynthesisUtterance(question.audioText); speech.lang = "fr-FR"; speech.rate = 0.92;
-  speech.onend = () => { $("#play-audio").textContent = "✓ 已播放"; }; window.speechSynthesis.speak(speech);
 }
 
 async function answer(selected, selectedButton) {
@@ -624,7 +614,7 @@ async function askTutor(question) {
   finally { clearInterval(timer); button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
 }
 
-$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
+$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
 $("#toggle-practice-settings").addEventListener("click", () => { const hub = $("#practice-hub"); hub.classList.toggle("show-settings"); $("#toggle-practice-settings").textContent = hub.classList.contains("show-settings") ? "收起训练设置" : "调整训练设置"; });
 $("#level").addEventListener("change", savePreferences);

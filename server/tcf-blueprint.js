@@ -10,14 +10,12 @@ export const TCF_BLUEPRINT = {
     A2: {
       readingWords: [25, 90],
       reading: ["repérer une information explicite", "comprendre une consigne", "identifier le but d'un message", "comprendre une correspondance simple"],
-      listening: ["comprendre une annonce simple", "identifier une situation", "repérer une information explicite", "comprendre une conversation quotidienne"],
       grammar: ["présent", "passé composé", "futur proche", "articles", "prépositions", "pronoms COD/COI simples", "comparaison", "négation"],
       vocabulary: ["vie quotidienne", "logement", "achats", "transport", "santé", "travail", "loisirs", "services"]
     },
     B1: {
       readingWords: [70, 180],
       reading: ["identifier l'idée principale", "relier des informations", "comprendre une cause ou une conséquence", "inférer une intention", "comprendre un point de vue clairement exprimé", "déduire le sens d'un mot en contexte"],
-      listening: ["identifier l'intention", "comprendre l'idée principale", "repérer une information détaillée", "inférer l'attitude d'un locuteur", "comprendre un échange professionnel courant"],
       grammar: ["imparfait et passé composé", "plus-que-parfait", "futur", "conditionnel présent", "subjonctif fréquent", "pronoms y et en", "pronoms relatifs", "hypothèse avec si", "connecteurs logiques", "discours indirect simple"],
       vocabulary: ["travail", "éducation", "environnement", "technologie", "culture", "médias", "société", "relations", "mobilité", "consommation"]
     }

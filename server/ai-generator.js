@@ -28,10 +28,10 @@ const schema = {
 export async function generateQuestions({ type, level, count, weakSkills = [], referenceQuestion = null, variationRequest = "" }) {
   if (!aiEnabled()) return null;
   const blueprint = blueprintFor(type, level);
-  const section = type === "grammar" ? "maîtrise des structures" : type === "reading" ? "compréhension écrite" : type === "listening" ? "compréhension orale" : "lexique en contexte";
+  const section = type === "grammar" ? "maîtrise des structures" : type === "reading" ? "compréhension écrite" : "lexique en contexte";
   const reference = referenceQuestion ? `Crée une variation du même point précis « ${referenceQuestion.skill} ». Reproduis le mécanisme d'évaluation et le niveau, mais change entièrement le contexte, les formulations, les exemples, les valeurs et l'ordre de la bonne réponse. Ne copie aucune phrase de la question de référence. Demande personnelle du candidat : ${variationRequest || "aucune contrainte supplémentaire"}. Respecte-la seulement si elle reste compatible avec le niveau et le format.` : "";
   const custom = !referenceQuestion && variationRequest ? `Contrainte personnelle du candidat : ${variationRequest}. Respecte-la si elle reste compatible avec le niveau et le format.` : "";
-  const instructions = `Tu es un concepteur expert des tests de français TCF et TEF. Crée des QCM originaux de ${section}, niveau CECR ${level}. Respecte strictement ce référentiel public : ${JSON.stringify(blueprint)}. ${reference} ${custom} Imite le mode d'évaluation sans reproduire de question protégée. Une seule réponse doit être incontestablement correcte et directement justifiable. Avant de répondre, remplace mentalement le blanc par CHACUNE des quatre options et vérifie que la position du blanc est syntaxiquement correcte. Pour les pronoms compléments, respecte impérativement leur place avant le verbe conjugué ou avant l'auxiliaire : écris « je l'ai vu », jamais « j'ai vu le/l' ». Une option avec apostrophe doit être suivie d'une voyelle ou d'un h muet. Les distracteurs doivent être plausibles, homogènes et sans ambiguïté. N'exige aucune connaissance extérieure au document. Rédige tout en français. Donne une explication pédagogique qui justifie la phrase complète correcte. Pour la lecture, passage contient le document. Pour l'écoute, audioText contient un court document oral naturel et le candidat ne doit pas voir sa transcription. Pour les autres sections, ces champs sont des chaînes vides. Compétences faibles à renforcer : ${weakSkills.join(", ") || "aucune donnée"}.`;
+  const instructions = `Tu es un concepteur expert des tests de français TCF et TEF. Crée des QCM originaux de ${section}, niveau CECR ${level}. Respecte strictement ce référentiel public : ${JSON.stringify(blueprint)}. ${reference} ${custom} Imite le mode d'évaluation sans reproduire de question protégée. Une seule réponse doit être incontestablement correcte et directement justifiable. Avant de répondre, remplace mentalement le blanc par CHACUNE des quatre options et vérifie que la position du blanc est syntaxiquement correcte. Pour les pronoms compléments, respecte impérativement leur place avant le verbe conjugué ou avant l'auxiliaire : écris « je l'ai vu », jamais « j'ai vu le/l' ». Une option avec apostrophe doit être suivie d'une voyelle ou d'un h muet. Les distracteurs doivent être plausibles, homogènes et sans ambiguïté. N'exige aucune connaissance extérieure au document. Rédige tout en français. Donne une explication pédagogique qui justifie la phrase complète correcte. Pour la lecture, passage contient le document. Pour les autres sections, passage et audioText sont des chaînes vides. Compétences faibles à renforcer : ${weakSkills.join(", ") || "aucune donnée"}.`;
 
   let lastError;
   for (let attempt = 0; attempt < 3; attempt++) {
@@ -68,11 +68,11 @@ export function validateGeneratedQuestions(questions, { type, level, count }) {
     if (!question.prompt.trim() || !question.explanation.trim()) throw new Error("AI returned an incomplete question.");
     if (new Set(question.options.map((option) => option.trim().toLowerCase())).size !== 4) throw new Error("AI returned duplicate answer choices.");
     validateBlankPlacement(question);
+    if (type === "vocabulary" && !/[?？]|_{2,}|…{2,}|\.{3,}/.test(question.prompt)) throw new Error("AI vocabulary prompt is not an answerable question.");
     if (type === "reading") {
       const words = question.passage.trim().split(/\s+/).filter(Boolean).length;
       if (words < blueprint.wordRange[0] || words > blueprint.wordRange[1]) throw new Error("AI reading passage is outside the target length.");
     } else if (question.passage !== "") throw new Error("AI returned an unexpected passage.");
-    if (type === "listening" && question.audioText.trim().split(/\s+/).length < 8) throw new Error("AI listening script is too short.");
-    if (type !== "listening" && question.audioText !== "") throw new Error("AI returned an unexpected audio script.");
+    if (question.audioText !== "") throw new Error("AI returned an unexpected audio script.");
   }
 }

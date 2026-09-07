@@ -33,7 +33,6 @@ test("weak skills keep grammar and reading mistakes separate", () => {
   assert.equal(stats.weakSkills.length, 2);
   assert.deepEqual(new Set(stats.weakSkills.map((item) => item.type)), new Set(["grammar", "reading"]));
   assert.equal(weakSkillForType(stats.weakSkills, "reading"), "inference");
-  assert.equal(weakSkillForType(stats.weakSkills, "listening"), null);
 });
 
 test("summarize handles an empty history", () => {

@@ -23,7 +23,7 @@ export async function loadImportedQuestions() {
 }
 
 export function validateImportedQuestions(questions) {
-  const allowedTypes = new Set(["vocabulary", "grammar", "reading", "listening"]);
+  const allowedTypes = new Set(["vocabulary", "grammar", "reading"]);
   const ids = new Set();
   for (const [index, question] of questions.entries()) {
     const label = question.id || `第 ${index + 1} 题`;
@@ -34,7 +34,6 @@ export function validateImportedQuestions(questions) {
     if (question.id && ids.has(question.id)) throw new Error(`${label}: duplicate id`);
     if (question.id) ids.add(question.id);
     if (question.type === "reading" && !question.passage) throw new Error(`${label}: reading passage required`);
-    if (question.type === "listening" && !question.audioText) throw new Error(`${label}: audioText required`);
   }
   return true;
 }
