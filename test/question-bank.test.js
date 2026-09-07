@@ -14,11 +14,11 @@ test("all bank questions have one valid answer among four options", () => {
   }
 });
 
-test("reading bank covers both target levels and always includes a document", () => {
+test("reading bank covers the full CEFR progression and always includes a document", () => {
   const reading = questionBank.filter((question) => question.type === "reading");
-  assert.equal(reading.length, 10);
-  assert.deepEqual(new Set(reading.map((question) => question.level)), new Set(["A2", "B1"]));
-  assert.ok(reading.every((question) => question.passage && question.passage.split(/\s+/).length >= 20));
+  assert.ok(reading.length >= 60);
+  assert.deepEqual(new Set(reading.map((question) => question.level)), new Set(["A1", "A2", "B1", "B2", "C1", "C2"]));
+  assert.ok(reading.every((question) => question.passage && question.passage.split(/\s+/).length >= 8));
 });
 
 test("listening bank has playable scripts and exam coverage", () => {

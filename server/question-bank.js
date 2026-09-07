@@ -1,4 +1,5 @@
 import { mockGrammarBatch001 } from "./mock-grammar-batch-001.js";
+import mockReadingBatch001 from "./mock-reading-batch-001.json" with { type: "json" };
 
 export const questionBank = [
   {
@@ -265,5 +266,6 @@ export const questionBank = [
     options: ["Commander un autre produit", "Contacter directement le transporteur", "Compléter rapidement son adresse", "Récupérer le colis au magasin"], answer: 2,
     explanation: "Le client doit ajouter le numéro de l'appartement avant ce soir.", skill: "consigne_orale"
   },
-  ...mockGrammarBatch001
+  ...mockGrammarBatch001,
+  ...mockReadingBatch001
 ];
