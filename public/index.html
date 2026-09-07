@@ -49,21 +49,27 @@
       <div class="brand"><span>lu</span> Lumi Français</div>
       <div class="header-actions"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号</button></div>
     </header>
-    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#practice-entry">连续刷题</a><a href="#ai-center">机经补缺</a><a href="#bank-center">机经题库</a></nav>
+    <nav class="quick-nav workspace-nav" aria-label="功能入口">
+      <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>考试专项</strong><small>TCF / TEF</small></a>
+      <a href="#practice-entry" data-workspace-view="practice-entry"><strong>连续刷题</strong><small>从易到难</small></a>
+      <a href="#bank-center" data-workspace-view="bank-center"><strong>机经题库</strong><small>筛选与进度</small></a>
+      <a href="#ai-center" data-workspace-view="ai-center"><strong>AI补缺</strong><small>考点强化</small></a>
+      <a href="#activity-center" data-workspace-view="activity-center"><strong>训练记录</strong><small>历史与诊断</small></a>
+    </nav>
     <section class="hero">
       <div class="knowledge-summary">
         <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
         <button id="refresh-knowledge" aria-label="刷新知识点">↻ 换一个</button>
       </div>
     </section>
-    <section id="exam-center" class="exam-hub">
+    <section id="exam-center" class="exam-hub workspace-panel active">
       <div class="exam-tabs" role="group" aria-label="选择考试">
         <button class="active" data-exam="tcf"><strong>TCF</strong><span>预签证 / DAP</span></button>
         <button data-exam="tef"><strong>TEF</strong><span>全题型训练</span></button>
       </div>
       <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
-    <section id="activity-center" class="activity-panel">
+    <section id="activity-center" class="activity-panel workspace-panel">
       <div class="activity-heading"><div><p class="label">训练记录</p><h2>机经完成进度</h2></div><div class="activity-actions"><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div><button id="open-history">查看做题历史 →</button></div></div>
       <div class="activity-metrics">
         <article><span>历史已做机经</span><strong id="history-authentic">0 / 0</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 机经进度</small></article>
@@ -73,11 +79,11 @@
       </div>
       <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>机经库总量 <b id="authentic-total">0题</b></span></div>
     </section>
-    <section id="practice-entry" class="practice-entry">
+    <section id="practice-entry" class="practice-entry workspace-panel">
       <div><p class="label">连续刷题</p><h2>从简单到困难，一题一题完成</h2><p>选择语法、词汇、阅读或听力；每题作答后立即查看中法解析。</p></div>
       <button id="open-practice-hub">打开连续刷题窗口 <span>→</span></button>
     </section>
-    <section id="ai-center" class="ai-lab">
+    <section id="ai-center" class="ai-lab workspace-panel">
       <div class="section-heading"><div><p class="label">机经补缺训练室</p><h2>补充现有机经尚未覆盖的考试考点</h2></div><span class="ai-badge">公开考试范围约束</span></div>
       <div class="ai-lab-grid">
         <label>生成策略<select id="ai-mode"><option value="gap">机经缺口补充</option><option value="weak">重点考点强化</option></select></label>
@@ -88,7 +94,7 @@
       </div>
       <div id="coverage-gaps" class="coverage-gaps"></div>
     </section>
-    <section id="bank-center" class="bank-browser">
+    <section id="bank-center" class="bank-browser workspace-panel">
       <div class="section-heading"><div><p class="label">可滚动题库</p><h2>查看可作答题目</h2></div><div><strong id="bank-count">0</strong><span> 道可练题</span></div></div>
       <div class="category-heading"><div><strong>按细分考点进入</strong><span>每类显示机经题量与完成进度</span></div><select id="category-type" aria-label="细分题型"><option value="grammar">语法选择题</option><option value="vocabulary">词汇题</option><option value="reading">阅读理解</option><option value="listening">听力理解</option></select></div>
       <div id="category-grid" class="category-grid" aria-live="polite"></div>

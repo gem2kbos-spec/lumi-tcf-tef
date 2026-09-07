@@ -70,6 +70,18 @@ let tutorHistory = [];
 let journalEntries = [];
 let journalFilter = "all";
 let historyAttempts = [];
+const workspacePanelIds = ["exam-center", "activity-center", "practice-entry", "ai-center", "bank-center"];
+
+function activateWorkspace(viewId, { updateHash = true } = {}) {
+  const target = workspacePanelIds.includes(viewId) ? viewId : "exam-center";
+  document.body.classList.add("workspace-navigation-ready");
+  document.body.dataset.workspaceView = target;
+  workspacePanelIds.forEach((id) => $("#" + id)?.classList.toggle("active", id === target));
+  document.querySelectorAll("[data-workspace-view]").forEach((item) => item.classList.toggle("active", item.dataset.workspaceView === target));
+  if (updateHash && location.hash !== `#${target}`) history.replaceState(null, "", `#${target}`);
+  if (target === "practice-entry") { openPracticeHub(); return; }
+  requestAnimationFrame(() => $("#" + target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+}
 
 const catalogs = {
   tcf: {
@@ -610,6 +622,8 @@ $("#open-journal").addEventListener("click", openJournal); $("#close-journal").a
 $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
+document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
+window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
 document.querySelectorAll("[data-journal-filter]").forEach((button) => button.addEventListener("click", () => { journalFilter = button.dataset.journalFilter; document.querySelectorAll("[data-journal-filter]").forEach((item) => item.classList.toggle("active", item === button)); renderJournal(); }));
 $("#lookup-selection").addEventListener("click", () => selectedVocabulary && lookupWord(selectedVocabulary.word, selectedVocabulary.context));
@@ -643,7 +657,7 @@ document.addEventListener("keydown", (event) => { const editing = event.target.c
 let appInitialized = false;
 async function initializeApp() {
   if (appInitialized) return; appInitialized = true;
-  restorePreferences(); renderCatalog(); prepareResume();
+  restorePreferences(); renderCatalog(); prepareResume(); activateWorkspace(location.hash.slice(1) || "exam-center", { updateHash: false });
   const healthPromise = api("/api/health").then((health) => {
     const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库";
     $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 机经可用 · AI未连接";

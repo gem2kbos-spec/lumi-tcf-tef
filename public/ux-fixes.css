@@ -1,4 +1,14 @@
 body.app-booting main, body.app-booting .study-tools { visibility: hidden; pointer-events: none; }
+.workspace-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: min(760px, 100%); }
+.workspace-nav a { display: grid; gap: 2px; min-width: 0; padding: 10px 13px; text-align: center; text-decoration: none; }
+.workspace-nav a strong { font-size: 13px; color: #223b31; }
+.workspace-nav a small { font-size: 9px; color: #87918b; white-space: nowrap; }
+.workspace-nav a.active { background: #173d31; border-radius: 18px; }
+.workspace-nav a.active strong, .workspace-nav a.active small { color: white; }
+.workspace-navigation-ready .workspace-panel:not(.active) { display: none !important; }
+.workspace-navigation-ready:not([data-workspace-view="exam-center"]) .hero { display: none; }
+.workspace-navigation-ready .workspace-panel.active { animation: workspace-in .18s ease-out; }
+@keyframes workspace-in { from { opacity: .35; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 .app-toast { position: fixed; z-index: 15000; left: 50%; bottom: 28px; transform: translateX(-50%); width: min(520px, calc(100vw - 28px)); padding: 13px 17px; border-radius: 13px; background: #173d31; color: white; box-shadow: 0 15px 45px #10271e4d; font-weight: 700; text-align: center; }
 .app-toast[hidden] { display: none; }
 .app-toast[data-tone="error"] { background: #9b3d31; }
@@ -19,6 +29,9 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
   .app-toast { bottom: calc(76px + env(safe-area-inset-bottom)); font-size: 14px; }
   body:has(#practice-hub:not([hidden])) .app-toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
   #open-practice-hub.has-resume { min-height: 62px; }
+  .workspace-nav { display: flex; width: 100%; overflow-x: auto; justify-content: flex-start; }
+  .workspace-nav a { flex: 0 0 108px; min-height: 52px; padding: 8px 10px; }
+  .workspace-nav a.active { border-radius: 10px; }
   .bank-toolbar { top: 4px; display: grid; grid-template-columns: 1fr 1fr; backdrop-filter: none; }
   .bank-toolbar #bank-search { grid-column: 1/-1; }
   #clear-bank-filters { min-height: 46px; }
