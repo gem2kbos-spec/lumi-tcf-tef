@@ -92,6 +92,26 @@ main.app-shell {
 
 .practice-hub { border-radius: 28px; background: #f4f3ec; }
 .practice-hub > aside, .practice-hub .practice { border-radius: 20px; }
+.practice-hub:not(.is-answering) { display: grid; place-items: center; grid-template-columns: 1fr; padding: 32px; }
+.practice-hub:not(.is-answering) > aside { width: min(560px, 100%); padding: 34px; background: #fffef9; box-shadow: 0 18px 55px #183a2c12; }
+.practice-hub:not(.is-answering) > aside > .label { margin-bottom: 22px; color: var(--studio-green); font-size: 14px; text-transform: none; letter-spacing: 0; }
+.practice-hub:not(.is-answering) .practice { display: none; }
+.practice-hub:not(.is-answering) .stats,
+.practice-hub:not(.is-answering) .weak-card { display: none; }
+.practice-hub:not(.is-answering) .legacy-toggle { grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 20px; padding: 5px; border-radius: 14px; }
+.practice-hub:not(.is-answering) .legacy-toggle button { min-height: 48px; border-radius: 11px; }
+.practice-hub:not(.is-answering) aside label { margin: 0 0 18px; }
+.practice-hub:not(.is-answering) aside select { min-height: 50px; font-size: 15px; }
+.practice-hub:not(.is-answering) #start { min-height: 54px; margin-top: 4px; border-radius: 13px; font-size: 15px; }
+.practice-hub:not(.is-answering) #review { min-height: 48px; border-radius: 13px; }
+.practice-hub.is-answering { grid-template-columns: 260px minmax(0, 1fr); gap: 14px; padding: 18px; }
+.practice-hub.is-answering > aside { padding: 20px; }
+.practice-hub.is-answering .practice { min-height: calc(100vh - 72px); padding: clamp(28px, 4vw, 52px); }
+.practice-hub.is-answering #quiz { width: min(820px, 100%); margin: 0 auto; }
+.practice-hub.is-answering #prompt { font-size: clamp(23px, 2.5vw, 34px); letter-spacing: -.025em; }
+.practice-hub.is-answering .options { gap: 11px; margin-top: 28px; }
+.practice-hub.is-answering .options button { min-height: 58px; padding: 14px 17px; border-radius: 14px; font-size: 15px; }
+.practice-hub.is-answering .progress-bar { margin-bottom: 28px; }
 .study-tools { right: 18px; }
 .tool-ball { box-shadow: 0 9px 25px #14372a38; }
 
@@ -141,6 +161,12 @@ main.app-shell {
   .content-header .quiet-action { padding: 0 10px; }
   .bank-list { max-height: none; grid-template-columns: 1fr; }
   .study-tools { left: 8px; right: 8px; }
+  .practice-hub:not(.is-answering) { display: grid; padding: calc(58px + env(safe-area-inset-top)) 12px 20px; }
+  .practice-hub:not(.is-answering) > aside { width: 100%; padding: 22px 18px; margin: 0; box-shadow: none; }
+  .practice-hub:not(.is-answering) .legacy-toggle { grid-template-columns: repeat(2, 1fr) !important; }
+  .practice-hub.is-answering { display: block; padding: 58px 10px calc(18px + env(safe-area-inset-bottom)); }
+  .practice-hub.is-answering .practice { min-height: 0; padding: 19px 14px 28px; }
+  .practice-hub.is-answering #prompt { font-size: 22px; }
 }
 
 @media (max-width: 390px) {

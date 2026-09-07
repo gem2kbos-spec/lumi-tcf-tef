@@ -111,17 +111,17 @@
     <section id="practice-hub" class="dashboard practice-hub" role="dialog" aria-modal="true" aria-label="连续刷题" hidden>
       <button id="close-practice-hub" class="practice-hub-close" aria-label="关闭连续刷题窗口">×</button>
       <aside>
-        <p class="label">训练设置</p>
+        <p class="label">开始练习</p>
         <div class="toggle legacy-toggle" role="group" aria-label="题目类型">
           <button class="active" data-type="grammar">语法</button>
           <button data-type="vocabulary">词汇</button>
           <button data-type="reading">阅读</button>
           <button data-type="listening">听力</button>
         </div>
-        <label>训练范围<select id="level"><option value="all" selected>全部难度 · 由易到难</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+        <label>等级<select id="level"><option value="all" selected>全部等级</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label id="count-label">本组题数<select id="count"><option>1</option></select></label>
-        <button id="start" class="primary">开始连续刷题 <span>→</span></button>
-        <button id="review" class="secondary">复习错题 <span id="review-count">0</span></button>
+        <button id="start" class="primary">开始 <span>→</span></button>
+        <button id="review" class="secondary">错题复习 <span id="review-count">0</span></button>
         <div class="stats">
           <div><strong id="accuracy">0%</strong><span>正确率</span></div>
           <div><strong id="total">0</strong><span>已答题</span></div>
@@ -133,8 +133,8 @@
       <section id="practice" class="practice empty">
         <div id="welcome">
           <div class="orb">L</div>
-          <h2>选择训练范围</h2>
-          <p>选择题型和等级后开始。</p>
+          <h2>练习设置</h2>
+          <p>选择题型和等级。</p>
         </div>
         <div id="quiz" hidden>
           <button id="toggle-practice-settings" class="toggle-practice-settings" type="button">调整训练设置</button>

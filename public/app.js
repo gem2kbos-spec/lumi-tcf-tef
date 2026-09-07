@@ -412,7 +412,14 @@ async function loadHistory() {
 }
 function openHistory() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closePracticeHub(); $("#history-drawer").hidden = false; loadHistory(); }
 function closeHistory() { $("#history-drawer").hidden = true; }
-function openPracticeHub() { closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closeHistory(); $("#practice-hub").hidden = false; }
+function openPracticeHub() {
+  closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closeHistory();
+  if (!state.questions[state.index] || state.answered) {
+    $("#practice-hub").classList.remove("is-answering", "show-settings");
+    $("#quiz").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false; $("#practice").classList.add("empty");
+  }
+  $("#practice-hub").hidden = false;
+}
 function closePracticeHub() { $("#practice-hub").hidden = true; }
 
 async function loadBank(reset = true) {
@@ -495,7 +502,7 @@ async function start(typeOverride, preserveSequence = false) {
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
     $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   } catch (error) { showToast(`暂时无法载入题目：${error.message}`, "error"); }
-  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始连续刷题 "; }
+  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始 "; }
 }
 
 async function loadQuestionComments() {
