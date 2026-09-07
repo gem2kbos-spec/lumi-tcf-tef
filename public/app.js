@@ -70,18 +70,17 @@ let tutorHistory = [];
 let journalEntries = [];
 let journalFilter = "all";
 let historyAttempts = [];
-const workspacePanelIds = ["exam-center", "activity-center", "practice-entry", "ai-center", "bank-center"];
+const workspacePanelIds = ["exam-center", "activity-center", "ai-center", "bank-center"];
 
 function activateWorkspace(viewId, { updateHash = true } = {}) {
   const target = workspacePanelIds.includes(viewId) ? viewId : "exam-center";
-  const headings = { "exam-center": ["学习中心", "选择你的考试和训练专项"], "practice-entry": ["连续刷题", "从下一道题开始进步"], "bank-center": ["机经题库", "按考点、难度和进度查找"], "ai-center": ["AI补缺", "补齐机经没有覆盖的考点"], "activity-center": ["训练记录", "查看进度与最近表现"] };
+  const headings = { "exam-center": ["练习", "TCF / TEF 专项训练"], "bank-center": ["机经", "查找和做题"], "ai-center": ["AI专项", "生成补充练习"], "activity-center": ["记录", "进度和历史"] };
   document.body.classList.add("workspace-navigation-ready");
   document.body.dataset.workspaceView = target;
-  const [section, title] = headings[target]; $(".content-header span").textContent = section; $(".content-header strong").textContent = title;
+  const [section, title] = headings[target]; $("#content-section-label").textContent = section; $("#content-section-title").textContent = title;
   workspacePanelIds.forEach((id) => $("#" + id)?.classList.toggle("active", id === target));
   document.querySelectorAll("[data-workspace-view]").forEach((item) => item.classList.toggle("active", item.dataset.workspaceView === target));
   if (updateHash && location.hash !== `#${target}`) history.replaceState(null, "", `#${target}`);
-  if (target === "practice-entry") { openPracticeHub(); return; }
   requestAnimationFrame(() => $("#" + target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
 
@@ -624,7 +623,7 @@ $("#open-journal").addEventListener("click", openJournal); $("#close-journal").a
 $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
-$("#header-practice-shortcut").addEventListener("click", () => activateWorkspace("practice-entry"));
+$("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
 window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);

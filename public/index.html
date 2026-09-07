@@ -49,19 +49,17 @@
     <aside class="app-sidebar">
       <div class="sidebar-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF · TEF 学习工作台</small></div></div>
       <nav class="quick-nav workspace-nav" aria-label="功能入口">
-      <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>考试专项</strong><small>TCF / TEF</small></a>
-      <a href="#practice-entry" data-workspace-view="practice-entry"><strong>连续刷题</strong><small>从易到难</small></a>
-      <a href="#bank-center" data-workspace-view="bank-center"><strong>机经题库</strong><small>筛选与进度</small></a>
-      <a href="#ai-center" data-workspace-view="ai-center"><strong>AI补缺</strong><small>考点强化</small></a>
-      <a href="#activity-center" data-workspace-view="activity-center"><strong>训练记录</strong><small>历史与诊断</small></a>
+      <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>练习</strong><small>TCF / TEF 专项</small></a>
+      <a href="#bank-center" data-workspace-view="bank-center"><strong>机经</strong><small>查找和做题</small></a>
+      <a href="#activity-center" data-workspace-view="activity-center"><strong>记录</strong><small>进度和历史</small></a>
       </nav>
       <div class="sidebar-footer"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号与权限</button></div>
     </aside>
     <div class="app-content">
-      <header class="content-header"><div><span>学习中心</span><strong>今天继续向前一步</strong></div><button id="header-practice-shortcut" type="button">开始刷题 <b>→</b></button></header>
+      <header class="content-header"><div><span id="content-section-label">练习</span><strong id="content-section-title">TCF / TEF 专项训练</strong></div><div class="content-actions"><button id="open-ai-shortcut" class="quiet-action" type="button">AI专项</button><button id="open-practice-hub" type="button">开始刷题 <b>→</b></button></div></header>
     <section class="hero">
       <div class="knowledge-summary">
-        <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
+        <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">知识点</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看讲解和练习 →</i></button>
         <button id="refresh-knowledge" aria-label="刷新知识点">↻ 换一个</button>
       </div>
     </section>
@@ -82,12 +80,8 @@
       </div>
       <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>机经库总量 <b id="authentic-total">0题</b></span></div>
     </section>
-    <section id="practice-entry" class="practice-entry workspace-panel">
-      <div><p class="label">连续刷题</p><h2>从简单到困难，一题一题完成</h2><p>选择语法、词汇、阅读或听力；每题作答后立即查看中法解析。</p></div>
-      <button id="open-practice-hub">打开连续刷题窗口 <span>→</span></button>
-    </section>
     <section id="ai-center" class="ai-lab workspace-panel">
-      <div class="section-heading"><div><p class="label">机经补缺训练室</p><h2>补充现有机经尚未覆盖的考试考点</h2></div><span class="ai-badge">公开考试范围约束</span></div>
+      <div class="section-heading"><div><p class="label">AI专项</p><h2>生成补充练习</h2></div><span class="ai-badge">TCF / TEF 范围</span></div>
       <div class="ai-lab-grid">
         <label>生成策略<select id="ai-mode"><option value="gap">机经缺口补充</option><option value="weak">重点考点强化</option></select></label>
         <label>题型<select id="ai-type"><option value="grammar">语言结构</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select></label>
@@ -139,8 +133,8 @@
       <section id="practice" class="practice empty">
         <div id="welcome">
           <div class="orb">L</div>
-          <h2>Prêt à commencer ?</h2>
-          <p>选择必考专项，然后开始连续刷题。</p>
+          <h2>选择训练范围</h2>
+          <p>选择题型和等级后开始。</p>
         </div>
         <div id="quiz" hidden>
           <button id="toggle-practice-settings" class="toggle-practice-settings" type="button">调整训练设置</button>

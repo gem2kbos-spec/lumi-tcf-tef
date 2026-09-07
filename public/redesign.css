@@ -52,6 +52,8 @@ main.app-shell {
 .content-header strong { font-size: 17px; }
 .content-header button { display: flex; align-items: center; gap: 18px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--studio-green); color: white; font-weight: 800; cursor: pointer; }
 .content-header button b { color: var(--studio-lime); font-size: 18px; }
+.content-actions { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 8px !important; }
+.content-header .quiet-action { background: transparent; color: var(--studio-green); border: 1px solid var(--studio-line); }
 
 .app-content .hero { padding: 22px 0 16px; }
 .app-content .knowledge-summary { min-height: 164px; padding: 28px 30px; border: 0; border-radius: 22px; background: linear-gradient(120deg, #e9f2d5, #f5f6e8); box-shadow: inset 0 0 0 1px #dbe4c7; }
@@ -78,10 +80,6 @@ main.app-shell {
 .activity-metrics article { min-height: 150px; padding: 20px; background: #f4f5ef; border: 0; border-radius: 18px; }
 .activity-metrics strong { font-size: 31px; }
 .today-summary { padding: 20px 4px 0; }
-.app-content .practice-entry { min-height: 340px; padding: clamp(30px, 6vw, 78px); background: linear-gradient(135deg, #123d2f, #245d49); border: 0; }
-.practice-entry h2 { max-width: 650px; font-size: clamp(35px, 5vw, 64px); letter-spacing: -.055em; line-height: 1.02; }
-.practice-entry p { font-size: 15px; }
-.practice-entry > button { min-width: 230px; min-height: 58px; border-radius: 15px; font-size: 15px; }
 .app-content .ai-lab { background: var(--studio-panel); border-color: var(--studio-line); }
 .ai-lab-grid { grid-template-columns: 170px 170px 120px minmax(220px, 1fr); }
 .ai-lab-grid button { grid-column: 1/-1; min-height: 54px; font-size: 15px; }
@@ -139,9 +137,8 @@ main.app-shell {
   .module-card, .module-card:last-child { min-height: 120px; }
   .activity-metrics { grid-template-columns: 1fr 1fr; }
   .activity-metrics article { min-height: 126px; }
-  .app-content .practice-entry { min-height: calc(100dvh - 235px); justify-content: center; padding: 28px 20px; }
-  .practice-entry h2 { font-size: 38px; }
-  .practice-entry > button { width: 100%; min-width: 0; }
+  .content-actions { gap: 5px !important; }
+  .content-header .quiet-action { padding: 0 10px; }
   .bank-list { max-height: none; grid-template-columns: 1fr; }
   .study-tools { left: 8px; right: 8px; }
 }
