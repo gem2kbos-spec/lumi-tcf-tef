@@ -1,7 +1,9 @@
 import { mockGrammarBatch001 } from "./mock-grammar-batch-001.js";
 import { mockGrammarBatch002 } from "./mock-grammar-batch-002.js";
+import mockGrammarBatch003 from "./mock-grammar-batch-003.json" with { type: "json" };
 import mockReadingBatch001 from "./mock-reading-batch-001.json" with { type: "json" };
 import mockReadingBatch002 from "./mock-reading-batch-002.json" with { type: "json" };
+import mockReadingBatch003 from "./mock-reading-batch-003.json" with { type: "json" };
 
 export const questionBank = [
   {
@@ -270,6 +272,8 @@ export const questionBank = [
   },
   ...mockGrammarBatch001,
   ...mockGrammarBatch002,
+  ...mockGrammarBatch003,
   ...mockReadingBatch001,
-  ...mockReadingBatch002
+  ...mockReadingBatch002,
+  ...mockReadingBatch003
 ];
