@@ -108,7 +108,16 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth, aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) }) : sendJson(res, 401, { error: "AUTH_REQUIRED" });
     if (url.pathname.startsWith("/api/")) {
       if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
-      if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, { user: auth, orders: await ordersForUser(auth.id), plans, paymentQrUrl: process.env.PAYMENT_QR_URL || "", aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) });
+      if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, {
+        user: auth,
+        orders: await ordersForUser(auth.id),
+        plans,
+        paymentMethods: {
+          wechat: process.env.PAYMENT_WECHAT_QR_URL || process.env.PAYMENT_QR_URL || "/assets/payment-wechat.jpg",
+          alipay: process.env.PAYMENT_ALIPAY_QR_URL || "/assets/payment-alipay.jpg"
+        },
+        aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id)
+      });
       if (req.method === "POST" && url.pathname === "/api/orders") { try { const input = await body(req); return sendJson(res, 201, { order: await createOrder(auth.id, input) }); } catch (error) { return sendJson(res, 409, { error: error.message }); } }
       if (url.pathname === "/api/admin/overview" && req.method === "GET") return auth.role === "admin" ? sendJson(res, 200, await adminOverview()) : sendJson(res, 403, { error: "ADMIN_REQUIRED" });
       if (url.pathname === "/api/admin/orders/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await reviewOrder(auth.id, input.orderId, input.action)); } catch (error) { return sendJson(res, 409, { error: error.message }); } }
@@ -381,7 +390,12 @@ const server = http.createServer(async (req, res) => {
     const filePath = path.join(publicDir, requested);
     if (!filePath.startsWith(publicDir)) return sendJson(res, 403, { error: "Forbidden" });
     const content = await readFile(filePath);
-    const contentType = filePath.endsWith(".css") ? "text/css" : filePath.endsWith(".js") ? "text/javascript" : "text/html";
+    const contentType = filePath.endsWith(".css") ? "text/css"
+      : filePath.endsWith(".js") ? "text/javascript"
+        : /\.jpe?g$/i.test(filePath) ? "image/jpeg"
+          : filePath.endsWith(".png") ? "image/png"
+            : filePath.endsWith(".svg") ? "image/svg+xml"
+              : "text/html";
     res.writeHead(200, { "Content-Type": `${contentType}; charset=utf-8`, "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
     res.end(content);
   } catch (error) {
