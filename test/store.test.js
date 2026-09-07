@@ -97,3 +97,16 @@ test("activitySummary excludes removed authentic questions from current-bank pro
   assert.equal(result.authenticPercentage, 50);
   assert.equal(result.todayTotal, 2, "历史记录本身仍应保留");
 });
+
+test("activitySummary reports one unified machine-question bank", () => {
+  const attempts = [
+    { questionId: "imported-1", correct: true, createdAt: "2026-08-07T01:00:00.000Z", question: { source: "user_imported" } },
+    { questionId: "mock-1", correct: false, createdAt: "2026-08-07T02:00:00.000Z", question: { source: "mock" } },
+    { questionId: "mock-1", correct: true, createdAt: "2026-08-07T03:00:00.000Z", question: { source: "mock" } }
+  ];
+  const result = activitySummary(attempts, [{ id: "imported-1" }], new Date("2026-08-07T04:00:00.000Z"), "Asia/Shanghai", [{ id: "imported-1" }, { id: "mock-1" }, { id: "curated-1" }]);
+  assert.equal(result.historicBank, 2);
+  assert.equal(result.todayBank, 2);
+  assert.equal(result.bankTotal, 3);
+  assert.equal(result.bankPercentage, 67);
+});

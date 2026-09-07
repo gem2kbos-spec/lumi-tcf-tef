@@ -140,11 +140,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "GET" && url.pathname === "/api/stats") {
       const progress = await readProgress(storageKey);
       const imported = await loadImportedQuestions();
-      return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported) });
+      return sendJson(res, 200, { ...summarize(progress.attempts), imported: importedProgress(progress.attempts, imported), bank: sequenceProgress(progress.attempts, [...imported, ...questionBank]) });
     }
     if (req.method === "GET" && url.pathname === "/api/activity") {
       const progress = await readProgress(storageKey); const imported = await loadImportedQuestions();
-      return sendJson(res, 200, activitySummary(progress.attempts, imported));
+      return sendJson(res, 200, activitySummary(progress.attempts, imported, new Date(), "Asia/Shanghai", [...imported, ...questionBank]));
     }
     if (req.method === "GET" && url.pathname === "/api/history") {
       const progress = await readProgress(storageKey); const type = url.searchParams.get("type") || "all"; const result = url.searchParams.get("result") || "all"; const source = url.searchParams.get("source") || "all"; const level = url.searchParams.get("level") || "all";
@@ -303,11 +303,10 @@ const server = http.createServer(async (req, res) => {
         const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
         matching.sort((a, b) => a.difficulty - b.difficulty || a.order - b.order);
         const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
-        const importedMatching = matching.filter((item) => item.source === "user_imported");
-        const nextImported = importedMatching.filter((item) => !completedIds.has(item.id));
+        const nextInBank = matching.filter((item) => !completedIds.has(item.id));
         const unseen = matching.filter((item) => !excludeIds.has(item.id));
-        questions = nextImported.length ? nextImported.slice(0, count) : (unseen.length ? unseen : matching).slice(0, count);
-        sequence = sequenceProgress(progress.attempts, importedMatching);
+        questions = nextInBank.length ? nextInBank.slice(0, count) : (unseen.length ? unseen : matching).slice(0, count);
+        sequence = sequenceProgress(progress.attempts, matching);
       }
       for (const question of questions) rememberQuestion(question);
       return sendJson(res, 200, { mode, notice, sequence, questions: questions.map(publicQuestion) });
@@ -338,7 +337,7 @@ const server = http.createServer(async (req, res) => {
       const targetSkill = input.mode === "weak" ? (weak || gap) : (gap || weak);
       const request = typeof input.request === "string" ? input.request.trim().slice(0, 300) : "";
       const generated = await generateQuestions({ type, level, count: 1, weakSkills: targetSkill ? [targetSkill] : [], variationRequest: request });
-      const question = { ...generated[0], source: "ai_supplement", targetReason: input.mode === "weak" ? "重点考点强化" : "真题覆盖缺口" };
+      const question = { ...generated[0], source: "ai_supplement", targetReason: input.mode === "weak" ? "重点考点强化" : "机经覆盖缺口" };
       rememberQuestion(question);
       return sendJson(res, 201, { question: publicQuestion(question), targetSkill, reason: question.targetReason });
     }

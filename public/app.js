@@ -138,12 +138,12 @@ async function api(path, options) {
 async function refreshStats() {
   const stats = await api("/api/stats");
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
-  $("#authentic-progress").textContent = `${stats.imported.completed}/${stats.imported.total}`;
+  $("#authentic-progress").textContent = `${stats.bank.completed}/${stats.bank.total}`;
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 4); $("#weak-card").hidden = weak.length === 0;
   $("#weak-skills").replaceChildren(...weak.map((item) => {
     const row = document.createElement("article"); row.className = "weak-skill-row";
-    row.innerHTML = `<div class="weak-meta"><em>${escapeHtml(item.examAbility)}</em><span>错 ${item.count}/${item.total} · ${item.errorRate}%</span></div><strong>${escapeHtml(item.title)}</strong><p><b>错误判断</b>${escapeHtml(item.errorType)}</p><p><b>下一步</b>${escapeHtml(item.action)}</p><button>练同类真题 →</button>${item.latestReason && item.latestReason !== item.errorType ? `<details><summary>查看最近一次错因</summary><p>${escapeHtml(item.latestReason)}</p></details>` : ""}`;
+    row.innerHTML = `<div class="weak-meta"><em>${escapeHtml(item.examAbility)}</em><span>错 ${item.count}/${item.total} · ${item.errorRate}%</span></div><strong>${escapeHtml(item.title)}</strong><p><b>错误判断</b>${escapeHtml(item.errorType)}</p><p><b>下一步</b>${escapeHtml(item.action)}</p><button>练同类机经 →</button>${item.latestReason && item.latestReason !== item.errorType ? `<details><summary>查看最近一次错因</summary><p>${escapeHtml(item.latestReason)}</p></details>` : ""}`;
     row.querySelector("button").addEventListener("click", () => practiceWeakPoint(item)); return row;
   }));
 }
@@ -325,17 +325,17 @@ async function loadInsights() {
 
 async function loadActivity() {
   const activity = await api("/api/activity");
-  $("#history-authentic").textContent = `${activity.historicAuthentic} / ${activity.authenticTotal}`;
-  $("#history-generated").textContent = `${activity.historicGenerated}题`; $("#today-authentic").textContent = `${activity.todayAuthentic}题`; $("#today-generated").textContent = `${activity.todayGenerated}题`;
-  const authenticRemaining = Math.max(0, activity.authenticTotal - activity.historicAuthentic);
-  $("#history-authentic-percent").textContent = `${activity.authenticPercentage}% · 剩余 ${authenticRemaining} 题`; $("#authentic-progress-bar").style.width = `${activity.authenticPercentage}%`;
-  $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.authenticTotal}题`;
+  $("#history-authentic").textContent = `${activity.historicBank} / ${activity.bankTotal}`;
+  const bankRemaining = Math.max(0, activity.bankTotal - activity.historicBank);
+  $("#history-generated").textContent = `${bankRemaining}题`; $("#today-authentic").textContent = `${activity.todayBank}题`; $("#today-generated").textContent = `${activity.todayTotal}题`;
+  $("#history-authentic-percent").textContent = `${activity.bankPercentage}% · 剩余 ${bankRemaining} 题`; $("#authentic-progress-bar").style.width = `${activity.bankPercentage}%`;
+  $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.bankTotal}题`;
   $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
 }
 
 function renderHistoryDetail(attempt) {
   const question = attempt.question; const detail = $("#history-detail");
-  const source = question.source === "user_imported" ? "导入真题" : String(question.source || "").startsWith("ai") ? "AI生成题" : "精选题";
+  const source = "机经";
   detail.innerHTML = `<div class="history-meta"><span>${escapeHtml(question.level || "")}</span><span>${escapeHtml(question.categoryLabel || question.topic || "综合考点")}</span><span>${source}</span><span>${attempt.correct ? "本次正确" : "本次错误"}</span></div>${question.passage ? `<div class="history-passage">${escapeHtml(question.passage)}</div>` : ""}<h3>${escapeHtml(question.prompt)}</h3><div class="history-options">${question.options.map((option, index) => `<div class="history-option${option === attempt.correctOption ? " correct" : index === attempt.selected && !attempt.correct ? " wrong" : ""}"><b>${String.fromCharCode(65 + index)}</b> ${escapeHtml(option)}${option === attempt.correctOption ? " · 正确答案" : index === attempt.selected ? " · 你的选择" : ""}</div>`).join("")}</div><div class="history-analysis"><section><b>${attempt.analysis ? "新版详细中文解析" : "旧解析已撤下"}</b><p>${escapeHtml(attempt.analysis?.detailedZh || "这次历史作答没有新版解析。重新作答后会先立即显示正确答案，再生成逐项详细解析。")}</p></section></div><div class="history-variation"><div><strong>生成类似题目</strong><span>围绕同一考点立即再练一题</span></div><input id="history-variation-request" maxlength="300" placeholder="例如：难一点，换成生活场景，干扰项更接近……"><button id="history-generate-variation">生成并作答 ✦</button></div>`;
   $("#history-generate-variation").addEventListener("click", () => generateHistoryVariation(attempt));
 }
@@ -375,7 +375,7 @@ async function loadBank(reset = true) {
     }
     const cards = payload.questions.map((question) => {
     const card = document.createElement("article"); card.className = `bank-card${question.completed ? " completed" : ""}`;
-    const source = question.source === "user_imported" ? "真题" : question.source === "mock" ? "TCF模拟题" : question.source?.startsWith("ai") ? "AI补充" : "精选";
+    const source = "机经";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
     card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
@@ -388,13 +388,11 @@ async function loadBank(reset = true) {
 
 async function loadCategories(type = $("#category-type").value) {
   const payload = await api(`/api/categories?type=${encodeURIComponent(type)}`); categoryCatalog = payload.categories;
-  const sourceFilter = $("#bank-source").value;
-  const visibleCategories = payload.categories.filter((category) => sourceFilter === "user_imported" ? category.authenticTotal > 0 : sourceFilter === "mock" ? category.mockTotal > 0 : sourceFilter === "curated" ? category.curatedTotal > 0 : category.readyTotal > 0);
+  const visibleCategories = payload.categories.filter((category) => category.readyTotal > 0);
   $("#category-grid").replaceChildren(...visibleCategories.map((category) => {
-    const progress = category.authenticTotal ? Math.round(category.authenticCompleted / category.authenticTotal * 100) : 0;
-    const curatedTotal = category.curatedTotal; const mockTotal = category.mockTotal;
+    const progress = category.total ? Math.round(category.completed / category.total * 100) : 0;
     const card = document.createElement("button"); card.className = `category-card${$("#bank-category").value === category.id ? " active" : ""}`;
-    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>真题 <b>${category.authenticCompleted}/${category.authenticTotal}</b></span>${mockTotal ? `<span>模拟 ${mockTotal}题</span>` : ""}${curatedTotal ? `<span>精选 ${curatedTotal}题</span>` : ""}</div><div class="category-progress"><i style="width:${progress}%"></i></div><small>点击查看并刷题 · 真题进度 ${progress}%</small>`;
+    card.innerHTML = `<strong>${escapeHtml(category.label)}</strong><p>${escapeHtml(category.description)}</p><div class="category-counts"><span>机经 <b>${category.completed}/${category.total}</b></span></div><div class="category-progress"><i style="width:${progress}%"></i></div><small>点击查看并刷题 · 机经进度 ${progress}%</small>`;
     card.addEventListener("click", async () => { $("#bank-type").value = type; setCategoryOptions(payload.categories, category.id); state.activeCategory = category.id; await loadBank(true); await loadCategories(type); $("#bank-list").scrollIntoView({ behavior: "smooth", block: "start" }); });
     return card;
   }));
@@ -422,7 +420,7 @@ async function smartGenerate() {
     openBankQuestion(payload.question); state.mode = "ai";
     $("#notice").hidden = false; $("#notice").textContent = `${payload.reason} · 目标考点：${payload.targetSkill || "综合能力"}`;
   } catch (error) {
-    alert(error.message === "AI_KEY_REQUIRED" ? "AI补缺训练需要先配置 DeepSeek 密钥。配置后会根据真题覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
+    alert(error.message === "AI_KEY_REQUIRED" ? "机经补缺训练需要先配置 DeepSeek 密钥。配置后会根据机经覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
   } finally { clearInterval(timer); button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
 }
 
@@ -466,14 +464,14 @@ function render() {
   $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
-  $("#source").textContent = currentSource === "ai" ? "AI 同考点变式" : currentSource === "review" ? "错题复习" : currentSource === "authentic" ? "导入真题" : currentSource === "mock" ? "TCF模拟题" : "精选题库";
+  $("#source").textContent = currentSource === "review" ? "错题复习" : "机经";
   $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
-  $("#next").firstChild.textContent = currentSource === "authentic" ? "直接练下一道同考点真题 " : currentSource === "review" ? "直接练下一道错题 " : "直接练下一题 ";
+  $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
   revealPractice({ smooth: state.continuousNumber > 1 });
 }
 

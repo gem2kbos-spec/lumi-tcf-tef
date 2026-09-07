@@ -48,7 +48,7 @@
       <div class="brand"><span>lu</span> Lumi Français</div>
       <div class="header-actions"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号</button></div>
     </header>
-    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#practice-entry">连续刷题</a><a href="#ai-center">AI补缺</a><a href="#bank-center">真题题库</a></nav>
+    <nav class="quick-nav" aria-label="页面快捷导航"><a href="#exam-center">考试专项</a><a href="#activity-center">训练记录</a><a href="#practice-entry">连续刷题</a><a href="#ai-center">机经补缺</a><a href="#bank-center">机经题库</a></nav>
     <section class="hero">
       <div class="knowledge-summary">
         <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
@@ -63,37 +63,37 @@
       <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF Tout Public</h2></div><p id="exam-note">三项 QCM + 写作 + 口语</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
     <section id="activity-center" class="activity-panel">
-      <div class="activity-heading"><div><p class="label">训练记录</p><h2>真题与生成题进度</h2></div><div class="activity-actions"><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div><button id="open-history">查看做题历史 →</button></div></div>
+      <div class="activity-heading"><div><p class="label">训练记录</p><h2>机经完成进度</h2></div><div class="activity-actions"><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div><button id="open-history">查看做题历史 →</button></div></div>
       <div class="activity-metrics">
-        <article><span>历史已做真题</span><strong id="history-authentic">0 / 593</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 真题进度</small></article>
-        <article><span>历史已做生成题</span><strong id="history-generated">0题</strong><small>AI补缺与举一反三</small></article>
-        <article><span>今日已做真题</span><strong id="today-authentic">0题</strong><small>按不同题目计数</small></article>
-        <article><span>今日已做生成题</span><strong id="today-generated">0题</strong><small>按不同题目计数</small></article>
+        <article><span>历史已做机经</span><strong id="history-authentic">0 / 0</strong><div class="metric-progress"><i id="authentic-progress-bar"></i></div><small id="history-authentic-percent">0% 机经进度</small></article>
+        <article><span>剩余机经</span><strong id="history-generated">0题</strong><small>继续按难度顺序完成</small></article>
+        <article><span>今日已做机经</span><strong id="today-authentic">0题</strong><small>按不同题目计数</small></article>
+        <article><span>今日作答次数</span><strong id="today-generated">0题</strong><small>包含复习与重做</small></article>
       </div>
-      <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>真题库总量 <b id="authentic-total">593题</b></span></div>
+      <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>机经库总量 <b id="authentic-total">0题</b></span></div>
     </section>
     <section id="practice-entry" class="practice-entry">
       <div><p class="label">连续刷题</p><h2>从简单到困难，一题一题完成</h2><p>选择语法、词汇、阅读或听力；每题作答后立即查看中法解析。</p></div>
       <button id="open-practice-hub">打开连续刷题窗口 <span>→</span></button>
     </section>
     <section id="ai-center" class="ai-lab">
-      <div class="section-heading"><div><p class="label">AI 补缺训练室</p><h2>生成真题没有覆盖，但考试可能考到的题</h2></div><span class="ai-badge">公开考试范围约束</span></div>
+      <div class="section-heading"><div><p class="label">机经补缺训练室</p><h2>补充现有机经尚未覆盖的考试考点</h2></div><span class="ai-badge">公开考试范围约束</span></div>
       <div class="ai-lab-grid">
-        <label>生成策略<select id="ai-mode"><option value="gap">真题缺口补充</option><option value="weak">重点考点强化</option></select></label>
+        <label>生成策略<select id="ai-mode"><option value="gap">机经缺口补充</option><option value="weak">重点考点强化</option></select></label>
         <label>题型<select id="ai-type"><option value="grammar">语言结构</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select></label>
         <label>难度<select id="ai-level"><option>B1</option><option>A2</option></select></label>
-        <label class="ai-request-label">附加要求<input id="ai-request" maxlength="300" placeholder="例如：专练最常考的连接词，干扰项更像真题" /></label>
+        <label class="ai-request-label">附加要求<input id="ai-request" maxlength="300" placeholder="例如：专练最常考的连接词，干扰项更接近考试" /></label>
         <button id="smart-generate">分析覆盖并生成 ✦</button>
       </div>
       <div id="coverage-gaps" class="coverage-gaps"></div>
     </section>
     <section id="bank-center" class="bank-browser">
       <div class="section-heading"><div><p class="label">可滚动题库</p><h2>查看可作答题目</h2></div><div><strong id="bank-count">0</strong><span> 道可练题</span></div></div>
-      <div class="category-heading"><div><strong>按细分考点进入</strong><span>每类显示真题题量与完成进度</span></div><select id="category-type" aria-label="细分题型"><option value="grammar">语法选择题</option><option value="vocabulary">词汇题</option><option value="reading">阅读理解</option><option value="listening">听力理解</option></select></div>
+      <div class="category-heading"><div><strong>按细分考点进入</strong><span>每类显示机经题量与完成进度</span></div><select id="category-type" aria-label="细分题型"><option value="grammar">语法选择题</option><option value="vocabulary">词汇题</option><option value="reading">阅读理解</option><option value="listening">听力理解</option></select></div>
       <div id="category-grid" class="category-grid" aria-live="polite"></div>
       <div class="bank-toolbar">
         <input id="bank-search" type="search" maxlength="100" placeholder="搜索题干、文章或考点…" aria-label="搜索题库" />
-        <select id="bank-source" aria-label="题库来源"><option value="all">全部来源</option><option value="user_imported" selected>真题</option><option value="mock">TCF模拟题</option><option value="curated">精选题</option></select>
+        <input id="bank-source" type="hidden" value="all" />
         <select id="bank-type" aria-label="题库题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
         <select id="bank-category" aria-label="细分考点"><option value="all">全部细分考点</option></select>
         <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
@@ -121,7 +121,7 @@
           <div><strong id="accuracy">0%</strong><span>正确率</span></div>
           <div><strong id="total">0</strong><span>已答题</span></div>
           <div><strong id="streak">0</strong><span>连续天数</span></div>
-          <div><strong id="authentic-progress">0/0</strong><span>真题进度</span></div>
+          <div><strong id="authentic-progress">0/0</strong><span>机经进度</span></div>
         </div>
         <div id="weak-card" class="weak-card" hidden><p class="label">考试能力诊断</p><div id="weak-skills"></div></div>
       </aside>
@@ -193,7 +193,7 @@
     <div class="history-filters">
       <select id="history-type" aria-label="历史题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
       <select id="history-result" aria-label="历史对错"><option value="all">全部结果</option><option value="wrong">仅错题</option><option value="correct">仅正确</option></select>
-      <select id="history-source" aria-label="历史来源"><option value="all">全部来源</option><option value="authentic">真题</option><option value="generated">AI生成题</option></select>
+      <input id="history-source" type="hidden" value="all" />
       <select id="history-level" aria-label="历史等级"><option value="all">全部等级</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
     </div>
     <div class="history-layout"><div><div id="history-count" class="history-count"></div><div id="history-list" class="history-list"></div></div><div id="history-detail" class="history-detail"><p>选择左侧记录查看完整题目。</p></div></div>
