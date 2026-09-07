@@ -1,0 +1,152 @@
+:root {
+  --studio-bg: #f3f1e9;
+  --studio-panel: #fffef9;
+  --studio-ink: #132b22;
+  --studio-muted: #718078;
+  --studio-green: #164c39;
+  --studio-lime: #c9ef69;
+  --studio-line: #dfe3d9;
+  --studio-soft: #edf3e3;
+}
+
+body { background: var(--studio-bg); color: var(--studio-ink); }
+main.app-shell {
+  display: grid; grid-template-columns: 238px minmax(0, 1fr); gap: 0;
+  width: 100%; max-width: none; min-height: 100vh; margin: 0; padding: 0;
+}
+.app-sidebar {
+  position: sticky; top: 0; z-index: 80; align-self: start;
+  display: flex; flex-direction: column; height: 100vh; padding: 26px 18px 20px;
+  background: #123d2f; color: white; border: 0; border-radius: 0;
+}
+.sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 28px; }
+.sidebar-brand > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: var(--studio-lime); color: var(--studio-green); font-weight: 900; }
+.sidebar-brand strong, .sidebar-brand small { display: block; }
+.sidebar-brand strong { font-size: 18px; letter-spacing: -.02em; }
+.sidebar-brand small { margin-top: 3px; color: #afc7bd; font-size: 9px; letter-spacing: .04em; }
+.app-sidebar .workspace-nav {
+  position: static; display: grid; grid-template-columns: 1fr; gap: 6px;
+  width: 100%; max-width: none; margin: 0; padding: 0; overflow: visible;
+  background: transparent; border: 0; border-radius: 0; box-shadow: none; backdrop-filter: none;
+}
+.app-sidebar .workspace-nav a {
+  position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px;
+  min-height: 58px; padding: 11px 14px; text-align: left; border-radius: 14px;
+}
+.app-sidebar .workspace-nav a strong { color: #f7faf7; font-size: 14px; }
+.app-sidebar .workspace-nav a small { grid-column: 1; color: #9fb8ae; font-size: 10px; }
+.app-sidebar .workspace-nav a:after { content: "→"; grid-column: 2; grid-row: 1 / span 2; color: #7f9e92; }
+.app-sidebar .workspace-nav a:hover { background: #ffffff0e; }
+.app-sidebar .workspace-nav a.active { background: var(--studio-lime); box-shadow: 0 10px 30px #071d1640; }
+.app-sidebar .workspace-nav a.active strong, .app-sidebar .workspace-nav a.active small, .app-sidebar .workspace-nav a.active:after { color: var(--studio-green); }
+.sidebar-footer { display: grid; gap: 8px; margin-top: auto; padding: 18px 6px 0; border-top: 1px solid #ffffff17; }
+.sidebar-footer .status { color: #b7cbc2; padding: 3px 5px 8px; }
+.sidebar-footer .status.ready { color: var(--studio-lime); }
+.sidebar-footer .account-header-button { width: 100%; min-height: 42px; color: white; background: #ffffff0c; border-color: #ffffff24; border-radius: 11px; text-align: left; }
+.sidebar-footer .account-header-button:hover { background: #ffffff17; }
+
+.app-content { min-width: 0; padding: 22px clamp(24px, 4vw, 58px) 70px; }
+.content-header { display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 0 0 18px; border-bottom: 1px solid var(--studio-line); }
+.content-header div { display: grid; gap: 2px; }
+.content-header span { color: var(--studio-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
+.content-header strong { font-size: 17px; }
+.content-header button { display: flex; align-items: center; gap: 18px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--studio-green); color: white; font-weight: 800; cursor: pointer; }
+.content-header button b { color: var(--studio-lime); font-size: 18px; }
+
+.app-content .hero { padding: 22px 0 16px; }
+.app-content .knowledge-summary { min-height: 164px; padding: 28px 30px; border: 0; border-radius: 22px; background: linear-gradient(120deg, #e9f2d5, #f5f6e8); box-shadow: inset 0 0 0 1px #dbe4c7; }
+.knowledge-preview strong { max-width: 850px; font-size: clamp(28px, 3.1vw, 45px) !important; letter-spacing: -.045em; line-height: 1.08; }
+
+.app-content .workspace-panel { min-height: min(620px, calc(100vh - 112px)); margin: 22px 0 0; border: 1px solid var(--studio-line); border-radius: 24px; background: var(--studio-panel); box-shadow: 0 14px 44px #26372f0b; }
+.app-content .exam-hub { grid-template-columns: 190px minmax(0, 1fr); gap: 28px; padding: 30px; background: var(--studio-panel); color: var(--studio-ink); }
+.exam-tabs { display: flex; flex-direction: column; gap: 10px; }
+.exam-tabs button { min-height: 108px; padding: 18px; border-color: var(--studio-line); background: #f2f4ed; color: var(--studio-muted); }
+.exam-tabs button.active { background: var(--studio-green); color: white; border-color: var(--studio-green); }
+.exam-tabs button.active span { color: #bed1c8; }
+.hub-heading { padding: 4px 2px 22px; }
+.hub-heading h2 { font-size: clamp(28px, 3vw, 40px); letter-spacing: -.04em; }
+.module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.module-card, .module-card:last-child { min-height: 156px; padding: 20px; border: 1px solid var(--studio-line); border-radius: 18px; background: #f8f8f3; color: var(--studio-ink); }
+.module-card:hover { border-color: #8ba596; background: white; transform: translateY(-2px); }
+.module-card.active { border-color: var(--studio-green); background: var(--studio-soft); color: var(--studio-green); }
+.module-card span { color: #7b9a3b; }
+.module-card p, .module-card small { color: var(--studio-muted); }
+
+.app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: clamp(24px, 3vw, 38px); }
+.activity-heading h2, .section-heading h2 { font-size: clamp(28px, 3vw, 40px); letter-spacing: -.04em; }
+.activity-metrics { gap: 12px; }
+.activity-metrics article { min-height: 150px; padding: 20px; background: #f4f5ef; border: 0; border-radius: 18px; }
+.activity-metrics strong { font-size: 31px; }
+.today-summary { padding: 20px 4px 0; }
+.app-content .practice-entry { min-height: 340px; padding: clamp(30px, 6vw, 78px); background: linear-gradient(135deg, #123d2f, #245d49); border: 0; }
+.practice-entry h2 { max-width: 650px; font-size: clamp(35px, 5vw, 64px); letter-spacing: -.055em; line-height: 1.02; }
+.practice-entry p { font-size: 15px; }
+.practice-entry > button { min-width: 230px; min-height: 58px; border-radius: 15px; font-size: 15px; }
+.app-content .ai-lab { background: var(--studio-panel); border-color: var(--studio-line); }
+.ai-lab-grid { grid-template-columns: 170px 170px 120px minmax(220px, 1fr); }
+.ai-lab-grid button { grid-column: 1/-1; min-height: 54px; font-size: 15px; }
+.coverage-gaps { padding-top: 6px; }
+.coverage-gaps span { padding: 7px 11px; background: var(--studio-soft); }
+.bank-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: calc(100vh - 370px); gap: 12px; }
+.bank-card { min-height: 190px; padding: 20px; border-radius: 18px; box-shadow: 0 5px 18px #26372f08; }
+.bank-card h3 { font-size: 17px; }
+.bank-toolbar { top: 12px; }
+
+.practice-hub { border-radius: 28px; background: #f4f3ec; }
+.practice-hub > aside, .practice-hub .practice { border-radius: 20px; }
+.study-tools { right: 18px; }
+.tool-ball { box-shadow: 0 9px 25px #14372a38; }
+
+@media (max-width: 980px) {
+  main.app-shell { grid-template-columns: 198px minmax(0, 1fr); }
+  .app-content { padding-left: 22px; padding-right: 22px; }
+  .app-content .exam-hub { grid-template-columns: 1fr; }
+  .exam-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+  .exam-tabs button { min-height: 84px; }
+  .module-grid { grid-template-columns: 1fr 1fr; }
+  .ai-lab-grid { grid-template-columns: 1fr 1fr; }
+  .ai-request-label, .ai-lab-grid button { grid-column: 1/-1; }
+}
+
+@media (max-width: 700px) {
+  body { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  main.app-shell { display: block; min-height: 100dvh; }
+  .app-sidebar { position: sticky; top: 0; z-index: 900; display: grid; grid-template-columns: 1fr auto; height: auto; padding: calc(10px + env(safe-area-inset-top)) 10px 8px; box-shadow: 0 6px 22px #10271e26; }
+  .sidebar-brand { padding: 0 4px 10px; }
+  .sidebar-brand > span { width: 34px; height: 34px; border-radius: 10px; }
+  .sidebar-brand strong { font-size: 16px; }
+  .sidebar-brand small { display: none; }
+  .sidebar-footer { display: flex; align-items: center; gap: 5px; margin: 0; padding: 0 0 10px; border: 0; }
+  .sidebar-footer .status { display: none; }
+  .sidebar-footer .account-header-button { width: auto; min-height: 36px; padding: 7px 9px; font-size: 11px; }
+  .app-sidebar .workspace-nav { grid-column: 1/-1; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+  .app-sidebar .workspace-nav::-webkit-scrollbar { display: none; }
+  .app-sidebar .workspace-nav a { flex: 0 0 auto; display: block; min-height: 38px; padding: 10px 14px; border-radius: 11px; text-align: center; }
+  .app-sidebar .workspace-nav a strong { font-size: 12px; white-space: nowrap; }
+  .app-sidebar .workspace-nav a small, .app-sidebar .workspace-nav a:after { display: none; }
+  .app-content { padding: 12px 10px calc(86px + env(safe-area-inset-bottom)); }
+  .content-header { min-height: 48px; padding: 0 3px 10px; }
+  .content-header div span { display: none; }
+  .content-header div strong { font-size: 14px; }
+  .content-header button { min-height: 38px; padding: 0 12px; font-size: 12px; }
+  .app-content .hero { padding: 10px 0; }
+  .app-content .knowledge-summary { min-height: 0; padding: 18px; border-radius: 17px; }
+  .knowledge-preview strong { font-size: 25px !important; }
+  .app-content .workspace-panel { min-height: 0; margin-top: 10px; border-radius: 18px; }
+  .app-content .exam-hub, .app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: 16px; }
+  .exam-tabs { grid-template-columns: 1fr 1fr; }
+  .module-grid { display: grid; grid-template-columns: 1fr; overflow: visible; }
+  .module-card, .module-card:last-child { min-height: 120px; }
+  .activity-metrics { grid-template-columns: 1fr 1fr; }
+  .activity-metrics article { min-height: 126px; }
+  .app-content .practice-entry { min-height: calc(100dvh - 235px); justify-content: center; padding: 28px 20px; }
+  .practice-entry h2 { font-size: 38px; }
+  .practice-entry > button { width: 100%; min-width: 0; }
+  .bank-list { max-height: none; grid-template-columns: 1fr; }
+  .study-tools { left: 8px; right: 8px; }
+}
+
+@media (max-width: 390px) {
+  .activity-metrics { grid-template-columns: 1fr; }
+  .app-sidebar .workspace-nav a { padding-left: 12px; padding-right: 12px; }
+}

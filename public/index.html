@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="/comments.css" />
   <link rel="stylesheet" href="/mobile.css" />
   <link rel="stylesheet" href="/ux-fixes.css" />
+  <link rel="stylesheet" href="/redesign.css" />
 </head>
 <body class="app-booting">
   <section id="account-gate" class="account-gate" hidden>
@@ -44,18 +45,20 @@
     <div class="account-card membership-card"><p class="account-kicker">训练权限</p><h1>账号已创建，等待开通</h1><p>选择套餐并扫码付款后提交订单。管理员确认后，页面会自动进入训练，无需重新登录。</p><div id="plan-list" class="plan-list"></div><div class="payment-box"><div id="payment-qr" class="payment-qr">在此放置<br>收款二维码</div><label>付款备注 / 转账单号后四位<input id="payment-note" maxlength="120" placeholder="便于管理员核对" /></label></div><button id="submit-order" class="account-primary">我已付款，提交审核</button><div id="order-status"></div><button id="refresh-membership" class="account-secondary">刷新审核状态</button><button id="membership-logout" class="account-link">退出当前账号</button></div>
   </section>
   <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><h3>待审核付款</h3><div id="admin-orders"></div><div class="admin-user-heading"><h3>全部用户</h3><input id="admin-search" type="search" placeholder="搜索称呼或邮箱" /></div><div id="admin-users"></div></div></section>
-  <main>
-    <header>
-      <div class="brand"><span>lu</span> Lumi Français</div>
-      <div class="header-actions"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号</button></div>
-    </header>
-    <nav class="quick-nav workspace-nav" aria-label="功能入口">
+  <main class="app-shell">
+    <aside class="app-sidebar">
+      <div class="sidebar-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF · TEF 学习工作台</small></div></div>
+      <nav class="quick-nav workspace-nav" aria-label="功能入口">
       <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>考试专项</strong><small>TCF / TEF</small></a>
       <a href="#practice-entry" data-workspace-view="practice-entry"><strong>连续刷题</strong><small>从易到难</small></a>
       <a href="#bank-center" data-workspace-view="bank-center"><strong>机经题库</strong><small>筛选与进度</small></a>
       <a href="#ai-center" data-workspace-view="ai-center"><strong>AI补缺</strong><small>考点强化</small></a>
       <a href="#activity-center" data-workspace-view="activity-center"><strong>训练记录</strong><small>历史与诊断</small></a>
-    </nav>
+      </nav>
+      <div class="sidebar-footer"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号与权限</button></div>
+    </aside>
+    <div class="app-content">
+      <header class="content-header"><div><span>学习中心</span><strong>今天继续向前一步</strong></div><button id="header-practice-shortcut" type="button">开始刷题 <b>→</b></button></header>
     <section class="hero">
       <div class="knowledge-summary">
         <button id="open-knowledge" class="knowledge-preview"><span class="eyebrow">今日精炼知识点 · 点击彻底学懂</span><strong id="knowledge-title">y 和 en 的区别看介词，不看中文</strong><span id="knowledge-body">y 通常替代 à + 地点/事物；en 通常替代 de + 名词或数量。先找介词和句法功能，再选择代词。</span><i>查看完整讲解、追问和考点练习 →</i></button>
@@ -179,6 +182,7 @@
         </div>
       </section>
     </section>
+    </div>
   </main>
   <div id="selection-tools" class="selection-tools" hidden><button id="lookup-selection">查看用法</button><button id="save-selection">＋ 生词本</button></div>
   <aside id="vocab-drawer" class="vocab-drawer" role="dialog" aria-modal="true" aria-label="生词本" hidden>
