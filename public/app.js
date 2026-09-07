@@ -193,6 +193,9 @@ async function refreshStats() {
   const stats = await api("/api/stats");
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
   $("#authentic-progress").textContent = `${stats.bank.completed}/${stats.bank.total}`;
+  $("#dashboard-accuracy").textContent = stats.total ? `${stats.accuracy}%` : "暂无"; $("#dashboard-streak").textContent = stats.streak; $("#dashboard-remaining").textContent = stats.bank.remaining;
+  const abilityLabels = { listening: "听力", grammar: "语言结构", reading: "阅读" };
+  $("#ability-overview").replaceChildren(...Object.entries(abilityLabels).map(([type, label]) => { const item = stats.byType[type] || { total: 0, accuracy: 0 }; const row = document.createElement("div"); row.innerHTML = `<span>${label}<small>${item.total ? `${item.total}题` : "暂无数据"}</small></span><i><b style="width:${item.total ? item.accuracy : 0}%"></b></i><strong>${item.total ? `${item.accuracy}%` : "—"}</strong>`; return row; }));
   $("#review-count").textContent = stats.pendingReview;
   const weak = stats.weakSkills.slice(0, 4); $("#weak-card").hidden = weak.length === 0;
   $("#weak-skills").replaceChildren(...weak.map((item) => {
@@ -365,6 +368,7 @@ function captureVocabularySelection() {
 
 async function loadInsights() {
   const insights = await api("/api/insights");
+  $("#daily-recommendation").textContent = `建议 ${insights.recommendedToday} 题`;
   const typeLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读", listening: "听力" };
   const skillLabels = {
     technologie: "科技主题", culture: "文化主题", médias: "媒体主题", société: "社会主题",
@@ -631,6 +635,7 @@ $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes"
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 $("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
+$("#today-start").addEventListener("click", openPracticeHub);
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
 window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
