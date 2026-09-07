@@ -24,8 +24,9 @@
   <link rel="stylesheet" href="/account-refine.css" />
   <link rel="stylesheet" href="/comments.css" />
   <link rel="stylesheet" href="/mobile.css" />
+  <link rel="stylesheet" href="/ux-fixes.css" />
 </head>
-<body>
+<body class="app-booting">
   <section id="account-gate" class="account-gate" hidden>
     <div class="account-card">
       <div class="account-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF / TEF 智能训练系统</small></div></div>
@@ -217,6 +218,7 @@
     <div id="tutor-messages" class="tutor-messages"><div class="tutor-message assistant">可以问我语法、词汇、阅读方法，也可以让我生成清晰可见的速查表。</div></div>
     <form id="tutor-form"><textarea id="tutor-question" rows="3" maxlength="800" placeholder="输入你的问题……"></textarea><button>发送 →</button></form>
   </aside>
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite" hidden></div>
   <script type="module" src="/account.js"></script>
   <script type="module" src="/app.js"></script>
 </body>

@@ -3,7 +3,14 @@ let registerMode = false; let currentUser = null; let selectedPlan = "quarter";
 let adminData = null; let membershipTimer = null;
 const safe = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 async function request(path, options = {}) { const response = await fetch(path, { ...options, headers: { "Content-Type": "application/json", ...(options.headers || {}) } }); const payload = await response.json().catch(() => ({ error: "服务器返回了无法识别的内容" })); if (!response.ok) { const error = new Error(payload.error || "请求失败"); error.status = response.status; throw error; } return payload; }
-function showAuth() { $a("#account-gate").hidden = false; }
+function setAppAccess(ready, user = null) {
+  window.__LUMI_AUTH__ = { ready, user };
+  document.body.classList.toggle("app-booting", !ready);
+  document.querySelector("main")?.toggleAttribute("inert", !ready);
+  document.querySelector(".study-tools")?.toggleAttribute("inert", !ready);
+  if (ready) window.dispatchEvent(new CustomEvent("lumi:auth-ready", { detail: { user } }));
+}
+function showAuth() { setAppAccess(false); $a("#account-gate").hidden = false; }
 function switchMode(next) { registerMode = next; $a("#show-login").classList.toggle("active", !next); $a("#show-register").classList.toggle("active", next); $a("#name-field").hidden = !next; $a("#account-name").required = next; $a("#account-password").autocomplete = next ? "new-password" : "current-password"; $a("#account-submit").textContent = next ? "注册账号" : "登录并进入"; $a("#account-error").textContent = ""; }
 function membershipText(user) { if (user.hasAccess) return user.membershipExpiresAt ? `有效期至 ${new Date(user.membershipExpiresAt).toLocaleDateString("zh-CN")}` : "管理员账号"; return ({ pending: "等待开通", suspended: "权限已暂停", expired: "权限已到期" })[user.membershipStatus] || "尚未开通"; }
 async function loadMembership() {
@@ -15,7 +22,7 @@ async function loadMembership() {
   else { $a("#payment-qr").innerHTML = "管理员尚未<br>上传收款码"; submit.disabled = true; submit.textContent = "收款码配置后可提交"; }
   const orders = data.orders; $a("#order-status").innerHTML = orders.length ? `<p><strong>最近订单：${orders[0].status === "pending" ? "等待管理员确认" : orders[0].status === "confirmed" ? "已确认并开通" : "未通过，请联系管理员"}</strong><br><small>${orders[0].id} · ¥${orders[0].amountCny}</small></p>` : "";
 }
-async function initialize() { try { const { user, aiUsage } = await request("/api/auth/me"); currentUser = user; $a("#account-profile").textContent = `${user.name} · ${membershipText(user)}${aiUsage ? ` · AI剩余${aiUsage.remaining}` : ""}`; if (user.role === "admin") $a("#open-admin").hidden = false; if (!user.hasAccess) { $a("#membership-gate").hidden = false; await loadMembership(); membershipTimer = setInterval(() => loadMembership().catch(() => {}), 15000); } } catch { showAuth(); } }
+async function initialize() { try { const { user, aiUsage } = await request("/api/auth/me"); currentUser = user; $a("#account-profile").textContent = `${user.name} · ${membershipText(user)}${aiUsage ? ` · AI剩余${aiUsage.remaining}` : ""}`; if (user.role === "admin") $a("#open-admin").hidden = false; if (!user.hasAccess) { setAppAccess(false, user); $a("#membership-gate").hidden = false; await loadMembership(); membershipTimer = setInterval(() => loadMembership().catch(() => {}), 15000); return; } setAppAccess(true, user); } catch { showAuth(); } }
 $a("#show-login").onclick = () => switchMode(false); $a("#show-register").onclick = () => switchMode(true);
 $a("#account-form").onsubmit = async (event) => { event.preventDefault(); const button = $a("#account-submit"); button.disabled = true; button.textContent = registerMode ? "正在创建账号…" : "正在登录…"; try { await request(registerMode ? "/api/auth/register" : "/api/auth/login", { method: "POST", body: JSON.stringify({ name: $a("#account-name").value, email: $a("#account-email").value, password: $a("#account-password").value }) }); location.reload(); } catch (error) { $a("#account-error").textContent = error.message; button.disabled = false; button.textContent = registerMode ? "注册账号" : "登录并进入"; } };
 $a("#submit-order").onclick = async () => { const button = $a("#submit-order"); button.disabled = true; button.textContent = "正在提交…"; try { await request("/api/orders", { method: "POST", body: JSON.stringify({ planId: selectedPlan, paymentMethod: "wechat", paymentNote: $a("#payment-note").value }) }); await loadMembership(); button.textContent = "已提交，等待管理员确认"; } catch (error) { alert(error.message); button.disabled = false; button.textContent = "我已付款，提交审核"; } };

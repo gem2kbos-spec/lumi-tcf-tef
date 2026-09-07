@@ -2,6 +2,44 @@ const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0,
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const richInline = (value) => escapeHtml(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`(.+?)`/g, "<code>$1</code>");
+let toastTimer = null;
+function showToast(message, tone = "info") {
+  const toast = $("#app-toast"); if (!toast) return;
+  toast.textContent = message; toast.dataset.tone = tone; toast.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
+}
+function userStorageKey(suffix) { return `lumi:${window.__LUMI_AUTH__?.user?.id || "guest"}:${suffix}`; }
+function savePreferences() {
+  try { localStorage.setItem(userStorageKey("preferences"), JSON.stringify({ exam: state.exam, type: state.type, level: $("#level")?.value || "all", category: state.activeCategory, bankType: $("#bank-type")?.value || "all", bankLevel: $("#bank-level")?.value || "all", bankStatus: $("#bank-status")?.value || "all" })); } catch {}
+}
+function savePracticeSession() {
+  const question = state.questions[state.index]; if (!question || state.answered) return;
+  if (String(question.source || "").startsWith("ai")) return;
+  try { localStorage.setItem(userStorageKey("practice"), JSON.stringify({ savedAt: Date.now(), exam: state.exam, type: state.type, mode: state.mode, continuousNumber: state.continuousNumber, activeCategory: state.activeCategory, sequence: state.sequence, question })); } catch {}
+}
+function clearPracticeSession() { try { localStorage.removeItem(userStorageKey("practice")); } catch {} }
+function readPracticeSession() { try { const saved = JSON.parse(localStorage.getItem(userStorageKey("practice")) || "null"); return saved?.question && Date.now() - saved.savedAt < 30 * 86400000 ? saved : null; } catch { return null; } }
+function restorePreferences() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(userStorageKey("preferences")) || "null"); if (!saved) return;
+    if (saved.exam && catalogs[saved.exam]) state.exam = saved.exam;
+    if (saved.type) state.type = saved.type;
+    if (saved.level && [...$("#level").options].some((option) => option.value === saved.level)) $("#level").value = saved.level;
+    if (saved.bankType) $("#bank-type").value = saved.bankType;
+    if (saved.bankLevel) $("#bank-level").value = saved.bankLevel;
+    if (saved.bankStatus) $("#bank-status").value = saved.bankStatus;
+    state.activeCategory = saved.category || null;
+  } catch {}
+}
+function prepareResume() {
+  const saved = readPracticeSession(); const button = $("#open-practice-hub"); if (!saved) return;
+  const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读", listening: "听力" };
+  button.classList.add("has-resume"); button.innerHTML = `<span><small>继续上次训练</small>${labels[saved.type] || "机经"} · ${escapeHtml(saved.question.level || "综合")} · 第 ${saved.continuousNumber || 1} 题</span><b>继续 →</b>`;
+  button.onclick = () => {
+    Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
+    openPracticeHub(); $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
+  };
+}
 
 function renderTutorRichText(container, content) {
   const lines = String(content || "").split(/\r?\n/); const fragment = document.createDocumentFragment();
@@ -107,6 +145,7 @@ function selectModule(type) {
   state.type = type;
   state.activeCategory = null;
   state.productionType = ["writing", "speaking"].includes(type) ? type : null;
+  savePreferences();
   document.querySelectorAll("[data-type]").forEach((item) => item.classList.toggle("active", item.dataset.type === type));
   renderCatalog();
   if (state.productionType) showProduction();
@@ -121,6 +160,7 @@ function selectModule(type) {
 
 document.querySelectorAll("[data-exam]").forEach((button) => button.addEventListener("click", () => {
   state.exam = button.dataset.exam;
+  savePreferences();
   document.querySelectorAll("[data-exam]").forEach((item) => item.classList.toggle("active", item === button));
   selectModule(state.exam === "tcf" ? "grammar" : "mixed");
 }));
@@ -199,7 +239,7 @@ async function askKnowledge(event) {
 async function knowledgePractice() {
   const button = $("#knowledge-practice"); button.disabled = true; button.textContent = "正在生成…";
   try { const payload = await api("/api/knowledge/practice", { method: "POST", body: JSON.stringify({ topicId: currentKnowledgeId, level: $("#knowledge-level").value }) }); closeKnowledge(); openBankQuestion(payload.question); state.mode = "ai"; }
-  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成考点题需要先配置 DeepSeek 密钥。配置后会严格围绕当前知识点生成 TCF / TEF 风格四选一题。" : `生成失败：${error.message}`); }
+  catch (error) { showToast(error.message === "AI_KEY_REQUIRED" ? "生成考点题需要先配置 DeepSeek 密钥。" : `生成失败：${error.message}`, "error"); }
   finally { button.disabled = false; button.textContent = "生成考点题 ✦"; }
 }
 
@@ -343,7 +383,7 @@ function renderHistoryDetail(attempt) {
 async function generateHistoryVariation(attempt) {
   const button = $("#history-generate-variation"); button.disabled = true; button.textContent = "正在生成…";
   try { const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: attempt.questionId, request: $("#history-variation-request").value }) }); closeHistory(); openPracticeHub(); openBankQuestion(payload.question); state.mode = "ai"; }
-  catch (error) { alert(error.message === "AI_KEY_REQUIRED" ? "生成类似题需要先连接 DeepSeek。" : `生成失败：${error.message}`); button.disabled = false; button.textContent = "生成并作答 ✦"; }
+  catch (error) { showToast(error.message === "AI_KEY_REQUIRED" ? "生成类似题需要先连接 DeepSeek。" : `生成失败：${error.message}`, "error"); button.disabled = false; button.textContent = "生成并作答 ✦"; }
 }
 
 function renderHistory() {
@@ -378,7 +418,7 @@ async function loadBank(reset = true) {
     const source = "机经";
     const preview = question.passage ? question.passage.slice(0, 105) : question.type === "listening" ? "音频内容仅在作答时播放" : question.prompt;
     const category = question.categoryLabel || categoryCatalog.find((item) => item.id === question.category)?.label || question.skill.replaceAll("_", " ");
-    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3><p>${escapeHtml(preview)}</p><div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
+    card.innerHTML = `<div class="bank-card-top"><span class="level-pill ${question.level.toLowerCase()}">${question.levelEstimated ? "≈" : ""}${escapeHtml(question.level)}</span><span>难度 ${question.difficulty}/10</span><span>${escapeHtml(source)}</span><span class="category-tag">${escapeHtml(category)}</span>${question.completed ? "<b>✓ 已完成</b>" : ""}</div><h3>${escapeHtml(question.prompt)}</h3>${question.passage || question.type === "listening" ? `<p>${escapeHtml(preview)}</p>` : ""}<div><small>${escapeHtml(question.topic)}</small><button ${question.answerVerified ? "" : "disabled"}>${question.answerVerified ? "进入作答 →" : "暂不开放"}</button></div>`;
     if (question.answerVerified) card.querySelector("button").addEventListener("click", () => openBankQuestion(question)); else card.classList.add("pending-answer"); return card;
     });
     if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
@@ -420,7 +460,7 @@ async function smartGenerate() {
     openBankQuestion(payload.question); state.mode = "ai";
     $("#notice").hidden = false; $("#notice").textContent = `${payload.reason} · 目标考点：${payload.targetSkill || "综合能力"}`;
   } catch (error) {
-    alert(error.message === "AI_KEY_REQUIRED" ? "机经补缺训练需要先配置 DeepSeek 密钥。配置后会根据机经覆盖缺口和你的错题生成。" : `生成失败：${error.message}`);
+    showToast(error.message === "AI_KEY_REQUIRED" ? "机经补缺训练需要先配置 DeepSeek 密钥。" : `生成失败：${error.message}`, "error");
   } finally { clearInterval(timer); button.disabled = false; button.textContent = "分析覆盖并生成 ✦"; }
 }
 
@@ -430,13 +470,13 @@ async function start(typeOverride, preserveSequence = false) {
   $("#start").disabled = true; $("#review").disabled = true; $("#start").firstChild.textContent = "正在准备… ";
   try {
     const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: false }) });
-    if (!payload.questions.length) { alert("这一专项的本地题目正在扩充，请配置 AI 出题或换一个等级。"); return; }
+    if (!payload.questions.length) { showToast("这一专项暂时没有可练题，请换一个等级或考点。", "error"); return; }
     if (!preserveSequence) state.continuousNumber = 1;
     Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false, sequence: payload.sequence });
     state.recentIds = [...state.recentIds, ...payload.questions.map((question) => question.id)].slice(-12);
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
     $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
-  } catch (error) { alert(`暂时无法生成题目：${error.message}`); }
+  } catch (error) { showToast(`暂时无法载入题目：${error.message}`, "error"); }
   finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始连续刷题 "; }
 }
 
@@ -472,6 +512,7 @@ function render() {
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true;
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
+  savePreferences(); savePracticeSession();
   revealPractice({ smooth: state.continuousNumber > 1 });
 }
 
@@ -490,7 +531,7 @@ async function answer(selected, selectedButton) {
   try {
     const result = await api("/api/check-answer", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected }) });
     const answeredQuestion = state.questions[state.index]; const answeredQuestionId = answeredQuestion.id;
-    state.answered = true; selectedButton.classList.remove("checking"); buttons[result.answer].classList.add("correct");
+    state.answered = true; clearPracticeSession(); selectedButton.classList.remove("checking"); buttons[result.answer].classList.add("correct");
     if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
@@ -508,7 +549,7 @@ async function answer(selected, selectedButton) {
       if (!result.correct) loadJournal();
     }).catch((error) => { const pending = $("#analysis-pending"); if (pending && state.questions[state.index]?.id === answeredQuestionId) pending.innerHTML = `<p>新版解析暂时生成失败：${escapeHtml(error.message)}。正确答案已显示，可继续下一题或稍后重做。</p>`; });
   } catch (error) {
-    selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); alert(`提交失败，请重试：${error.message}`);
+    selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); showToast(`提交失败，请重试：${error.message}`, "error");
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
 }
 
@@ -518,7 +559,7 @@ async function variation() {
     const payload = await api("/api/variations", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, request: $("#variation-request").value }) });
     state.questions = [payload.question]; state.index = 0; state.mode = "ai"; state.continuousNumber++; render();
   } catch (error) {
-    alert(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 DeepSeek 密钥。配置后会针对当前考点生成全新的变式题。" : `生成失败：${error.message}`);
+    showToast(error.message === "AI_KEY_REQUIRED" ? "举一反三需要先配置 DeepSeek 密钥。" : `生成失败：${error.message}`, "error");
   } finally { button.disabled = false; button.textContent = "生成变式题 ✦"; }
 }
 
@@ -555,6 +596,7 @@ async function askTutor(question) {
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
+$("#level").addEventListener("change", savePreferences);
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
 $("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
@@ -581,14 +623,29 @@ $("#comment-form").addEventListener("submit", submitQuestionComment); $("#refres
 $("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { alert(error.message); button.disabled = false; } });
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
 document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
-for (const selector of ["#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; loadBank(true); });
+for (const selector of ["#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; savePreferences(); loadBank(true); });
 $("#bank-source").addEventListener("change", () => { state.activeCategory = null; $("#bank-category").value = "all"; loadBank(true); loadCategories($("#category-type").value); });
 $("#bank-search").addEventListener("input", () => { clearTimeout(bankSearchTimer); bankSearchTimer = setTimeout(() => loadBank(true), 250); });
 $("#bank-load-more").addEventListener("click", () => loadBank(false));
 $("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });
 $("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
-$("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
-document.addEventListener("keydown", (event) => { if (event.key === "Escape") { closePracticeHub(); closeHistory(); closeJournal(); closeMistakes(); closeTutor(); closeNotebook(); return; } if ($("#quiz").hidden || $("#practice-hub").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) next(); });
+$("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; savePreferences(); $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
+document.addEventListener("keydown", (event) => { const editing = event.target.closest?.("input, textarea, select, [contenteditable=true]"); if (event.key === "Escape" && !editing) { closePracticeHub(); closeHistory(); closeJournal(); closeMistakes(); closeTutor(); closeNotebook(); return; } if (editing || $("#quiz").hidden || $("#practice-hub").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); next(); } });
 
-renderCatalog();
-Promise.all([api("/api/health"), refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics(), loadJournal()]).then(([health]) => { const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库"; $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 本地题库模式"; $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点"; $("#ai-status").classList.add("ready"); }).catch(() => { $("#ai-status").textContent = "连接失败"; });
+let appInitialized = false;
+async function initializeApp() {
+  if (appInitialized) return; appInitialized = true;
+  restorePreferences(); renderCatalog(); prepareResume();
+  const healthPromise = api("/api/health").then((health) => {
+    const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库";
+    $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 机经可用 · AI未连接";
+    $("#tutor-mode").textContent = health.aiEnabled ? `${label} 已连接 · 可以连续追问` : "本地知识库 · 可回答常见考点";
+    $("#ai-status").classList.add("ready");
+  }).catch(() => { $("#ai-status").textContent = "机经可用 · AI暂时离线"; $("#ai-status").classList.remove("ready"); });
+  const jobs = [refreshStats(), loadActivity(), loadInsights(), loadCategories().then(loadBank), loadNotebook(), loadKnowledgeTopics(), loadJournal()];
+  const results = await Promise.allSettled(jobs); await healthPromise;
+  const failures = results.filter((result) => result.status === "rejected").length;
+  if (failures) showToast(`${failures}项个人数据暂未同步，机经刷题仍可继续。`, "warning");
+}
+window.addEventListener("lumi:auth-ready", initializeApp, { once: true });
+if (window.__LUMI_AUTH__?.ready) initializeApp();

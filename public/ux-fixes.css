@@ -1,0 +1,14 @@
+body.app-booting main, body.app-booting .study-tools { visibility: hidden; pointer-events: none; }
+.app-toast { position: fixed; z-index: 15000; left: 50%; bottom: 28px; transform: translateX(-50%); width: min(520px, calc(100vw - 28px)); padding: 13px 17px; border-radius: 13px; background: #173d31; color: white; box-shadow: 0 15px 45px #10271e4d; font-weight: 700; text-align: center; }
+.app-toast[hidden] { display: none; }
+.app-toast[data-tone="error"] { background: #9b3d31; }
+.app-toast[data-tone="warning"] { background: #705716; }
+#open-practice-hub.has-resume { text-align: left; gap: 18px; }
+#open-practice-hub.has-resume > span { display: grid; gap: 3px; }
+#open-practice-hub.has-resume small { font-size: 11px; opacity: .76; }
+#open-practice-hub.has-resume b { white-space: nowrap; }
+@media (max-width: 700px) {
+  .app-toast { bottom: calc(76px + env(safe-area-inset-bottom)); font-size: 14px; }
+  body:has(#practice-hub:not([hidden])) .app-toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
+  #open-practice-hub.has-resume { min-height: 62px; }
+}
