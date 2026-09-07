@@ -99,12 +99,13 @@
         <select id="bank-category" aria-label="细分考点"><option value="all">全部细分考点</option></select>
         <select id="bank-level" aria-label="题库难度"><option value="all">全部难度</option><option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option></select>
         <select id="bank-status" aria-label="完成状态"><option value="all">全部状态</option><option value="pending">未完成</option><option value="completed">已完成</option></select>
+        <button id="clear-bank-filters" type="button">清除筛选</button>
         <input id="bank-answer-status" type="hidden" value="ready" />
       </div>
       <div id="bank-list" class="bank-list" aria-live="polite"></div>
       <button id="bank-load-more" class="bank-load-more" hidden>继续加载更多题目 ↓</button>
     </section>
-    <section id="practice-hub" class="dashboard practice-hub" hidden>
+    <section id="practice-hub" class="dashboard practice-hub" role="dialog" aria-modal="true" aria-label="连续刷题" hidden>
       <button id="close-practice-hub" class="practice-hub-close" aria-label="关闭连续刷题窗口">×</button>
       <aside>
         <p class="label">训练设置</p>
@@ -133,6 +134,7 @@
           <p>选择必考专项，然后开始连续刷题。</p>
         </div>
         <div id="quiz" hidden>
+          <button id="toggle-practice-settings" class="toggle-practice-settings" type="button">调整训练设置</button>
           <div id="notice" class="notice" hidden></div>
           <div class="progress-row"><span id="counter"></span><span id="source"></span></div>
           <div class="progress-bar"><i id="progress"></i></div>
@@ -173,23 +175,23 @@
     </section>
   </main>
   <div id="selection-tools" class="selection-tools" hidden><button id="lookup-selection">查看用法</button><button id="save-selection">＋ 生词本</button></div>
-  <aside id="vocab-drawer" class="vocab-drawer" aria-label="生词本" hidden>
+  <aside id="vocab-drawer" class="vocab-drawer" role="dialog" aria-modal="true" aria-label="生词本" hidden>
     <header><div><p class="label">随题生词本</p><h2 id="lookup-word">Mes mots</h2></div><button id="close-notebook" aria-label="关闭生词本">×</button></header>
     <div id="lookup-detail" class="lookup-detail"><p>在题目中选择一个法语单词，即可查看中文释义、法语用法、搭配和例句。</p></div>
     <div class="notebook-heading"><strong>已收藏</strong><span id="notebook-summary"></span></div>
     <div id="notebook-list" class="notebook-list"></div>
   </aside>
-  <aside id="journal-drawer" class="journal-drawer tool-drawer" aria-label="知识点整理" hidden>
+  <aside id="journal-drawer" class="journal-drawer tool-drawer" role="dialog" aria-modal="true" aria-label="知识点整理" hidden>
     <header><div><p class="label">自动知识整理</p><h2>知识点整理</h2><p>把lili老师的答疑、归纳和速查表集中整理。</p></div><button id="close-journal" aria-label="关闭知识点整理">×</button></header>
     <div class="journal-filters" role="group" aria-label="知识记录筛选"><button class="active" data-journal-filter="all">全部知识</button><button data-journal-filter="quick-reference">速查表</button><button data-journal-filter="question">答疑整理</button></div>
     <div id="journal-list" class="journal-list"></div>
   </aside>
-  <aside id="mistake-drawer" class="journal-drawer tool-drawer" aria-label="错题本" hidden>
+  <aside id="mistake-drawer" class="journal-drawer tool-drawer" role="dialog" aria-modal="true" aria-label="错题本" hidden>
     <header><div><p class="label">自动错因复盘</p><h2>错题本</h2><p>按具体考点整理错误原因、中法解析和原题。</p></div><button id="close-mistakes" aria-label="关闭错题本">×</button></header>
     <div class="mistake-summary"><strong id="mistake-count">0</strong><span>个待复盘考点</span></div>
     <div id="mistake-list" class="journal-list"></div>
   </aside>
-  <aside id="history-drawer" class="history-drawer" aria-label="做题历史" hidden>
+  <aside id="history-drawer" class="history-drawer" role="dialog" aria-modal="true" aria-label="做题历史" hidden>
     <header><div><p class="label">从新到旧</p><h2>做题历史</h2><p>筛选并重新打开每一次作答，查看当时选择和完整解析。</p></div><button id="close-history" aria-label="关闭做题历史">×</button></header>
     <div class="history-filters">
       <select id="history-type" aria-label="历史题型"><option value="all">全部题型</option><option value="grammar">语法</option><option value="vocabulary">词汇</option><option value="reading">阅读</option><option value="listening">听力</option></select>
@@ -199,7 +201,7 @@
     </div>
     <div class="history-layout"><div><div id="history-count" class="history-count"></div><div id="history-list" class="history-list"></div></div><div id="history-detail" class="history-detail"><p>选择左侧记录查看完整题目。</p></div></div>
   </aside>
-  <aside id="knowledge-drawer" class="knowledge-drawer" aria-label="知识点教室" hidden>
+  <aside id="knowledge-drawer" class="knowledge-drawer" role="dialog" aria-modal="true" aria-label="知识点教室" hidden>
     <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>
     <nav id="knowledge-topics" aria-label="知识点列表"></nav>
     <div id="lesson-content" class="lesson-content"></div>
@@ -212,7 +214,7 @@
     <button id="open-notebook" class="tool-ball" aria-label="打开生词本"><span>生词</span><b id="vocab-count">0</b></button>
     <button id="open-tutor" class="tool-ball tutor-launch" aria-label="打开lili老师"><span>lili</span></button>
   </nav>
-  <aside id="tutor-drawer" class="tutor-drawer" aria-label="lili老师" hidden>
+  <aside id="tutor-drawer" class="tutor-drawer" role="dialog" aria-modal="true" aria-label="lili老师" hidden>
     <header><div><p class="label">随时追问</p><h2>lili老师</h2><span id="tutor-mode">正在连接…</span></div><button id="close-tutor" aria-label="收起lili老师">×</button></header>
     <div class="tutor-starters"><button>y 和 en 到底怎么选？</button><button>帮我解释当前题</button><button>为什么其他选项不对？</button></div>
     <div id="tutor-messages" class="tutor-messages"><div class="tutor-message assistant">可以问我语法、词汇、阅读方法，也可以让我生成清晰可见的速查表。</div></div>

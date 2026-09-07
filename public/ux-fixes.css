@@ -7,8 +7,21 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
 #open-practice-hub.has-resume > span { display: grid; gap: 3px; }
 #open-practice-hub.has-resume small { font-size: 11px; opacity: .76; }
 #open-practice-hub.has-resume b { white-space: nowrap; }
+.toggle-practice-settings { display: none; }
+.bank-retry { grid-column: 1/-1; min-height: 180px; border: 1px dashed #c6cfc6; border-radius: 15px; background: #fbfcf8; color: #173d31; padding: 24px; cursor: pointer; }
+.bank-retry strong, .bank-retry span, .bank-retry b { display: block; }
+.bank-retry span { color: #748078; font-size: 12px; margin: 8px 0 16px; }
+.bank-retry b { width: fit-content; margin: auto; border-radius: 9px; background: #173d31; color: white; padding: 9px 14px; }
+.bank-list.loading { opacity: .58; }
+.bank-toolbar { position: sticky; top: 8px; z-index: 12; padding: 9px; border: 1px solid #e2e5dc; border-radius: 13px; background: #fbfaf5f2; backdrop-filter: blur(10px); }
+#clear-bank-filters { border: 1px solid #ccd5cd; border-radius: 10px; background: white; color: #315d49; padding: 10px 12px; white-space: nowrap; font-weight: 700; cursor: pointer; }
 @media (max-width: 700px) {
   .app-toast { bottom: calc(76px + env(safe-area-inset-bottom)); font-size: 14px; }
   body:has(#practice-hub:not([hidden])) .app-toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
   #open-practice-hub.has-resume { min-height: 62px; }
+  .bank-toolbar { top: 4px; display: grid; grid-template-columns: 1fr 1fr; backdrop-filter: none; }
+  .bank-toolbar #bank-search { grid-column: 1/-1; }
+  #clear-bank-filters { min-height: 46px; }
+  .practice-hub.is-answering:not(.show-settings) > aside { display: none; }
+  .toggle-practice-settings { display: block; position: sticky; top: 0; z-index: 7; margin: -4px 46px 12px auto; border: 1px solid #cbd4ca; border-radius: 18px; background: #fff; color: #194c3b; padding: 8px 12px; font-weight: 700; }
 }

@@ -143,6 +143,7 @@ function revealPractice({ smooth = true } = {}) {
 
 function selectModule(type) {
   state.type = type;
+  $("#practice-hub").classList.remove("is-answering", "show-settings");
   state.activeCategory = null;
   state.productionType = ["writing", "speaking"].includes(type) ? type : null;
   savePreferences();
@@ -170,7 +171,7 @@ async function api(path, options) {
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 60000);
   try {
     const response = await fetch(path, { ...options, signal: controller.signal, headers: { "Content-Type": "application/json" } });
-    const payload = await response.json(); if (!response.ok) throw new Error(payload.error || "请求失败"); return payload;
+    const payload = await response.json().catch(() => ({ error: "服务器返回异常，请稍后重试" })); if (!response.ok) throw new Error(payload.error || "请求失败"); return payload;
   } catch (error) { if (error.name === "AbortError") throw new Error("请求超过60秒，已自动恢复按钮，请重试"); throw error; }
   finally { clearTimeout(timeout); }
 }
@@ -404,6 +405,7 @@ function closePracticeHub() { $("#practice-hub").hidden = true; }
 async function loadBank(reset = true) {
   if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
   if (reset) bankOffset = 0;
+  if (reset) $("#bank-list").setAttribute("aria-busy", "true");
   const params = new URLSearchParams({ source: $("#bank-source").value, type: $("#bank-type").value, level: $("#bank-level").value, status: $("#bank-status").value, category: $("#bank-category").value, answerStatus: $("#bank-answer-status").value, q: $("#bank-search").value.trim(), offset: bankOffset, limit: 50 });
   try {
     const payload = await api(`/api/bank?${params}`);
@@ -423,7 +425,10 @@ async function loadBank(reset = true) {
     });
     if (reset) $("#bank-list").replaceChildren(...cards); else $("#bank-list").append(...cards);
     bankOffset += payload.questions.length;
-  } finally { bankLoading = false; $("#bank-list").classList.remove("loading"); }
+  } catch (error) {
+    if (reset) { const retry = document.createElement("button"); retry.className = "bank-retry"; retry.innerHTML = `<strong>题库暂时没有载入</strong><span>${escapeHtml(error.message)}</span><b>重新加载</b>`; retry.addEventListener("click", () => loadBank(true)); $("#bank-list").replaceChildren(retry); }
+    else showToast(`更多题目加载失败：${error.message}`, "error");
+  } finally { bankLoading = false; $("#bank-list").classList.remove("loading"); $("#bank-list").removeAttribute("aria-busy"); }
 }
 
 async function loadCategories(type = $("#category-type").value) {
@@ -500,7 +505,7 @@ async function submitQuestionComment(event) {
 }
 
 function render() {
-  const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false;
+  const question = state.questions[state.index]; state.answered = false; state.submitting = false; state.audioPlayed = false; $("#practice-hub").classList.add("is-answering"); $("#practice-hub").classList.remove("show-settings");
   $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
@@ -572,6 +577,7 @@ async function next() {
 }
 
 function showProduction() {
+  $("#practice-hub").classList.remove("is-answering", "show-settings");
   const tasks = productionTasks[state.exam][state.productionType]; const task = tasks[Math.floor(Math.random() * tasks.length)];
   $("#welcome").hidden = true; $("#quiz").hidden = true; $("#finished").hidden = true; $("#production").hidden = false; $("#practice").classList.remove("empty");
   $("#production-exam").textContent = `${state.exam.toUpperCase()} · ${state.productionType === "writing" ? "表达写作" : "口语表达"}`; $("#production-format").textContent = task[0];
@@ -596,6 +602,7 @@ async function askTutor(question) {
 
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#play-audio").addEventListener("click", playAudio); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
+$("#toggle-practice-settings").addEventListener("click", () => { const hub = $("#practice-hub"); hub.classList.toggle("show-settings"); $("#toggle-practice-settings").textContent = hub.classList.contains("show-settings") ? "收起训练设置" : "调整训练设置"; });
 $("#level").addEventListener("change", savePreferences);
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);
@@ -620,13 +627,14 @@ document.addEventListener("click", (event) => {
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
 $("#comment-form").addEventListener("submit", submitQuestionComment); $("#refresh-comments").addEventListener("click", loadQuestionComments);
-$("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { alert(error.message); button.disabled = false; } });
+$("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { showToast(error.message, "error"); button.disabled = false; } });
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
 document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
 for (const selector of ["#bank-level", "#bank-status", "#bank-category", "#bank-answer-status"]) $(selector).addEventListener("change", () => { state.activeCategory = $("#bank-category").value === "all" ? null : $("#bank-category").value; savePreferences(); loadBank(true); });
 $("#bank-source").addEventListener("change", () => { state.activeCategory = null; $("#bank-category").value = "all"; loadBank(true); loadCategories($("#category-type").value); });
 $("#bank-search").addEventListener("input", () => { clearTimeout(bankSearchTimer); bankSearchTimer = setTimeout(() => loadBank(true), 250); });
 $("#bank-load-more").addEventListener("click", () => loadBank(false));
+$("#clear-bank-filters").addEventListener("click", async () => { $("#bank-search").value = ""; $("#bank-type").value = "all"; $("#bank-level").value = "all"; $("#bank-status").value = "all"; state.activeCategory = null; $("#category-type").value = "grammar"; await loadCategories("grammar"); $("#bank-category").value = "all"; savePreferences(); await loadBank(true); showToast("已恢复全部机经", "info"); });
 $("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });
 $("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
 $("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; savePreferences(); $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
@@ -648,4 +656,5 @@ async function initializeApp() {
   if (failures) showToast(`${failures}项个人数据暂未同步，机经刷题仍可继续。`, "warning");
 }
 window.addEventListener("lumi:auth-ready", initializeApp, { once: true });
+window.addEventListener("lumi:toast", (event) => showToast(event.detail?.message || "操作失败", event.detail?.tone || "info"));
 if (window.__LUMI_AUTH__?.ready) initializeApp();
