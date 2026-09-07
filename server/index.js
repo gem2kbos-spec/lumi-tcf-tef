@@ -105,9 +105,9 @@ const server = http.createServer(async (req, res) => {
       await logout(cookieToken(req)); res.setHeader("Set-Cookie", sessionCookie("", true)); return sendJson(res, 200, { ok: true });
     }
     const auth = await authenticate(cookieToken(req));
-    if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth, aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) }) : sendJson(res, 401, { error: "AUTH_REQUIRED" });
+    if (req.method === "GET" && url.pathname === "/api/auth/me") return auth ? sendJson(res, 200, { user: auth, aiUsage: auth.role === "admin" ? null : await aiUsageForUser(auth.id) }) : sendJson(res, 401, { error: cookieToken(req) ? "SESSION_REPLACED" : "AUTH_REQUIRED" });
     if (url.pathname.startsWith("/api/")) {
-      if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
+      if (!auth) return sendJson(res, 401, { error: cookieToken(req) ? "SESSION_REPLACED" : "AUTH_REQUIRED" });
       if (req.method === "GET" && url.pathname === "/api/membership") return sendJson(res, 200, {
         user: auth,
         orders: await ordersForUser(auth.id),

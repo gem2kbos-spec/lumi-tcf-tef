@@ -71,7 +71,9 @@ export async function login(email, password) {
   const data = await readData();
   const user = data.users.find((item) => item.email === normalizeEmail(email));
   if (!user || !await passwordMatches(String(password || ""), user.passwordHash)) throw new Error("邮箱或密码错误");
-  data.sessions = data.sessions.filter((item) => new Date(item.expiresAt) > new Date());
+  // A user can have only one active session. A successful login on a new
+  // device replaces every older session for that account.
+  data.sessions = data.sessions.filter((item) => new Date(item.expiresAt) > new Date() && item.userId !== user.id);
   const token = crypto.randomBytes(32).toString("base64url");
   data.sessions.push({ id: crypto.randomUUID(), userId: user.id, tokenHash: tokenHash(token), createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 30 * 86400000).toISOString() });
   await writeData(data); return { token, user: publicUser(user) };
@@ -80,7 +82,9 @@ export async function login(email, password) {
 export async function authenticate(token) {
   if (!token) return null;
   const data = await readData(); const session = data.sessions.find((item) => item.tokenHash === tokenHash(token) && new Date(item.expiresAt) > new Date());
-  return session ? publicUser(data.users.find((item) => item.id === session.userId)) : null;
+  if (!session) return null;
+  const latest = data.sessions.filter((item) => item.userId === session.userId && new Date(item.expiresAt) > new Date()).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  return latest?.id === session.id ? publicUser(data.users.find((item) => item.id === session.userId)) : null;
 }
 
 export async function logout(token) {

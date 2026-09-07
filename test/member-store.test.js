@@ -33,3 +33,15 @@ test("payment note is required for manual verification", async () => {
   const member = await store.register({ name: "学员", email: "note@example.com", password: "secure-pass-2026" });
   await assert.rejects(() => store.createOrder(member.id, { planId: "month", paymentNote: "" }), /付款备注/);
 });
+
+test("a new login invalidates the previous device session", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "lumi-single-session-"));
+  process.env.LUMI_MEMBER_FILE = path.join(directory, "members.json");
+  const store = await import(`../server/member-store.js?test=${Date.now()}-single-session`);
+  await store.register({ name: "单设备学员", email: "single@example.com", password: "secure-pass-2026" });
+  const firstDevice = await store.login("single@example.com", "secure-pass-2026");
+  assert.equal((await store.authenticate(firstDevice.token))?.email, "single@example.com");
+  const secondDevice = await store.login("single@example.com", "secure-pass-2026");
+  assert.equal(await store.authenticate(firstDevice.token), null);
+  assert.equal((await store.authenticate(secondDevice.token))?.email, "single@example.com");
+});
