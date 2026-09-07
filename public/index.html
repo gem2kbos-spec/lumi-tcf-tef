@@ -161,9 +161,8 @@
             </div>
           </div>
           <section id="question-comments" class="question-comments" hidden>
-            <div class="comment-heading"><div><strong>这道题的讨论</strong><span id="comment-count">0条</span></div><button id="refresh-comments" type="button">刷新</button></div>
-            <div id="comment-list" class="comment-list"><p>正在加载讨论…</p></div>
-            <form id="comment-form"><textarea id="comment-content" rows="2" maxlength="500" placeholder="分享解题思路、提出疑问，或指出题目需要改进的地方……"></textarea><div><span id="comment-hint">最多500字</span><button>发表评论</button></div></form>
+            <button id="toggle-comments" class="comment-toggle" type="button"><span>题目讨论</span><small id="comment-count">按需查看</small><b>展开</b></button>
+            <div class="comment-body" hidden><div class="comment-heading"><span>交流解题思路或指出题目问题</span><button id="refresh-comments" type="button">刷新</button></div><div id="comment-list" class="comment-list"><p>正在加载讨论…</p></div><form id="comment-form"><textarea id="comment-content" rows="2" maxlength="500" placeholder="写下疑问、解题思路或题目问题……"></textarea><div><span id="comment-hint">最多500字</span><button>发表</button></div></form></div>
           </section>
         </div>
         <div id="production" hidden>

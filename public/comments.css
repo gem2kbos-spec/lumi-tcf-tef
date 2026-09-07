@@ -1,4 +1,10 @@
 .question-comments { margin-top: 24px; border-top: 1px solid #dde3da; padding-top: 20px; }
+.comment-toggle { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #dce2da; border-radius: 12px; background: #f8f9f5; color: #244b3c; text-align: left; cursor: pointer; }
+.comment-toggle span { font-weight: 800; }
+.comment-toggle small { color: #77827c; }
+.comment-toggle b { min-width: 38px; text-align: right; font-size: 11px; }
+.comment-body { padding-top: 12px; }
+.comment-body[hidden] { display: none; }
 .comment-heading, .comment-heading > div, #comment-form > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .comment-heading span { color: #77827c; font-size: 13px; }
 .comment-heading button, .comment-delete { border: 0; background: transparent; color: #3d6958; }

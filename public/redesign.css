@@ -131,6 +131,8 @@ main.app-shell {
 .practice-hub.is-answering .options { gap: 11px; margin-top: 28px; }
 .practice-hub.is-answering .options button { min-height: 58px; padding: 14px 17px; border-radius: 14px; font-size: 15px; }
 .practice-hub.is-answering .progress-bar { margin-bottom: 28px; }
+.detailed-analysis details > summary { cursor: pointer; color: var(--studio-green); font-size: 13px; font-weight: 800; }
+.detailed-analysis details > p { margin-top: 13px; }
 .study-tools { right: 18px; }
 .tool-ball { box-shadow: 0 9px 25px #14372a38; }
 

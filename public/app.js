@@ -538,7 +538,7 @@ function render() {
   $("#play-audio").hidden = !question.audioText; $("#play-audio").disabled = false; $("#play-audio").textContent = "▶ 播放音频（仅一次）";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
-  $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true;
+  $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
   savePreferences(); savePracticeSession();
@@ -569,11 +569,11 @@ async function answer(selected, selectedButton) {
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false;
     const savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) });
     const analysisPromise = api("/api/attempt-analysis", { method: "POST", body: JSON.stringify({ attemptId: savedAttempt.attemptId, questionId: answeredQuestionId }) });
-    Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories(), loadQuestionComments()]).catch(() => {});
+    Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]).catch(() => {});
     analysisPromise.then((payload) => {
       if (state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
       const analysis = payload.analysis; const pending = $("#analysis-pending"); if (!pending) return;
-      pending.className = "detailed-analysis"; pending.innerHTML = `<p>${escapeHtml(analysis.detailedZh)}</p>`;
+      pending.className = "detailed-analysis"; pending.innerHTML = `<details open><summary>详细中文解析</summary><p>${escapeHtml(analysis.detailedZh)}</p></details>`;
       const ask = document.createElement("button"); ask.id = "ask-lili-analysis"; ask.className = "ask-lili-analysis"; ask.innerHTML = "<span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small>"; ask.addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis)); $("#feedback").append(ask);
       if (!result.correct) loadJournal();
     }).catch((error) => { const pending = $("#analysis-pending"); if (pending && state.questions[state.index]?.id === answeredQuestionId) pending.innerHTML = `<p>新版解析暂时生成失败：${escapeHtml(error.message)}。正确答案已显示，可继续下一题或稍后重做。</p>`; });
@@ -655,6 +655,7 @@ document.addEventListener("click", (event) => {
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
 $("#comment-form").addEventListener("submit", submitQuestionComment); $("#refresh-comments").addEventListener("click", loadQuestionComments);
+$("#toggle-comments").addEventListener("click", async () => { const body = $(".comment-body"); body.hidden = !body.hidden; $("#toggle-comments b").textContent = body.hidden ? "展开" : "收起"; if (!body.hidden && $("#comment-count").textContent === "按需查看") await loadQuestionComments(); });
 $("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { showToast(error.message, "error"); button.disabled = false; } });
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });
 document.querySelectorAll(".tutor-starters button").forEach((button) => button.addEventListener("click", () => askTutor(button.textContent)));
