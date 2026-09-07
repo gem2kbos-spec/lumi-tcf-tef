@@ -1,5 +1,7 @@
 import { mockGrammarBatch001 } from "./mock-grammar-batch-001.js";
+import { mockGrammarBatch002 } from "./mock-grammar-batch-002.js";
 import mockReadingBatch001 from "./mock-reading-batch-001.json" with { type: "json" };
+import mockReadingBatch002 from "./mock-reading-batch-002.json" with { type: "json" };
 
 export const questionBank = [
   {
@@ -267,5 +269,7 @@ export const questionBank = [
     explanation: "Le client doit ajouter le numéro de l'appartement avant ce soir.", skill: "consigne_orale"
   },
   ...mockGrammarBatch001,
-  ...mockReadingBatch001
+  ...mockGrammarBatch002,
+  ...mockReadingBatch001,
+  ...mockReadingBatch002
 ];
