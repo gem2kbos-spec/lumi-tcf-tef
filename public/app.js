@@ -70,7 +70,33 @@ let tutorHistory = [];
 let journalEntries = [];
 let journalFilter = "all";
 let historyAttempts = [];
+let dashboardStats = null;
+let dashboardActivity = null;
+let dashboardGoal = 10;
 const workspacePanelIds = ["exam-center", "activity-center", "ai-center", "bank-center"];
+
+function updateTodayPlan() {
+  if (!dashboardStats || !dashboardActivity) return;
+  const done = dashboardActivity.todayTotal || 0;
+  const goal = dashboardGoal || 10;
+  const reviewCount = dashboardStats.pendingReview || 0;
+  const remaining = Math.max(0, goal - done);
+  $("#today-goal-bar").style.width = `${Math.min(100, Math.round(done / goal * 100))}%`;
+  $("#today-goal-text").textContent = remaining ? `今天已完成 ${done} / ${goal}` : `今日目标已完成 · 共 ${done} 题`;
+  if (reviewCount) {
+    $("#today-focus-label").textContent = "建议先做";
+    $("#daily-recommendation").textContent = `${reviewCount} 道错题待复习`;
+    $("#today-next-reason").textContent = "复习后答对的题会自动离开待复习列表。";
+    $("#today-start").textContent = "去复习";
+    $("#today-start").dataset.action = "review";
+  } else {
+    $("#today-focus-label").textContent = remaining ? "今日训练" : "今日已完成";
+    $("#daily-recommendation").textContent = remaining ? `还差 ${remaining} 题` : "可以收尾，也可以继续";
+    $("#today-next-reason").textContent = remaining ? "继续上次选择的考试、题型和难度。" : "新的错题会自动进入复习列表。";
+    $("#today-start").textContent = remaining ? "继续" : "再练几题";
+    $("#today-start").dataset.action = "continue";
+  }
+}
 
 function activateWorkspace(viewId, { updateHash = true } = {}) {
   const target = workspacePanelIds.includes(viewId) ? viewId : "exam-center";
@@ -80,6 +106,7 @@ function activateWorkspace(viewId, { updateHash = true } = {}) {
   const [section, title] = headings[target]; $("#content-section-label").textContent = section; $("#content-section-title").textContent = title;
   workspacePanelIds.forEach((id) => $("#" + id)?.classList.toggle("active", id === target));
   document.querySelectorAll("[data-workspace-view]").forEach((item) => item.classList.toggle("active", item.dataset.workspaceView === target));
+  try { localStorage.setItem(userStorageKey("workspace"), target); } catch {}
   if (updateHash && location.hash !== `#${target}`) history.replaceState(null, "", `#${target}`);
   requestAnimationFrame(() => $("#" + target)?.scrollIntoView({ behavior: "smooth", block: "start" }));
 }
@@ -189,12 +216,14 @@ async function api(path, options) {
 
 async function refreshStats() {
   const stats = await api("/api/stats");
+  dashboardStats = stats;
   $("#accuracy").textContent = `${stats.accuracy}%`; $("#total").textContent = stats.total; $("#streak").textContent = stats.streak;
   $("#authentic-progress").textContent = `${stats.bank.completed}/${stats.bank.total}`;
   $("#dashboard-accuracy").textContent = stats.total ? `${stats.accuracy}%` : "暂无"; $("#dashboard-streak").textContent = stats.streak; $("#dashboard-remaining").textContent = stats.bank.remaining;
   const abilityLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读" };
   $("#ability-overview").replaceChildren(...Object.entries(abilityLabels).map(([type, label]) => { const item = stats.byType[type] || { total: 0, accuracy: 0 }; const row = document.createElement("div"); row.innerHTML = `<span>${label}<small>${item.total ? `${item.total}题` : "暂无数据"}</small></span><i><b style="width:${item.total ? item.accuracy : 0}%"></b></i><strong>${item.total ? `${item.accuracy}%` : "—"}</strong>`; return row; }));
   $("#review-count").textContent = stats.pendingReview;
+  updateTodayPlan();
   const weak = stats.weakSkills.slice(0, 4); $("#weak-card").hidden = weak.length === 0;
   $("#weak-skills").replaceChildren(...weak.map((item) => {
     const row = document.createElement("article"); row.className = "weak-skill-row";
@@ -366,7 +395,8 @@ function captureVocabularySelection() {
 
 async function loadInsights() {
   const insights = await api("/api/insights");
-  $("#daily-recommendation").textContent = `建议 ${insights.recommendedToday} 题`;
+  dashboardGoal = insights.recommendedToday;
+  updateTodayPlan();
   const typeLabels = { grammar: "语言结构", vocabulary: "词汇", reading: "阅读" };
   const skillLabels = {
     technologie: "科技主题", culture: "文化主题", médias: "媒体主题", société: "社会主题",
@@ -381,12 +411,14 @@ async function loadInsights() {
 
 async function loadActivity() {
   const activity = await api("/api/activity");
+  dashboardActivity = activity;
   $("#history-authentic").textContent = `${activity.historicBank} / ${activity.bankTotal}`;
   const bankRemaining = Math.max(0, activity.bankTotal - activity.historicBank);
   $("#history-generated").textContent = `${bankRemaining}题`; $("#today-authentic").textContent = `${activity.todayBank}题`; $("#today-generated").textContent = `${activity.todayTotal}题`;
   $("#history-authentic-percent").textContent = `${activity.bankPercentage}% · 剩余 ${bankRemaining} 题`; $("#authentic-progress-bar").style.width = `${activity.bankPercentage}%`;
   $("#today-total").textContent = `${activity.todayTotal}题`; $("#today-accuracy").textContent = `${activity.todayAccuracy}%`; $("#authentic-total").textContent = `${activity.bankTotal}题`;
   $("#last-activity").textContent = activity.lastActivityAt ? new Date(activity.lastActivityAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "暂无记录";
+  updateTodayPlan();
 }
 
 function renderHistoryDetail(attempt) {
@@ -642,7 +674,7 @@ $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes"
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 $("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
-$("#today-start").addEventListener("click", openPracticeHub);
+$("#today-start").addEventListener("click", () => { openPracticeHub(); if ($("#today-start").dataset.action === "review") start("review"); });
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
 window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
@@ -681,7 +713,8 @@ window.addEventListener("offline", updateNetworkStatus); window.addEventListener
 let appInitialized = false;
 async function initializeApp() {
   if (appInitialized) return; appInitialized = true;
-  restorePreferences(); renderCatalog(); prepareResume(); activateWorkspace(location.hash.slice(1) || "exam-center", { updateHash: false });
+  let savedWorkspace = "exam-center"; try { savedWorkspace = localStorage.getItem(userStorageKey("workspace")) || savedWorkspace; } catch {}
+  restorePreferences(); renderCatalog(); prepareResume(); activateWorkspace(location.hash.slice(1) || savedWorkspace, { updateHash: false });
   const healthPromise = api("/api/health").then((health) => {
     const label = health.aiProvider === "deepseek" ? "DeepSeek" : health.aiProvider === "openai" ? "OpenAI" : "本地题库";
     $("#ai-status").textContent = health.aiEnabled ? `● ${label} 已连接` : "● 机经可用 · AI未连接";

@@ -56,10 +56,15 @@ main.app-shell {
 .content-header .quiet-action { background: transparent; color: var(--studio-green); border: 1px solid var(--studio-line); }
 .today-dashboard { display: grid; grid-template-columns: 210px 260px minmax(320px, 1fr); gap: 12px; margin-top: 22px; }
 .today-primary, .today-numbers, .ability-overview { border: 1px solid var(--studio-line); border-radius: 18px; background: var(--studio-panel); }
-.today-primary { display: grid; grid-template-columns: 1fr auto; align-items: center; padding: 18px; background: #eaf0f8; border-color: #d8e1ed; }
+.today-primary { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 7px 10px; padding: 18px; background: #eaf0f8; border-color: #d8e1ed; }
 .today-primary > span { grid-column: 1/-1; color: #65758a; font-size: 10px; }
 .today-primary > strong { font-size: 20px; color: #1c3d65; }
 .today-primary button { border: 0; border-radius: 10px; background: #244f7d; color: white; padding: 9px 13px; font-weight: 800; cursor: pointer; }
+.today-goal { grid-column: 1/-1; display: grid; gap: 5px; margin-top: 3px; }
+.today-goal i { display: block; height: 5px; overflow: hidden; border-radius: 10px; background: #d7e0ea; }
+.today-goal i b { display: block; width: 0; height: 100%; border-radius: inherit; background: #315f8e; transition: width .25s ease; }
+.today-goal small { color: #65758a; font-size: 9px; }
+.today-primary > p { grid-column: 1/-1; margin: 0; color: #65758a; font-size: 10px; line-height: 1.45; }
 .today-numbers { display: grid; grid-template-columns: repeat(3, 1fr); padding: 15px 8px; }
 .today-numbers > div { display: grid; gap: 6px; padding: 3px 10px; border-right: 1px solid var(--studio-line); }
 .today-numbers > div:last-child { border-right: 0; }
