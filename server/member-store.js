@@ -31,10 +31,15 @@ async function passwordMatches(password, stored) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 
+function configuredPrice(key, fallback) {
+  const value = Number(process.env[key]);
+  return Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : fallback;
+}
+
 export const plans = [
-  { id: "month", name: "30 天训练权限", days: 30, priceCny: 29 },
-  { id: "quarter", name: "90 天训练权限", days: 90, priceCny: 69 },
-  { id: "half-year", name: "180 天训练权限", days: 180, priceCny: 119 }
+  { id: "month", name: "30 天体验训练", days: 30, priceCny: configuredPrice("PRICE_MONTH_CNY", 39) },
+  { id: "quarter", name: "90 天冲刺训练", days: 90, priceCny: configuredPrice("PRICE_QUARTER_CNY", 89), recommended: true },
+  { id: "half-year", name: "180 天长期训练", days: 180, priceCny: configuredPrice("PRICE_HALF_YEAR_CNY", 159) }
 ];
 
 export function publicUser(user) {
@@ -90,6 +95,21 @@ export async function authenticate(token) {
 export async function logout(token) {
   if (!token) return;
   const data = await readData(); data.sessions = data.sessions.filter((item) => item.tokenHash !== tokenHash(token)); await writeData(data);
+}
+
+export async function changePassword(userId, currentPassword, newPassword) {
+  newPassword = String(newPassword || "");
+  if (newPassword.length < 10) throw new Error("新密码至少需要 10 位");
+  if (String(currentPassword || "") === newPassword) throw new Error("新密码不能与当前密码相同");
+  const data = await readData();
+  const user = data.users.find((item) => item.id === userId);
+  if (!user || !await passwordMatches(String(currentPassword || ""), user.passwordHash)) throw new Error("当前密码不正确");
+  user.passwordHash = await passwordHash(newPassword);
+  user.updatedAt = new Date().toISOString();
+  data.sessions = data.sessions.filter((item) => item.userId !== userId);
+  data.audit.unshift({ id: crypto.randomUUID(), adminId: null, action: "member.password_changed", targetId: userId, createdAt: new Date().toISOString() });
+  await writeData(data);
+  return { ok: true };
 }
 
 export async function createOrder(userId, input) {
@@ -151,7 +171,49 @@ export async function deleteQuestionComment(actor, commentId) {
 
 export async function adminOverview() {
   const data = await readData();
-  return { users: data.users.map(publicUser).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), orders: data.orders.map((order) => ({ ...order, user: publicUser(data.users.find((item) => item.id === order.userId)) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)), audit: data.audit.slice(0, 100) };
+  const confirmed = data.orders.filter((order) => order.status === "confirmed");
+  const now = Date.now();
+  const memberUsers = data.users.filter((user) => user.role !== "admin");
+  const activeUsers = memberUsers.filter((user) => publicUser(user).hasAccess);
+  const pendingOrders = data.orders.filter((order) => order.status === "pending");
+  return {
+    users: data.users.map(publicUser).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    orders: data.orders.map((order) => ({ ...order, user: publicUser(data.users.find((item) => item.id === order.userId)) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    audit: data.audit.slice(0, 100),
+    metrics: {
+      confirmedRevenueCny: confirmed.reduce((sum, order) => sum + Number(order.amountCny || 0), 0),
+      confirmedOrders: confirmed.length,
+      revenue30dCny: confirmed.filter((order) => now - new Date(order.reviewedAt || order.createdAt).getTime() <= 30 * 86400000).reduce((sum, order) => sum + Number(order.amountCny || 0), 0),
+      registrations7d: memberUsers.filter((user) => now - new Date(user.createdAt).getTime() <= 7 * 86400000).length,
+      expiring7d: activeUsers.filter((user) => user.membershipExpiresAt && new Date(user.membershipExpiresAt).getTime() - now <= 7 * 86400000).length,
+      conversionPercent: memberUsers.length ? Math.round(activeUsers.length / memberUsers.length * 100) : 0,
+      oldestPendingAt: [...pendingOrders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0]?.createdAt || null
+    }
+  };
+}
+
+export async function resetMemberPassword(adminId, userId) {
+  const data = await readData();
+  const user = data.users.find((item) => item.id === userId);
+  if (!user || user.role === "admin") throw new Error("用户不存在或不可重置");
+  const temporaryPassword = `Lu-${crypto.randomBytes(6).toString("base64url")}!8`;
+  user.passwordHash = await passwordHash(temporaryPassword);
+  user.updatedAt = new Date().toISOString();
+  data.sessions = data.sessions.filter((item) => item.userId !== userId);
+  data.audit.unshift({ id: crypto.randomUUID(), adminId, action: "member.password_reset", targetId: userId, createdAt: new Date().toISOString() });
+  await writeData(data);
+  return { user: publicUser(user), temporaryPassword };
+}
+
+export async function revokeMemberSessions(adminId, userId) {
+  const data = await readData();
+  const user = data.users.find((item) => item.id === userId);
+  if (!user || user.role === "admin") throw new Error("用户不存在或不可操作");
+  const before = data.sessions.length;
+  data.sessions = data.sessions.filter((item) => item.userId !== userId);
+  data.audit.unshift({ id: crypto.randomUUID(), adminId, action: "member.sessions_revoked", targetId: userId, createdAt: new Date().toISOString() });
+  await writeData(data);
+  return { ok: true, revoked: before - data.sessions.length };
 }
 
 function extendMembership(user, days) {

@@ -35,3 +35,12 @@ async function writeLocalDocument(file, value) {
 export async function readDocument(key, fallback, localFile) { return supabaseEnabled() ? readSupabaseDocument(key, fallback) : readLocalDocument(localFile, fallback); }
 export async function writeDocument(key, value, localFile) { return supabaseEnabled() ? writeSupabaseDocument(key, value) : writeLocalDocument(localFile, value); }
 
+export async function persistenceHealth() {
+  if (!supabaseEnabled()) return { mode: "local", durable: process.env.NODE_ENV !== "production", reachable: true };
+  try {
+    await readSupabaseDocument("healthcheck", {});
+    return { mode: "supabase", durable: true, reachable: true };
+  } catch {
+    return { mode: "supabase", durable: true, reachable: false };
+  }
+}

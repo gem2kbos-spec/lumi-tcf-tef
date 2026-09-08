@@ -21,6 +21,14 @@ services:
         sync: false
       - key: AI_DAILY_LIMIT
         value: 100
+      - key: PRICE_MONTH_CNY
+        value: 39
+      - key: PRICE_QUARTER_CNY
+        value: 89
+      - key: PRICE_HALF_YEAR_CNY
+        value: 159
+      - key: SUPPORT_CONTACT
+        sync: false
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY

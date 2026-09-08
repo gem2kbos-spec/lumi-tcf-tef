@@ -45,3 +45,28 @@ test("a new login invalidates the previous device session", async () => {
   assert.equal(await store.authenticate(firstDevice.token), null);
   assert.equal((await store.authenticate(secondDevice.token))?.email, "single@example.com");
 });
+
+test("admin can reset a member password and invalidate active sessions", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "lumi-password-reset-"));
+  process.env.LUMI_MEMBER_FILE = path.join(directory, "members.json");
+  const store = await import(`../server/member-store.js?test=${Date.now()}-password-reset`);
+  const member = await store.register({ name: "找回密码学员", email: "recover@example.com", password: "old-password-2026" });
+  const oldSession = await store.login(member.email, "old-password-2026");
+  const result = await store.resetMemberPassword("admin-id", member.id);
+  assert.match(result.temporaryPassword, /^Lu-/);
+  assert.equal(await store.authenticate(oldSession.token), null);
+  await assert.rejects(() => store.login(member.email, "old-password-2026"), /邮箱或密码错误/);
+  assert.equal((await store.login(member.email, result.temporaryPassword)).user.email, member.email);
+});
+
+test("member can change their own password and every existing session is revoked", async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "lumi-change-password-"));
+  process.env.LUMI_MEMBER_FILE = path.join(directory, "members.json");
+  const store = await import(`../server/member-store.js?test=${Date.now()}-change-password`);
+  const member = await store.register({ name: "安全设置学员", email: "change@example.com", password: "old-password-2026" });
+  const session = await store.login(member.email, "old-password-2026");
+  await assert.rejects(() => store.changePassword(member.id, "wrong-password", "new-password-2026"), /当前密码不正确/);
+  await store.changePassword(member.id, "old-password-2026", "new-password-2026");
+  assert.equal(await store.authenticate(session.token), null);
+  assert.equal((await store.login(member.email, "new-password-2026")).user.email, member.email);
+});
