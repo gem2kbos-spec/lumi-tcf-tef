@@ -28,8 +28,17 @@ const sessionCookie = (token, clear = false) => `lumi_session=${clear ? "" : tok
 const storageKeyFor = (user) => user.role === "admin" ? "legacy" : user.id;
 
 function sendJson(res, status, value) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
+  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin", "Permissions-Policy": "camera=(), microphone=(), geolocation=()" });
   res.end(JSON.stringify(value));
+}
+
+function validBrowserOrigin(req) {
+  const origin = String(req.headers.origin || "");
+  if (!origin) return true;
+  const protocol = String(req.headers["x-forwarded-proto"] || "http").split(",")[0].trim();
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0].trim();
+  const allowed = new Set([`${protocol}://${host}`, String(process.env.PUBLIC_BASE_URL || "").replace(/\/$/, "")].filter(Boolean));
+  return allowed.has(origin.replace(/\/$/, ""));
 }
 
 async function body(req) {
@@ -86,6 +95,7 @@ function localTutorAnswer(question) {
 const server = http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    if (!["GET", "HEAD", "OPTIONS"].includes(req.method) && url.pathname.startsWith("/api/") && !validBrowserOrigin(req)) return sendJson(res, 403, { error: "请求来源不受信任，请刷新页面后重试" });
     if (req.method === "GET" && url.pathname === "/api/health") {
       const ai = getAiConfig();
       const storage = await persistenceHealth();
@@ -406,7 +416,8 @@ const server = http.createServer(async (req, res) => {
           : filePath.endsWith(".png") ? "image/png"
             : filePath.endsWith(".svg") ? "image/svg+xml"
               : "text/html";
-    res.writeHead(200, { "Content-Type": `${contentType}; charset=utf-8`, "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin" });
+    const cacheControl = /\.(?:jpe?g|png|svg)$/i.test(filePath) ? "public, max-age=86400" : "no-cache";
+    res.writeHead(200, { "Content-Type": `${contentType}; charset=utf-8`, "Cache-Control": cacheControl, "X-Content-Type-Options": "nosniff", "X-Frame-Options": "DENY", "Referrer-Policy": "same-origin", "Permissions-Policy": "camera=(), microphone=(), geolocation=()" });
     res.end(content);
   } catch (error) {
     if (error.code === "ENOENT") return sendJson(res, 404, { error: "Not found" });

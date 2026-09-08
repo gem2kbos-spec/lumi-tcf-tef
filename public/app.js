@@ -422,7 +422,7 @@ function openPracticeHub() {
   }
   $("#practice-hub").hidden = false;
 }
-function closePracticeHub() { $("#practice-hub").hidden = true; }
+function closePracticeHub() { if (!$("#practice-hub").hidden && state.questions[state.index] && !state.answered) { savePracticeSession(); showToast("当前题目已保存，下次可以继续", "info"); } $("#practice-hub").hidden = true; }
 
 async function loadBank(reset = true) {
   if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
@@ -532,11 +532,12 @@ function render() {
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
   $("#source").textContent = currentSource === "review" ? "错题复习" : "机经";
-  $("#progress").style.width = `${((state.index + 1) / state.questions.length) * 100}%`; $("#topic").textContent = `${question.level} · ${question.topic}`;
+  const progressPercent = state.sequence?.total ? Math.min(100, ((state.sequence.completed + 1) / state.sequence.total) * 100) : 100;
+  $("#progress").style.width = `${progressPercent}%`; $("#progress").parentElement.setAttribute("aria-label", `当前范围进度 ${Math.round(progressPercent)}%`); $("#topic").textContent = `${question.level} · ${question.topic}`;
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
-  $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const marker = document.createElement("span"); marker.textContent = String.fromCharCode(65 + index); button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${String.fromCharCode(65 + index)}，${option}`); button.addEventListener("click", () => answer(index, button)); return button; }));
+  $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const letter = String.fromCharCode(65 + index); const marker = document.createElement("span"); marker.textContent = letter; button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${letter}，${option}`); button.title = `快捷键 ${index + 1} 或 ${letter}`; button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
   savePreferences(); savePracticeSession();
   revealPractice({ smooth: state.continuousNumber > 1 });
@@ -557,16 +558,31 @@ async function answer(selected, selectedButton) {
     const correctOption = answeredQuestion.options[result.answer]; const completedSentence = answeredQuestion.prompt.replace(/_+|…+|\.{3,}/, correctOption);
     $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "✓ 回答正确" : "✕ 回答错误"}</strong><span>正确答案：${String.fromCharCode(65 + result.answer)}</span></div><section class="instant-answer"><b>${escapeHtml(correctOption)}</b><p>${escapeHtml(completedSentence)}</p></section><section id="analysis-pending" class="analysis-pending"><div class="answer-loading"><i></i><div><strong>正在生成新版详细解析</strong><p>将说明决定性规则，并逐项解释每个选项；你现在可以直接练下一题。</p></div></div></section>`;
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false;
+    if (window.matchMedia("(max-width: 700px)").matches) requestAnimationFrame(() => $("#feedback").scrollIntoView({ behavior: "smooth", block: "start" }));
     const savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) });
-    const analysisPromise = api("/api/attempt-analysis", { method: "POST", body: JSON.stringify({ attemptId: savedAttempt.attemptId, questionId: answeredQuestionId }) });
+    const loadDetailedAnalysis = async () => {
+      const pending = $("#analysis-pending");
+      if (!pending || state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
+      pending.className = "analysis-pending";
+      pending.innerHTML = `<div class="answer-loading"><i></i><div><strong>正在生成新版详细解析</strong><p>将说明决定性规则，并逐项解释每个选项；你现在可以直接练下一题。</p></div></div>`;
+      try {
+        const payload = await api("/api/attempt-analysis", { method: "POST", body: JSON.stringify({ attemptId: savedAttempt.attemptId, questionId: answeredQuestionId }) });
+        if (state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
+        const analysis = payload.analysis; const current = $("#analysis-pending"); if (!current) return;
+        current.className = "detailed-analysis"; current.innerHTML = `<details open><summary>详细中文解析</summary><p>${escapeHtml(analysis.detailedZh)}</p></details>`;
+        $("#ask-lili-analysis")?.remove();
+        const ask = document.createElement("button"); ask.id = "ask-lili-analysis"; ask.className = "ask-lili-analysis"; ask.innerHTML = "<span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small>"; ask.addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis)); $("#feedback").append(ask);
+        if (!result.correct) loadJournal();
+      } catch (error) {
+        const current = $("#analysis-pending");
+        if (!current || state.questions[state.index]?.id !== answeredQuestionId) return;
+        current.className = "analysis-pending analysis-error";
+        current.innerHTML = `<p>详细解析暂时没有生成成功：${escapeHtml(error.message)}</p><button type="button" class="retry-analysis">重新生成详细解析</button>`;
+        current.querySelector(".retry-analysis").addEventListener("click", loadDetailedAnalysis, { once: true });
+      }
+    };
     Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]).catch(() => {});
-    analysisPromise.then((payload) => {
-      if (state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
-      const analysis = payload.analysis; const pending = $("#analysis-pending"); if (!pending) return;
-      pending.className = "detailed-analysis"; pending.innerHTML = `<details open><summary>详细中文解析</summary><p>${escapeHtml(analysis.detailedZh)}</p></details>`;
-      const ask = document.createElement("button"); ask.id = "ask-lili-analysis"; ask.className = "ask-lili-analysis"; ask.innerHTML = "<span>lili</span><strong>还有哪里没看懂？继续问这道题</strong><small>自动带上题目、你的答案和当前解析</small>"; ask.addEventListener("click", () => askLiliAboutAttempt(selected, result, analysis)); $("#feedback").append(ask);
-      if (!result.correct) loadJournal();
-    }).catch((error) => { const pending = $("#analysis-pending"); if (pending && state.questions[state.index]?.id === answeredQuestionId) pending.innerHTML = `<p>新版解析暂时生成失败：${escapeHtml(error.message)}。正确答案已显示，可继续下一题或稍后重做。</p>`; });
+    loadDetailedAnalysis();
   } catch (error) {
     selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); showToast(`提交失败，请重试：${error.message}`, "error");
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
@@ -584,10 +600,11 @@ async function variation() {
 
 async function next() {
   if (state.submitting || $("#next").disabled) return;
-  $("#next").disabled = true;
+  const button = $("#next"); const previous = button.innerHTML; button.disabled = true; button.innerHTML = "正在载入下一题…";
   state.continuousNumber++;
-  try { await start(state.mode === "review" ? "review" : state.type, true); }
-  finally { $("#next").disabled = false; }
+  let loaded = false;
+  try { await start(state.mode === "review" ? "review" : state.type, true); loaded = true; }
+  finally { button.disabled = false; if (!loaded && button.isConnected && !button.hidden) button.innerHTML = previous; }
 }
 
 function showProduction() {
@@ -657,7 +674,9 @@ $("#clear-bank-filters").addEventListener("click", async () => { $("#bank-search
 $("#bank-list").addEventListener("scroll", (event) => { if (bankHasMore && event.currentTarget.scrollTop + event.currentTarget.clientHeight >= event.currentTarget.scrollHeight - 180) loadBank(false); });
 $("#category-type").addEventListener("change", (event) => loadCategories(event.target.value));
 $("#bank-type").addEventListener("change", async (event) => { state.activeCategory = null; savePreferences(); $("#category-type").value = event.target.value === "all" ? "grammar" : event.target.value; await loadCategories($("#category-type").value); await loadBank(true); });
-document.addEventListener("keydown", (event) => { const editing = event.target.closest?.("input, textarea, select, [contenteditable=true]"); if (event.key === "Escape" && !editing) { closePracticeHub(); closeHistory(); closeJournal(); closeMistakes(); closeTutor(); closeNotebook(); return; } if (editing || $("#quiz").hidden || $("#practice-hub").hidden) return; if (!state.answered && ["1", "2", "3", "4"].includes(event.key)) { const button = $("#options").children[Number(event.key) - 1]; if (button) button.click(); } else if (state.answered && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); next(); } });
+document.addEventListener("keydown", (event) => { const editing = event.target.closest?.("input, textarea, select, [contenteditable=true]"); if (event.key === "Escape" && !editing) { closePracticeHub(); closeHistory(); closeJournal(); closeMistakes(); closeTutor(); closeNotebook(); return; } if (editing || $("#quiz").hidden || $("#practice-hub").hidden) return; const key = event.key.toUpperCase(); const optionIndex = ["1", "2", "3", "4"].includes(key) ? Number(key) - 1 : ["A", "B", "C", "D"].indexOf(key); if (!state.answered && optionIndex >= 0) { const button = $("#options").children[optionIndex]; if (button) { event.preventDefault(); button.click(); } } else if (state.answered && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); next(); } });
+function updateNetworkStatus() { $("#network-status").hidden = navigator.onLine; if (navigator.onLine) showToast("网络已恢复，可以继续练习", "success"); }
+window.addEventListener("offline", updateNetworkStatus); window.addEventListener("online", updateNetworkStatus);
 
 let appInitialized = false;
 async function initializeApp() {

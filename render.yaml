@@ -29,6 +29,8 @@ services:
         value: 159
       - key: SUPPORT_CONTACT
         sync: false
+      - key: PUBLIC_BASE_URL
+        value: https://lumi-tcf-tef.onrender.com
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY

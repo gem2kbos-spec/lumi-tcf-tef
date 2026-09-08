@@ -13,6 +13,13 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
 .app-toast[hidden] { display: none; }
 .app-toast[data-tone="error"] { background: #9b3d31; }
 .app-toast[data-tone="warning"] { background: #705716; }
+.network-status { position: fixed; z-index: 20000; top: 0; left: 0; right: 0; padding: 9px 16px; background: #8e4939; color: #fff; text-align: center; font-size: 13px; font-weight: 700; }
+.network-status[hidden] { display: none; }
+.progress-row { align-items: center; gap: 10px; }
+#practice-save-status { margin-left: auto; padding: 3px 7px; border-radius: 999px; background: #edf3ea; color: #53705f; font-size: 10px; }
+.answer-shortcuts { margin: -7px 0 14px !important; color: #87918b !important; font-size: 11px; text-align: right; }
+.options button.checking { border-color: #5d846f; background: #eff5f1; box-shadow: inset 0 0 0 1px #5d846f; }
+.options button:focus-visible { outline: 3px solid #a9cc59; outline-offset: 2px; }
 #open-practice-hub.has-resume { text-align: left; gap: 18px; }
 #open-practice-hub.has-resume > span { display: grid; gap: 3px; }
 #open-practice-hub.has-resume small { font-size: 11px; opacity: .76; }
@@ -25,6 +32,11 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
 .bank-list.loading { opacity: .58; }
 .bank-toolbar { position: sticky; top: 8px; z-index: 12; padding: 9px; border: 1px solid #e2e5dc; border-radius: 13px; background: #fbfaf5f2; backdrop-filter: blur(10px); }
 #clear-bank-filters { border: 1px solid #ccd5cd; border-radius: 10px; background: white; color: #315d49; padding: 10px 12px; white-space: nowrap; font-weight: 700; cursor: pointer; }
+.analysis-error { border-color: #e7c2b8; background: #fff8f5 !important; }
+.analysis-error p { margin: 0 0 12px; color: #71382e; }
+.retry-analysis { min-height: 42px; padding: 0 16px; border: 1px solid #174c3b; border-radius: 10px; background: #174c3b; color: #fff; font-weight: 700; cursor: pointer; }
+.retry-analysis:hover { background: #0f3b2d; }
+.retry-analysis:focus-visible { outline: 3px solid rgba(23, 76, 59, .24); outline-offset: 2px; }
 @media (max-width: 700px) {
   .app-toast { bottom: calc(76px + env(safe-area-inset-bottom)); font-size: 14px; }
   body:has(#practice-hub:not([hidden])) .app-toast { bottom: calc(12px + env(safe-area-inset-bottom)); }
@@ -37,4 +49,6 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
   #clear-bank-filters { min-height: 46px; }
   .practice-hub.is-answering:not(.show-settings) > aside { display: none; }
   .toggle-practice-settings { display: block; position: sticky; top: 0; z-index: 7; margin: -4px 46px 12px auto; border: 1px solid #cbd4ca; border-radius: 18px; background: #fff; color: #194c3b; padding: 8px 12px; font-weight: 700; }
+  #practice-save-status { display: none; }
+  .answer-shortcuts { text-align: left; }
 }
