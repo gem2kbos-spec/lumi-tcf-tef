@@ -16,10 +16,10 @@ test("new vocabulary batch contains exactly 77 complete questions", () => {
   assert.equal(new Set(mockVocabularyBatch001.map((question) => normalized(question.prompt))).size, 77);
 });
 
-test("active bank has 1000 unique non-listening questions", async () => {
+test("active bank has 1100 unique non-listening questions", async () => {
   const imported = await loadImportedQuestions(); const all = [...questionBank, ...imported];
-  assert.equal(all.length, 1000);
+  assert.equal(all.length, 1100);
   assert.equal(all.some((question) => question.type === "listening"), false);
   assert.equal(new Set(all.map((question) => normalized(`${question.passage || ""} ${question.prompt}`))).size, all.length);
-  assert.deepEqual(Object.fromEntries(["grammar", "vocabulary", "reading"].map((type) => [type, all.filter((question) => question.type === type).length])), { grammar: 384, vocabulary: 307, reading: 309 });
+  assert.deepEqual(Object.fromEntries(["grammar", "vocabulary", "reading"].map((type) => [type, all.filter((question) => question.type === type).length])), { grammar: 434, vocabulary: 307, reading: 359 });
 });
