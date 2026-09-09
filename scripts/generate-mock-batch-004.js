@@ -1,8 +1,12 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import { generateQuestions, validateGeneratedQuestions } from "../server/ai-generator.js";
 import { questionBank } from "../server/question-bank.js";
 
 const normalize = (value) => String(value || "").normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr").replace(/\s+/g, " ").trim();
+const batch = Math.max(4, Number(process.argv[2]) || 4);
+const start = 151 + (batch - 4) * 50;
+const batchLabel = String(batch).padStart(3, "0");
+const contexts = ["services publics et démarches", "études et formation", "travail et vie professionnelle", "environnement et mobilité", "médias, culture et société"];
 const plans = {
   grammar: [
     ["A2", ["présent", "passé composé", "futur proche", "articles", "prépositions", "pronoms COD/COI simples", "comparaison", "négation"]],
@@ -18,7 +22,7 @@ async function build(type) {
   const result = [];
   for (const [level, skills] of plans[type]) {
     for (let group = 0; group < 5; group++) {
-      const questions = await generateQuestions({ type, level, count: 5, weakSkills: skills.slice(group * 2, group * 2 + 3) });
+      const questions = await generateQuestions({ type, level, count: 5, weakSkills: skills.slice(group * 2, group * 2 + 3), variationRequest: `Utilise surtout des situations liées à ${contexts[group]}. Évite les scénarios banals déjà surutilisés comme acheter du pain, prendre le bus ou inviter un ami.` });
       result.push(...questions);
       console.log(`${type} ${level}: ${result.length}/${type === "grammar" ? 50 : 50}`);
     }
@@ -40,7 +44,7 @@ function finalize(items, type, prefix) {
     const options = item.options.filter((_, optionIndex) => optionIndex !== item.answer);
     const answer = index % 4;
     options.splice(answer, 0, correct);
-    return { ...item, options, answer, id: `${prefix}-${String(index + 151).padStart(3, "0")}`, type, level: index < 25 ? "A2" : "B1", difficulty, exam: "tcf", source: "mock", batch: 4, answerVerified: true, order: index + 151 };
+    return { ...item, options, answer, id: `${prefix}-${String(index + start).padStart(3, "0")}`, type, level: index < 25 ? "A2" : "B1", difficulty, exam: "tcf", source: "mock", batch, answerVerified: true, order: index + start };
   });
 }
 
@@ -51,6 +55,6 @@ validateGeneratedQuestions(grammar.slice(25), { type: "grammar", level: "B1", co
 validateGeneratedQuestions(reading.slice(0, 25), { type: "reading", level: "A2", count: 25 });
 validateGeneratedQuestions(reading.slice(25), { type: "reading", level: "B1", count: 25 });
 
-await writeFile(new URL("../server/mock-grammar-batch-004.json", import.meta.url), `${JSON.stringify(grammar, null, 2)}\n`);
-await writeFile(new URL("../server/mock-reading-batch-004.json", import.meta.url), `${JSON.stringify(reading, null, 2)}\n`);
-console.log("Batch 004 written: 50 grammar + 50 reading");
+await writeFile(new URL(`../server/mock-grammar-batch-${batchLabel}.json`, import.meta.url), `${JSON.stringify(grammar, null, 2)}\n`);
+await writeFile(new URL(`../server/mock-reading-batch-${batchLabel}.json`, import.meta.url), `${JSON.stringify(reading, null, 2)}\n`);
+console.log(`Batch ${batchLabel} written: 50 grammar + 50 reading`);

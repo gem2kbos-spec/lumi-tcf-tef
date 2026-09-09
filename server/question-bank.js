@@ -2,10 +2,12 @@ import { mockGrammarBatch001 } from "./mock-grammar-batch-001.js";
 import { mockGrammarBatch002 } from "./mock-grammar-batch-002.js";
 import mockGrammarBatch003 from "./mock-grammar-batch-003.json" with { type: "json" };
 import mockGrammarBatch004 from "./mock-grammar-batch-004.json" with { type: "json" };
+import mockGrammarBatch005 from "./mock-grammar-batch-005.json" with { type: "json" };
 import mockReadingBatch001 from "./mock-reading-batch-001.json" with { type: "json" };
 import mockReadingBatch002 from "./mock-reading-batch-002.json" with { type: "json" };
 import mockReadingBatch003 from "./mock-reading-batch-003.json" with { type: "json" };
 import mockReadingBatch004 from "./mock-reading-batch-004.json" with { type: "json" };
+import mockReadingBatch005 from "./mock-reading-batch-005.json" with { type: "json" };
 import mockVocabularyBatch001 from "./mock-vocabulary-batch-001.json" with { type: "json" };
 
 export const questionBank = [
@@ -221,9 +223,11 @@ export const questionBank = [
   ...mockGrammarBatch002,
   ...mockGrammarBatch003,
   ...mockGrammarBatch004,
+  ...mockGrammarBatch005,
   ...mockReadingBatch001,
   ...mockReadingBatch002,
   ...mockReadingBatch003,
   ...mockReadingBatch004,
+  ...mockReadingBatch005,
   ...mockVocabularyBatch001
 ];
