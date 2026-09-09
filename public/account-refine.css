@@ -107,6 +107,7 @@
 #password-form h3 { margin: 0; }
 #password-form > small { color: #718078; line-height: 1.5; }
 .admin-toolbar { display: flex; justify-content: flex-end; margin: -8px 0 12px; }
+.admin-reports { margin: 24px 0; }.admin-reports h3 { margin: 0 0 8px; }.admin-report-row > span { line-height:1.45; }.admin-report-row select { min-height:34px; border:1px solid #ccd5cd; border-radius:9px; background:#fff; padding:0 7px; color:#385448; }
 .admin-toolbar button { border: 1px solid #ccd5cd; background: #fff; border-radius: 10px; padding: 9px 13px; color: #194c3b; font-weight: 700; cursor: pointer; }
 .admin-insights { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 0 0 18px; }
 .admin-insights > div { display: grid; gap: 5px; padding: 14px; border: 1px solid #dde4de; border-radius: 13px; background: #fff; }
