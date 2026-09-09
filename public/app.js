@@ -17,7 +17,7 @@ function savePracticeSession() {
   if (String(question.source || "").startsWith("ai")) return;
   try { localStorage.setItem(userStorageKey("practice"), JSON.stringify({ savedAt: Date.now(), exam: state.exam, type: state.type, mode: state.mode, continuousNumber: state.continuousNumber, activeCategory: state.activeCategory, sequence: state.sequence, question })); } catch {}
 }
-function clearPracticeSession() { try { localStorage.removeItem(userStorageKey("practice")); } catch {} }
+function clearPracticeSession() { try { localStorage.removeItem(userStorageKey("practice")); } catch {} refreshPracticeLaunch(); }
 function readPracticeSession() { try { const saved = JSON.parse(localStorage.getItem(userStorageKey("practice")) || "null"); return saved?.question && Date.now() - saved.savedAt < 30 * 86400000 ? saved : null; } catch { return null; } }
 function restorePreferences() {
   try {
@@ -31,15 +31,17 @@ function restorePreferences() {
     state.activeCategory = saved.category || null;
   } catch {}
 }
-function prepareResume() {
-  const saved = readPracticeSession(); const button = $("#open-practice-hub"); if (!saved) return;
+function refreshPracticeLaunch(saved = readPracticeSession()) {
+  const button = $("#open-practice-hub"); if (!button) return;
+  if (!saved) { button.classList.remove("has-resume"); button.innerHTML = "开始刷题 <b>→</b>"; return; }
   const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读" };
   button.classList.add("has-resume"); button.innerHTML = `<span><small>继续上次训练</small>${labels[saved.type] || "机经"} · ${escapeHtml(saved.question.level || "综合")} · 第 ${saved.continuousNumber || 1} 题</span><b>继续 →</b>`;
-  button.onclick = () => {
-    Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
-    openPracticeHub(); $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
-  };
 }
+function resumePractice(saved) {
+  Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
+  openPracticeHub(); $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
+}
+function prepareResume() { refreshPracticeLaunch(); }
 
 function renderTutorRichText(container, content) {
   const lines = String(content || "").split(/\r?\n/); const fragment = document.createDocumentFragment();
@@ -454,7 +456,7 @@ function openPracticeHub() {
   }
   $("#practice-hub").hidden = false;
 }
-function closePracticeHub() { if (!$("#practice-hub").hidden && state.questions[state.index] && !state.answered) { savePracticeSession(); showToast("当前题目已保存，下次可以继续", "info"); } $("#practice-hub").hidden = true; }
+function closePracticeHub() { if (!$("#practice-hub").hidden && state.questions[state.index] && !state.answered) { savePracticeSession(); refreshPracticeLaunch(); showToast("当前题目已保存，下次可以继续", "info"); } $("#practice-hub").hidden = true; }
 
 async function loadBank(reset = true) {
   if (bankLoading) return; bankLoading = true; $("#bank-list").classList.add("loading");
@@ -684,7 +686,7 @@ $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook"
 $("#open-journal").addEventListener("click", openJournal); $("#close-journal").addEventListener("click", closeJournal);
 $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes").addEventListener("click", closeMistakes);
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
-$("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
+$("#open-practice-hub").addEventListener("click", () => { const saved = readPracticeSession(); if (saved) resumePractice(saved); else openPracticeHub(); }); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 $("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
 $("#today-start").addEventListener("click", () => { openPracticeHub(); start($("#today-start").dataset.action === "review" ? "review" : undefined); });
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
