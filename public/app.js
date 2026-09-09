@@ -536,7 +536,7 @@ async function start(typeOverride, preserveSequence = false) {
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
     $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   } catch (error) { showToast(`暂时无法载入题目：${error.message}`, "error"); }
-  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始 "; }
+  finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始练习 "; }
 }
 
 async function loadQuestionComments() {
@@ -686,7 +686,7 @@ $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes"
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", openPracticeHub); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 $("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
-$("#today-start").addEventListener("click", () => { openPracticeHub(); if ($("#today-start").dataset.action === "review") start("review"); });
+$("#today-start").addEventListener("click", () => { openPracticeHub(); start($("#today-start").dataset.action === "review" ? "review" : undefined); });
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
 window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
