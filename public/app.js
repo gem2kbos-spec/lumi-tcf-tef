@@ -567,7 +567,7 @@ function render() {
   const progressPercent = state.sequence?.total ? Math.min(100, ((state.sequence.completed + 1) / state.sequence.total) * 100) : 100;
   $("#progress").style.width = `${progressPercent}%`; $("#progress").parentElement.setAttribute("aria-label", `当前范围进度 ${Math.round(progressPercent)}%`); $("#topic").textContent = `${question.level} · ${question.topic}`; $("#question-status").textContent = "请选择答案";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
-  $("#feedback").hidden = true; $("#answer-actions").hidden = true;
+  $("#feedback").hidden = true; $("#answer-actions").hidden = true; $("#question-tools").hidden = true; $("#toggle-question-tools").setAttribute("aria-expanded", "false"); $("#toggle-question-tools b").textContent = "⌄";
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const letter = String.fromCharCode(65 + index); const marker = document.createElement("span"); marker.textContent = letter; button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${letter}，${option}`); button.title = `快捷键 ${index + 1} 或 ${letter}`; button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
@@ -675,6 +675,7 @@ async function askTutor(question) {
 $("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#new-production").addEventListener("click", showProduction);
 $("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
 $("#toggle-practice-settings").addEventListener("click", () => { const hub = $("#practice-hub"); hub.classList.toggle("show-settings"); $("#toggle-practice-settings").textContent = hub.classList.contains("show-settings") ? "收起训练设置" : "调整训练设置"; });
+$("#toggle-question-tools").addEventListener("click", () => { const tools = $("#question-tools"); tools.hidden = !tools.hidden; $("#toggle-question-tools").setAttribute("aria-expanded", String(!tools.hidden)); $("#toggle-question-tools b").textContent = tools.hidden ? "⌄" : "⌃"; });
 $("#level").addEventListener("change", savePreferences);
 $("#refresh-knowledge").addEventListener("click", refreshKnowledge); $("#open-knowledge").addEventListener("click", () => openKnowledge()); $("#close-knowledge").addEventListener("click", closeKnowledge); $("#knowledge-form").addEventListener("submit", askKnowledge); $("#knowledge-practice").addEventListener("click", knowledgePractice);
 $("#open-notebook").addEventListener("click", openNotebook); $("#close-notebook").addEventListener("click", closeNotebook);

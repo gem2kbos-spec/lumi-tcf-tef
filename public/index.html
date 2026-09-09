@@ -167,16 +167,19 @@
           <div id="feedback" aria-live="polite" hidden></div>
           <div id="answer-actions" class="answer-actions" hidden>
             <button id="next" class="primary next-question-button">直接练下一题 <span>→</span><small>Enter / 空格</small></button>
-            <div class="variation-bar">
-              <div><strong>举一反三 · AI 同考点</strong><span>可选：告诉 AI 你想怎么变题</span></div>
-              <input id="variation-request" maxlength="300" placeholder="例如：更难一点，换成工作场景，重点练虚拟式……" />
-              <button id="variation">生成变式题 ✦</button>
+            <button id="toggle-question-tools" class="question-tools-toggle" type="button" aria-expanded="false"><span>更多操作</span><small>举一反三、题目讨论</small><b>⌄</b></button>
+            <div id="question-tools" class="question-tools" hidden>
+              <div class="variation-bar">
+                <div><strong>举一反三 · AI 同考点</strong><span>可选：告诉 AI 你想怎么变题</span></div>
+                <input id="variation-request" maxlength="300" placeholder="例如：更难一点，换成工作场景，重点练虚拟式……" />
+                <button id="variation">生成变式题 ✦</button>
+              </div>
+              <section id="question-comments" class="question-comments" hidden>
+                <button id="toggle-comments" class="comment-toggle" type="button"><span>题目讨论</span><small id="comment-count">按需查看</small><b>展开</b></button>
+                <div class="comment-body" hidden><div class="comment-heading"><span>交流解题思路或指出题目问题</span><button id="refresh-comments" type="button">刷新</button></div><div id="comment-list" class="comment-list"><p>正在加载讨论…</p></div><form id="comment-form"><textarea id="comment-content" rows="2" maxlength="500" placeholder="写下疑问、解题思路或题目问题……"></textarea><div><span id="comment-hint">最多500字</span><button>发表</button></div></form></div>
+              </section>
             </div>
           </div>
-          <section id="question-comments" class="question-comments" hidden>
-            <button id="toggle-comments" class="comment-toggle" type="button"><span>题目讨论</span><small id="comment-count">按需查看</small><b>展开</b></button>
-            <div class="comment-body" hidden><div class="comment-heading"><span>交流解题思路或指出题目问题</span><button id="refresh-comments" type="button">刷新</button></div><div id="comment-list" class="comment-list"><p>正在加载讨论…</p></div><form id="comment-form"><textarea id="comment-content" rows="2" maxlength="500" placeholder="写下疑问、解题思路或题目问题……"></textarea><div><span id="comment-hint">最多500字</span><button>发表</button></div></form></div>
-          </section>
         </div>
         <div id="production" hidden>
           <div class="progress-row"><span id="production-exam"></span><span id="production-format"></span></div>

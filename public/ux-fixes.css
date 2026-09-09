@@ -29,7 +29,15 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
 #open-practice-hub.has-resume > span { display: grid; gap: 3px; }
 #open-practice-hub.has-resume small { font-size: 11px; opacity: .76; }
 #open-practice-hub.has-resume b { white-space: nowrap; }
-.toggle-practice-settings { display: none; }
+.toggle-practice-settings { display: block; position: sticky; top: 0; z-index: 7; margin: -4px 46px 12px auto; border: 1px solid #cbd4ca; border-radius: 18px; background: #fff; color: #194c3b; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+.practice-hub.is-answering:not(.show-settings) { grid-template-columns: minmax(0, 1fr); }
+.practice-hub.is-answering:not(.show-settings) > aside { display: none; }
+.question-tools-toggle { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 9px; width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid #d9e0d6; border-radius: 12px; background: #fbfcf8; color: #315d49; text-align: left; cursor: pointer; }
+.question-tools-toggle > span { font-size: 12px; font-weight: 800; }
+.question-tools-toggle small { color: #7a8780; font-size: 11px; }
+.question-tools-toggle b { font-size: 16px; }
+.question-tools { display: grid; gap: 12px; }
+.question-tools[hidden] { display: none; }
 .bank-retry { grid-column: 1/-1; min-height: 180px; border: 1px dashed #c6cfc6; border-radius: 15px; background: #fbfcf8; color: #173d31; padding: 24px; cursor: pointer; }
 .bank-retry strong, .bank-retry span, .bank-retry b { display: block; }
 .bank-retry span { color: #748078; font-size: 12px; margin: 8px 0 16px; }
@@ -53,7 +61,6 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
   .bank-toolbar #bank-search { grid-column: 1/-1; }
   #clear-bank-filters { min-height: 46px; }
   .practice-hub.is-answering:not(.show-settings) > aside { display: none; }
-  .toggle-practice-settings { display: block; position: sticky; top: 0; z-index: 7; margin: -4px 46px 12px auto; border: 1px solid #cbd4ca; border-radius: 18px; background: #fff; color: #194c3b; padding: 8px 12px; font-weight: 700; }
   #practice-save-status { display: none; }
   .answer-shortcuts { text-align: left; }
   .question-context { align-items: flex-start; flex-direction: column; gap: 6px; }
