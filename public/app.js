@@ -541,21 +541,28 @@ async function start(typeOverride, preserveSequence = false) {
   finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始练习 "; }
 }
 
+let commentKind = "question";
+const commentKindInfo = { question: { label: "提问", placeholder: "例如：这一题我先看什么信息来判断？", hint: "把卡住的地方说具体一点，更容易得到有用回复" }, strategy: { label: "解题思路", placeholder: "分享你的判断路径：我先看……再排除……", hint: "建议写出判断顺序，而不只写答案" }, report: { label: "题目纠错", placeholder: "请具体说明题干、选项、答案或解析哪里有问题", hint: "提交后会进入管理员的题目核验队列" } };
+function setCommentKind(kind) { commentKind = kind; const info = commentKindInfo[kind] || commentKindInfo.question; document.querySelectorAll("[data-comment-kind]").forEach((button) => button.classList.toggle("active", button.dataset.commentKind === commentKind)); $("#comment-content").placeholder = info.placeholder; $("#comment-hint").textContent = info.hint; }
+function commentAvatar(name) { return String(name || "学").trim().slice(0, 1).toLocaleUpperCase(); }
+function commentKindLabel(kind) { return commentKindInfo[kind]?.label || "讨论"; }
+function reportLabel(status) { return ({ pending: "待核验", reviewing: "核验中", resolved: "已处理" })[status] || "待核验"; }
 async function loadQuestionComments() {
   const question = state.questions[state.index]; if (!question) return;
   const list = $("#comment-list"); const questionId = question.id; list.innerHTML = "<p>正在加载讨论…</p>";
   try {
     const payload = await api(`/api/comments/${encodeURIComponent(questionId)}`);
     if (state.questions[state.index]?.id !== questionId) return;
-    $("#comment-count").textContent = `${payload.comments.length}条`;
-    list.innerHTML = payload.comments.length ? payload.comments.map((comment) => `<article class="comment-item"><div class="comment-meta"><strong>${escapeHtml(comment.author.name)}</strong>${comment.author.role === "admin" ? '<span class="comment-admin">管理员</span>' : ""}<time>${new Date(comment.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time>${comment.canDelete ? `<button class="comment-delete" data-comment-id="${escapeHtml(comment.id)}">删除</button>` : ""}</div><p>${escapeHtml(comment.content)}</p></article>`).join("") : "<p>还没有讨论。你可以提出疑问，或分享自己的判断方法。</p>";
+    const pendingReports = payload.comments.filter((comment) => comment.kind === "report" && comment.reportStatus !== "resolved").length;
+    $("#comment-count").textContent = payload.comments.length ? `${payload.comments.length}条${pendingReports ? ` · ${pendingReports}待核验` : ""}` : "抢先讨论";
+    list.innerHTML = payload.comments.length ? payload.comments.map((comment) => `<article class="comment-item ${escapeHtml(comment.kind || "question")} ${comment.author.role === "admin" ? "admin" : ""}"><div class="comment-author"><span class="comment-avatar">${escapeHtml(commentAvatar(comment.author.name))}</span><div class="comment-meta"><strong>${escapeHtml(comment.author.name)}</strong>${comment.author.role === "admin" ? '<span class="comment-admin">管理员</span>' : ""}<span class="comment-kind ${escapeHtml(comment.kind || "question")}">${commentKindLabel(comment.kind)}</span>${comment.kind === "report" ? `<span class="comment-report-status">${reportLabel(comment.reportStatus)}</span>` : ""}<time>${new Date(comment.createdAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}</time></div></div><p>${escapeHtml(comment.content)}</p><div class="comment-footer"><span>${comment.kind === "report" ? "管理员会核验并更新状态" : "欢迎补充你的判断依据"}</span>${comment.canDelete ? `<button class="comment-delete" data-comment-id="${escapeHtml(comment.id)}">删除</button>` : ""}</div></article>`).join("") : "<p>还没有讨论。第一个提出具体问题的人，通常收获最多。</p>";
   } catch (error) { list.innerHTML = `<p>讨论加载失败：${escapeHtml(error.message)}</p>`; }
 }
 
 async function submitQuestionComment(event) {
   event.preventDefault(); const question = state.questions[state.index]; const content = $("#comment-content").value.trim(); if (!question || !content) return;
   const button = $("#comment-form button"); button.disabled = true; button.textContent = "正在发表…"; $("#comment-hint").textContent = "正在提交";
-  try { await api(`/api/comments/${encodeURIComponent(question.id)}`, { method: "POST", body: JSON.stringify({ content }) }); $("#comment-content").value = ""; $("#comment-hint").textContent = "发表成功"; await loadQuestionComments(); }
+  try { await api(`/api/comments/${encodeURIComponent(question.id)}`, { method: "POST", body: JSON.stringify({ content, kind: commentKind }) }); $("#comment-content").value = ""; $("#comment-hint").textContent = commentKind === "report" ? "已提交核验" : "已发布"; await loadQuestionComments(); }
   catch (error) { $("#comment-hint").textContent = error.message; }
   finally { button.disabled = false; button.textContent = "发表评论"; }
 }
@@ -571,7 +578,7 @@ function render() {
   $("#answer-shortcuts").textContent = "快捷键：1–4 或 A–D 选择答案";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true; $("#question-tools").hidden = true; $("#toggle-question-tools").setAttribute("aria-expanded", "false"); $("#toggle-question-tools b").textContent = "⌄";
-  $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
+  $("#comment-content").value = ""; setCommentKind("question"); $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
   $("#options").replaceChildren(...question.options.map((option, index) => { const button = document.createElement("button"); const letter = String.fromCharCode(65 + index); const marker = document.createElement("span"); marker.textContent = letter; button.append(marker, document.createTextNode(option)); button.setAttribute("aria-label", `${letter}，${option}`); button.title = `快捷键 ${index + 1} 或 ${letter}`; button.addEventListener("click", () => answer(index, button)); return button; }));
   $("#next").firstChild.textContent = currentSource === "review" ? "直接练下一道错题 " : "直接练下一道机经 ";
   savePreferences(); savePracticeSession();
@@ -708,6 +715,7 @@ document.addEventListener("click", (event) => {
 }, true);
 $("#smart-generate").addEventListener("click", smartGenerate);
 $("#comment-form").addEventListener("submit", submitQuestionComment); $("#refresh-comments").addEventListener("click", loadQuestionComments);
+document.querySelectorAll("[data-comment-kind]").forEach((button) => button.addEventListener("click", () => setCommentKind(button.dataset.commentKind)));
 $("#toggle-comments").addEventListener("click", async () => { const body = $(".comment-body"); body.hidden = !body.hidden; $("#toggle-comments b").textContent = body.hidden ? "展开" : "收起"; if (!body.hidden && $("#comment-count").textContent === "按需查看") await loadQuestionComments(); });
 $("#comment-list").addEventListener("click", async (event) => { const button = event.target.closest("[data-comment-id]"); if (!button || !confirm("确定删除这条评论吗？")) return; button.disabled = true; try { await api("/api/comments", { method: "DELETE", body: JSON.stringify({ commentId: button.dataset.commentId }) }); await loadQuestionComments(); } catch (error) { showToast(error.message, "error"); button.disabled = false; } });
 $("#open-tutor").addEventListener("click", openTutor); $("#close-tutor").addEventListener("click", closeTutor); $("#tutor-form").addEventListener("submit", (event) => { event.preventDefault(); askTutor($("#tutor-question").value); });

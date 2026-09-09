@@ -15,7 +15,7 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
-import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, revokeMemberSessions, updateMember } from "./member-store.js";
+import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, reviewQuestionReport, revokeMemberSessions, updateMember } from "./member-store.js";
 import { cacheAnalysis, readCachedAnalysis } from "./analysis-cache.js";
 import { persistenceHealth } from "./persistence.js";
 
@@ -142,6 +142,7 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === "/api/admin/members/update" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, { user: await updateMember(auth.id, input.userId, input.action, input.days) }); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
       if (url.pathname === "/api/admin/members/reset-password" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await resetMemberPassword(auth.id, input.userId)); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
       if (url.pathname === "/api/admin/members/revoke-sessions" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await revokeMemberSessions(auth.id, input.userId)); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
+      if (url.pathname === "/api/admin/comment-reports/review" && req.method === "POST") { if (auth.role !== "admin") return sendJson(res, 403, { error: "ADMIN_REQUIRED" }); try { const input = await body(req); return sendJson(res, 200, await reviewQuestionReport(auth, input.commentId, input.status)); } catch (error) { return sendJson(res, 400, { error: error.message }); } }
       if (!auth.hasAccess) return sendJson(res, 403, { error: "MEMBERSHIP_REQUIRED", user: auth });
       const aiRoutes = new Set(["/api/knowledge/ask", "/api/knowledge/practice", "/api/tutor/ask", "/api/variations", "/api/smart-generation", "/api/attempt-analysis"]);
       if (auth.role !== "admin" && aiEnabled() && (aiRoutes.has(url.pathname) || (req.method === "POST" && url.pathname === "/api/questions") || (req.method === "GET" && url.pathname === "/api/vocabulary/lookup"))) {
@@ -158,7 +159,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "POST") {
         const imported = await loadImportedQuestions(); const known = recalledQuestion(questionId) || questionBank.find((item) => item.id === questionId) || imported.find((item) => item.id === questionId);
         if (!known) return sendJson(res, 404, { error: "题目不存在或本次生成题已失效" });
-        try { const input = await body(req); await addQuestionComment(auth.id, questionId, input.content); return sendJson(res, 201, { comments: await questionComments(questionId, auth) }); }
+        try { const input = await body(req); await addQuestionComment(auth.id, questionId, input.content, input.kind); return sendJson(res, 201, { comments: await questionComments(questionId, auth) }); }
         catch (error) { return sendJson(res, 409, { error: error.message }); }
       }
     }

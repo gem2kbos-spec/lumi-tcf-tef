@@ -22,6 +22,12 @@ test("member orders cannot be duplicated and admin approval grants access", asyn
   await assert.rejects(() => store.addQuestionComment(member.id, "question-1", "我认为这里应先判断介词。"), /相同评论/);
   const comments = await store.questionComments("question-1", member);
   assert.equal(comments.length, 1); assert.equal(comments[0].canDelete, true); assert.equal(comments[0].author.name, "学员");
+  const report = await store.addQuestionComment(member.id, "question-2", "第二个选项疑似存在答案标注错误。", "report");
+  const reportComments = await store.questionComments("question-2", member);
+  assert.equal(reportComments[0].kind, "report"); assert.equal(reportComments[0].reportStatus, "pending");
+  const admin = { id: "admin-id", role: "admin" };
+  await store.reviewQuestionReport(admin, report.id, "resolved");
+  assert.equal((await store.questionComments("question-2", member))[0].reportStatus, "resolved");
   await store.deleteQuestionComment(member, comment.id);
   assert.equal((await store.questionComments("question-1", member)).length, 0);
 });

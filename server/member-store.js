@@ -166,19 +166,20 @@ export async function questionComments(questionId, viewer) {
   const data = await readData();
   return data.comments.filter((item) => item.questionId === questionId && !item.deletedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((item) => {
     const author = data.users.find((user) => user.id === item.userId);
-    return { id: item.id, questionId: item.questionId, content: item.content, createdAt: item.createdAt, author: { name: author?.name || "已注销用户", role: author?.role || "member" }, canDelete: viewer.role === "admin" || viewer.id === item.userId };
+    return { id: item.id, questionId: item.questionId, content: item.content, kind: item.kind || "question", reportStatus: item.reportStatus || null, createdAt: item.createdAt, author: { name: author?.name || "已注销用户", role: author?.role || "member" }, canDelete: viewer.role === "admin" || viewer.id === item.userId };
   });
 }
 
-export async function addQuestionComment(userId, questionId, content) {
+export async function addQuestionComment(userId, questionId, content, kind = "question") {
   content = String(content || "").trim().replace(/\s{3,}/g, "  ").slice(0, 500);
   if (content.length < 2) throw new Error("评论至少需要 2 个字");
+  if (!['question', 'strategy', 'report'].includes(kind)) throw new Error("请选择有效的讨论类型");
   return serializeMemberMutation(async () => {
   const data = await readData(); const since = Date.now() - 24 * 60 * 60 * 1000;
   if (data.comments.filter((item) => item.userId === userId && new Date(item.createdAt).getTime() > since && !item.deletedAt).length >= 30) throw new Error("今天发表评论较多，请明天继续");
   const duplicate = data.comments.find((item) => item.userId === userId && item.questionId === questionId && item.content === content && Date.now() - new Date(item.createdAt).getTime() < 10 * 60 * 1000 && !item.deletedAt);
   if (duplicate) throw new Error("相同评论已经发表，请勿重复提交");
-  const comment = { id: crypto.randomUUID(), questionId, userId, content, createdAt: new Date().toISOString(), deletedAt: null, deletedBy: null };
+  const comment = { id: crypto.randomUUID(), questionId, userId, content, kind, reportStatus: kind === "report" ? "pending" : null, createdAt: new Date().toISOString(), deletedAt: null, deletedBy: null };
   data.comments.push(comment); await writeData(data); return comment;
   });
 }
@@ -201,10 +202,14 @@ export async function adminOverview() {
   const memberUsers = data.users.filter((user) => user.role !== "admin");
   const activeUsers = memberUsers.filter((user) => publicUser(user).hasAccess);
   const pendingOrders = data.orders.filter((order) => order.status === "pending");
+  const reports = data.comments.filter((item) => item.kind === "report" && !item.deletedAt).map((item) => {
+    const author = data.users.find((user) => user.id === item.userId);
+    return { id: item.id, questionId: item.questionId, content: item.content, createdAt: item.createdAt, reportStatus: item.reportStatus || "pending", author: { name: author?.name || "已注销用户", email: author?.email || "" } };
+  }).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   return {
     users: data.users.map(publicUser).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     orders: data.orders.map((order) => ({ ...order, user: publicUser(data.users.find((item) => item.id === order.userId)) })).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    audit: data.audit.slice(0, 100),
+    audit: data.audit.slice(0, 100), reports,
     metrics: {
       confirmedRevenueCny: confirmed.reduce((sum, order) => sum + Number(order.amountCny || 0), 0),
       confirmedOrders: confirmed.length,
@@ -215,6 +220,18 @@ export async function adminOverview() {
       oldestPendingAt: [...pendingOrders].sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0]?.createdAt || null
     }
   };
+}
+
+export async function reviewQuestionReport(actor, commentId, status) {
+  if (actor.role !== "admin") throw new Error("需要管理员权限");
+  if (!['pending', 'reviewing', 'resolved'].includes(status)) throw new Error("无效的处理状态");
+  return serializeMemberMutation(async () => {
+    const data = await readData(); const comment = data.comments.find((item) => item.id === commentId && item.kind === "report" && !item.deletedAt);
+    if (!comment) throw new Error("题目问题不存在");
+    comment.reportStatus = status; comment.reviewedAt = new Date().toISOString(); comment.reviewedBy = actor.id;
+    data.audit.unshift({ id: crypto.randomUUID(), adminId: actor.id, action: `comment.report.${status}`, targetId: commentId, createdAt: new Date().toISOString() });
+    await writeData(data); return { ok: true };
+  });
 }
 
 export async function resetMemberPassword(adminId, userId) {
