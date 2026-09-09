@@ -177,21 +177,36 @@ export async function questionComments(questionId, viewer) {
   const data = await readData();
   return data.comments.filter((item) => item.questionId === questionId && !item.deletedAt).sort((a, b) => a.createdAt.localeCompare(b.createdAt)).map((item) => {
     const author = data.users.find((user) => user.id === item.userId);
-    return { id: item.id, questionId: item.questionId, content: item.content, kind: item.kind || "question", reportStatus: item.reportStatus || null, createdAt: item.createdAt, author: { name: author?.name || "已注销用户", role: author?.role || "member" }, canDelete: viewer.role === "admin" || viewer.id === item.userId };
+    const likes = Array.isArray(item.likes) ? item.likes : [];
+    return { id: item.id, questionId: item.questionId, parentId: item.parentId || null, content: item.content, kind: item.kind || "question", reportStatus: item.reportStatus || null, likes: likes.length, liked: likes.includes(viewer.id), createdAt: item.createdAt, author: { name: author?.name || "已注销用户", role: author?.role || "member" }, canDelete: viewer.role === "admin" || viewer.id === item.userId };
   });
 }
 
-export async function addQuestionComment(userId, questionId, content, kind = "question") {
+export async function addQuestionComment(userId, questionId, content, kind = "question", parentId = null) {
   content = String(content || "").trim().replace(/\s{3,}/g, "  ").slice(0, 500);
   if (content.length < 2) throw new Error("评论至少需要 2 个字");
   if (!['question', 'strategy', 'report'].includes(kind)) throw new Error("请选择有效的讨论类型");
   return serializeMemberMutation(async () => {
   const data = await readData(); const since = Date.now() - 24 * 60 * 60 * 1000;
   if (data.comments.filter((item) => item.userId === userId && new Date(item.createdAt).getTime() > since && !item.deletedAt).length >= 30) throw new Error("今天发表评论较多，请明天继续");
-  const duplicate = data.comments.find((item) => item.userId === userId && item.questionId === questionId && item.content === content && Date.now() - new Date(item.createdAt).getTime() < 10 * 60 * 1000 && !item.deletedAt);
+  const parent = parentId ? data.comments.find((item) => item.id === parentId && item.questionId === questionId && !item.deletedAt) : null;
+  if (parentId && (!parent || parent.parentId)) throw new Error("这条回复已不可用，请重新选择");
+  if (parent && kind !== "question") throw new Error("回复请使用“提问”类型");
+  const duplicate = data.comments.find((item) => item.userId === userId && item.questionId === questionId && item.content === content && item.parentId === parentId && Date.now() - new Date(item.createdAt).getTime() < 10 * 60 * 1000 && !item.deletedAt);
   if (duplicate) throw new Error("相同评论已经发表，请勿重复提交");
-  const comment = { id: crypto.randomUUID(), questionId, userId, content, kind, reportStatus: kind === "report" ? "pending" : null, createdAt: new Date().toISOString(), deletedAt: null, deletedBy: null };
+  const comment = { id: crypto.randomUUID(), questionId, userId, parentId, content, kind, reportStatus: kind === "report" ? "pending" : null, likes: [], createdAt: new Date().toISOString(), deletedAt: null, deletedBy: null };
   data.comments.push(comment); await writeData(data); return comment;
+  });
+}
+
+export async function toggleQuestionCommentLike(userId, commentId) {
+  return serializeMemberMutation(async () => {
+    const data = await readData(); const comment = data.comments.find((item) => item.id === commentId && !item.deletedAt);
+    if (!comment) throw new Error("评论不存在");
+    comment.likes = Array.isArray(comment.likes) ? comment.likes : [];
+    const index = comment.likes.indexOf(userId);
+    if (index >= 0) comment.likes.splice(index, 1); else comment.likes.push(userId);
+    await writeData(data); return { liked: index < 0, likes: comment.likes.length };
   });
 }
 

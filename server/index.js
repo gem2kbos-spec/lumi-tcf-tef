@@ -15,7 +15,7 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
-import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, reviewQuestionReport, revokeMemberSessions, updateMember, updateOwnProfile } from "./member-store.js";
+import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, reviewQuestionReport, revokeMemberSessions, toggleQuestionCommentLike, updateMember, updateOwnProfile } from "./member-store.js";
 import { cacheAnalysis, readCachedAnalysis } from "./analysis-cache.js";
 import { persistenceHealth } from "./persistence.js";
 
@@ -157,6 +157,10 @@ const server = http.createServer(async (req, res) => {
     const storageKey = auth ? storageKeyFor(auth) : "legacy";
     const rememberQuestion = (question) => sessions.set(question.id, { question, userId: auth.id, createdAt: Date.now() });
     const recalledQuestion = (id) => { const saved = sessions.get(id); return saved?.userId === auth.id ? saved.question : null; };
+    if (req.method === "POST" && url.pathname === "/api/comments/like") {
+      try { const input = await body(req); return sendJson(res, 200, await toggleQuestionCommentLike(auth.id, input.commentId)); }
+      catch (error) { return sendJson(res, 400, { error: error.message }); }
+    }
     if (url.pathname.startsWith("/api/comments/")) {
       const questionId = decodeURIComponent(url.pathname.slice("/api/comments/".length)).slice(0, 120);
       if (!questionId) return sendJson(res, 400, { error: "缺少题目标识" });
@@ -164,7 +168,7 @@ const server = http.createServer(async (req, res) => {
       if (req.method === "POST") {
         const imported = await loadImportedQuestions(); const known = recalledQuestion(questionId) || questionBank.find((item) => item.id === questionId) || imported.find((item) => item.id === questionId);
         if (!known) return sendJson(res, 404, { error: "题目不存在或本次生成题已失效" });
-        try { const input = await body(req); await addQuestionComment(auth.id, questionId, input.content, input.kind); return sendJson(res, 201, { comments: await questionComments(questionId, auth) }); }
+        try { const input = await body(req); await addQuestionComment(auth.id, questionId, input.content, input.kind, input.parentId); return sendJson(res, 201, { comments: await questionComments(questionId, auth) }); }
         catch (error) { return sendJson(res, 409, { error: error.message }); }
       }
     }

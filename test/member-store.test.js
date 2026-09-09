@@ -31,6 +31,12 @@ test("member orders cannot be duplicated and admin approval grants access", asyn
   const admin = { id: "admin-id", role: "admin" };
   await store.reviewQuestionReport(admin, report.id, "resolved");
   assert.equal((await store.questionComments("question-2", member))[0].reportStatus, "resolved");
+  const root = await store.addQuestionComment(member.id, "question-3", "我想知道这题的判断顺序。", "question");
+  await store.addQuestionComment(member.id, "question-3", "先看句法位置，再比较选项。", "question", root.id);
+  const liked = await store.toggleQuestionCommentLike(member.id, root.id);
+  assert.equal(liked.liked, true);
+  const threaded = await store.questionComments("question-3", member);
+  assert.equal(threaded[1].parentId, root.id); assert.equal(threaded[0].likes, 1);
   await store.deleteQuestionComment(member, comment.id);
   assert.equal((await store.questionComments("question-1", member)).length, 0);
 });
