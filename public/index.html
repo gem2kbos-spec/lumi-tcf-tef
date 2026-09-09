@@ -138,7 +138,7 @@
         </div>
         <label>等级<select id="level"><option value="all" selected>全部等级</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
         <label id="count-label">本组题数<select id="count"><option>1</option></select></label>
-        <button id="start" class="primary">开始 <span>→</span></button>
+        <button id="start" class="primary">开始练习 <span>→</span></button>
         <button id="review" class="secondary">错题复习 <span id="review-count">0</span></button>
         <div class="stats">
           <div><strong id="accuracy">0%</strong><span>正确率</span></div>
@@ -151,8 +151,8 @@
       <section id="practice" class="practice empty">
         <div id="welcome">
           <div class="orb">L</div>
-          <h2>练习设置</h2>
-          <p>选择题型和等级。</p>
+          <h2>选择练习范围</h2>
+          <p>题型和等级随时可以调整。</p>
         </div>
         <div id="quiz" hidden>
           <button id="toggle-practice-settings" class="toggle-practice-settings" type="button">调整训练设置</button>
@@ -163,7 +163,7 @@
           <article id="passage" class="passage" hidden></article>
           <h2 id="prompt"></h2>
           <div id="options" class="options" aria-live="polite"></div>
-          <p id="answer-shortcuts" class="answer-shortcuts">键盘：1–4 或 A–D 选择答案；答完后按 Enter 或空格进入下一题</p>
+          <p id="answer-shortcuts" class="answer-shortcuts">快捷键：1–4 或 A–D 选择答案</p>
           <div id="feedback" aria-live="polite" hidden></div>
           <div id="answer-actions" class="answer-actions" hidden>
             <button id="next" class="primary next-question-button">直接练下一题 <span>→</span><small>Enter / 空格</small></button>

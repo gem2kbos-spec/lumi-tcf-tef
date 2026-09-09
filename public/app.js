@@ -566,6 +566,7 @@ function render() {
   $("#source").textContent = currentSource === "review" ? "错题复习" : currentSource === "ai" ? "AI 补缺题" : "已审机经";
   const progressPercent = state.sequence?.total ? Math.min(100, ((state.sequence.completed + 1) / state.sequence.total) * 100) : 100;
   $("#progress").style.width = `${progressPercent}%`; $("#progress").parentElement.setAttribute("aria-label", `当前范围进度 ${Math.round(progressPercent)}%`); $("#topic").textContent = `${question.level} · ${question.topic}`; $("#question-status").textContent = "请选择答案";
+  $("#answer-shortcuts").textContent = "快捷键：1–4 或 A–D 选择答案";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true; $("#question-tools").hidden = true; $("#toggle-question-tools").setAttribute("aria-expanded", "false"); $("#toggle-question-tools b").textContent = "⌄";
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
@@ -591,6 +592,7 @@ async function answer(selected, selectedButton) {
       else if (index === selected && !result.correct) button.setAttribute("aria-label", `${button.textContent.trim()}，你的选择，不正确`);
     });
     $("#question-status").textContent = result.correct ? "回答正确 · 可直接进入下一题" : `回答错误 · 正确答案是 ${String.fromCharCode(65 + result.answer)}`;
+    $("#answer-shortcuts").textContent = "快捷键：Enter 或空格进入下一题";
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
     const correctOption = answeredQuestion.options[result.answer]; const completedSentence = answeredQuestion.prompt.replace(/_+|…+|\.{3,}/, correctOption);
