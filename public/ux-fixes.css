@@ -18,6 +18,11 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
 .progress-row { align-items: center; gap: 10px; }
 #practice-save-status { margin-left: auto; padding: 3px 7px; border-radius: 999px; background: #edf3ea; color: #53705f; font-size: 10px; }
 .answer-shortcuts { margin: -7px 0 14px !important; color: #87918b !important; font-size: 11px; text-align: right; }
+.question-context { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px; }
+.question-context .eyebrow { margin: 0; }
+#question-status { flex: 0 0 auto; max-width: 54%; padding: 5px 9px; border: 1px solid #dde3d8; border-radius: 999px; background: #f8faf5; color: #64766a; font-size: 11px; font-weight: 750; line-height: 1.25; text-align: right; }
+.good + .answer-actions .next-question-button { box-shadow: 0 10px 28px rgba(51, 103, 48, .28); }
+.bad + .answer-actions .next-question-button { box-shadow: 0 10px 28px rgba(151, 82, 55, .22); }
 .options button.checking { border-color: #5d846f; background: #eff5f1; box-shadow: inset 0 0 0 1px #5d846f; }
 .options button:focus-visible { outline: 3px solid #a9cc59; outline-offset: 2px; }
 #open-practice-hub.has-resume { text-align: left; gap: 18px; }
@@ -51,4 +56,6 @@ body.app-booting main, body.app-booting .study-tools { visibility: hidden; point
   .toggle-practice-settings { display: block; position: sticky; top: 0; z-index: 7; margin: -4px 46px 12px auto; border: 1px solid #cbd4ca; border-radius: 18px; background: #fff; color: #194c3b; padding: 8px 12px; font-weight: 700; }
   #practice-save-status { display: none; }
   .answer-shortcuts { text-align: left; }
+  .question-context { align-items: flex-start; flex-direction: column; gap: 6px; }
+  #question-status { max-width: 100%; text-align: left; }
 }

@@ -563,9 +563,9 @@ function render() {
   $("#selection-tools").hidden = true;
   $("#counter").textContent = state.sequence?.total ? `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}` : `第 ${state.continuousNumber} 题 · 作答后立即解析`;
   const currentSource = question.source === "user_imported" ? "authentic" : question.source === "mock" ? "mock" : question.source?.startsWith("ai") ? "ai" : state.mode;
-  $("#source").textContent = currentSource === "review" ? "错题复习" : "机经";
+  $("#source").textContent = currentSource === "review" ? "错题复习" : currentSource === "ai" ? "AI 补缺题" : "已审机经";
   const progressPercent = state.sequence?.total ? Math.min(100, ((state.sequence.completed + 1) / state.sequence.total) * 100) : 100;
-  $("#progress").style.width = `${progressPercent}%`; $("#progress").parentElement.setAttribute("aria-label", `当前范围进度 ${Math.round(progressPercent)}%`); $("#topic").textContent = `${question.level} · ${question.topic}`;
+  $("#progress").style.width = `${progressPercent}%`; $("#progress").parentElement.setAttribute("aria-label", `当前范围进度 ${Math.round(progressPercent)}%`); $("#topic").textContent = `${question.level} · ${question.topic}`; $("#question-status").textContent = "请选择答案";
   $("#passage").hidden = !question.passage; $("#passage").textContent = question.passage || ""; $("#prompt").textContent = question.prompt;
   $("#feedback").hidden = true; $("#answer-actions").hidden = true;
   $("#comment-content").value = ""; $("#comment-hint").textContent = "最多500字"; $("#question-comments").hidden = true; $(".comment-body").hidden = true; $("#toggle-comments b").textContent = "展开"; $("#comment-count").textContent = "按需查看";
@@ -579,18 +579,27 @@ async function answer(selected, selectedButton) {
   if (state.answered || state.submitting) return; state.submitting = true;
   const buttons = [...$("#options").children]; buttons.forEach((button) => button.disabled = true); $("#options").setAttribute("aria-busy", "true");
   selectedButton.classList.add("checking");
+  $("#question-status").textContent = `已选择 ${String.fromCharCode(65 + selected)}，正在核对`;
   $("#feedback").className = "feedback-loading"; $("#feedback").innerHTML = `<div class="answer-loading"><i></i><div><strong>已收到你的答案：${String.fromCharCode(65 + selected)}</strong><p>正在核对正确答案…</p></div></div>`; $("#feedback").hidden = false;
   try {
     const result = await api("/api/check-answer", { method: "POST", body: JSON.stringify({ questionId: state.questions[state.index].id, selected }) });
     const answeredQuestion = state.questions[state.index]; const answeredQuestionId = answeredQuestion.id;
     state.answered = true; clearPracticeSession(); selectedButton.classList.remove("checking"); buttons[result.answer].classList.add("correct");
     if (!result.correct) { selectedButton.classList.add("wrong"); state.mistakes.push(state.questions[state.index].skill); } else state.score++;
+    buttons.forEach((button, index) => {
+      if (index === result.answer) button.setAttribute("aria-label", `${button.textContent.trim()}，正确答案`);
+      else if (index === selected && !result.correct) button.setAttribute("aria-label", `${button.textContent.trim()}，你的选择，不正确`);
+    });
+    $("#question-status").textContent = result.correct ? "回答正确 · 可直接进入下一题" : `回答错误 · 正确答案是 ${String.fromCharCode(65 + result.answer)}`;
     if (state.sequence && state.questions[state.index].source === "user_imported") { state.sequence.completed = Math.min(state.sequence.total, state.sequence.completed + 1); state.sequence.remaining = Math.max(0, state.sequence.total - state.sequence.completed); $("#counter").textContent = `连续第 ${state.continuousNumber} 题 · 当前范围已完成 ${state.sequence.completed}/${state.sequence.total}`; }
     $("#feedback").className = result.correct ? "good feedback-rich" : "bad feedback-rich";
     const correctOption = answeredQuestion.options[result.answer]; const completedSentence = answeredQuestion.prompt.replace(/_+|…+|\.{3,}/, correctOption);
-    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "✓ 回答正确" : "✕ 回答错误"}</strong><span>正确答案：${String.fromCharCode(65 + result.answer)}</span></div><section class="instant-answer"><b>${escapeHtml(correctOption)}</b><p>${escapeHtml(completedSentence)}</p></section><section id="analysis-pending" class="analysis-pending"><div class="answer-loading"><i></i><div><strong>正在生成新版详细解析</strong><p>将说明决定性规则，并逐项解释每个选项；你现在可以直接练下一题。</p></div></div></section>`;
+    $("#feedback").innerHTML = `<div class="feedback-title"><strong>${result.correct ? "✓ 回答正确" : "✕ 回答错误"}</strong><span>正确答案 · ${String.fromCharCode(65 + result.answer)}</span></div><section class="instant-answer"><b>${escapeHtml(correctOption)}</b><p>${escapeHtml(completedSentence)}</p></section><section id="analysis-pending" class="analysis-pending"><div class="answer-loading"><i></i><div><strong>详细中文解析正在准备</strong><p>会说明判断顺序，并逐项解释每个选项。你无需等待，可随时练下一题。</p></div></div></section>`;
     $("#feedback").hidden = false; $("#answer-actions").hidden = false; $("#question-comments").hidden = false;
-    if (window.matchMedia("(max-width: 700px)").matches) requestAnimationFrame(() => $("#feedback").scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() => {
+      if (window.matchMedia("(max-width: 700px)").matches) $("#feedback").scrollIntoView({ behavior: "smooth", block: "start" });
+      $("#next").focus({ preventScroll: true });
+    });
     const savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) });
     const loadDetailedAnalysis = async () => {
       const pending = $("#analysis-pending");
