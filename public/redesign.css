@@ -9,6 +9,10 @@
   --studio-soft: #edf3e3;
 }
 
+/* The product only exposes the three scored sections. Let the remaining cards
+   use the available width instead of retaining the old five-module grid. */
+.module-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+
 body { background: var(--studio-bg); color: var(--studio-ink); }
 main.app-shell {
   display: grid; grid-template-columns: 238px minmax(0, 1fr); gap: 0;

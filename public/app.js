@@ -115,20 +115,17 @@ function activateWorkspace(viewId, { updateHash = true } = {}) {
 
 const catalogs = {
   tcf: {
-    title: "TCF 重点训练", note: "语法、词汇、阅读与书面表达",
+    title: "TCF 重点训练", note: "语言结构、词汇与阅读理解",
     modules: [
       ["grammar", "语言结构", "18题 · 15分钟", "语法、词汇与语域", "MSL"],
-      ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"],
-      ["writing", "书面表达", "3项 · 60分钟", "信息、叙述与观点比较", "EE"]
+      ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"]
     ]
   },
   tef: {
-    title: "TEF 重点训练", note: "阅读、词汇结构与表达",
+    title: "TEF 重点训练", note: "阅读理解与词汇结构",
     modules: [
       ["reading", "阅读理解", "40题 · 60分钟", "四选一，可自由导航", "CE"],
-      ["mixed", "词汇与结构", "40题 · 30分钟", "TEF Études 等版本使用", "LS"],
-      ["writing", "书面表达", "2项 · 60分钟", "续写事件与论证观点", "EE"],
-      ["speaking", "口语表达", "2项 · 15分钟", "询问信息与说服", "EO"]
+      ["mixed", "词汇与结构", "40题 · 30分钟", "TEF Études 等版本使用", "LS"]
     ]
   }
 };
