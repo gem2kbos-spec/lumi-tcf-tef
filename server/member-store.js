@@ -128,6 +128,17 @@ export async function changePassword(userId, currentPassword, newPassword) {
   });
 }
 
+export async function updateOwnProfile(userId, input = {}) {
+  const name = String(input.name || "").trim().replace(/\s+/g, " ").slice(0, 24);
+  if (name.length < 2) throw new Error("显示名称至少需要 2 个字");
+  return serializeMemberMutation(async () => {
+    const data = await readData(); const user = data.users.find((item) => item.id === userId);
+    if (!user) throw new Error("账号不存在");
+    user.name = name; user.updatedAt = new Date().toISOString();
+    await writeData(data); return publicUser(user);
+  });
+}
+
 export async function createOrder(userId, input) {
   if (input.purchaseAccepted !== true) throw new Error("请先确认购买与退款说明");
   return serializeMemberMutation(async () => {

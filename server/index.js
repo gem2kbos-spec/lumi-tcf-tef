@@ -15,7 +15,7 @@ import { categoriesFor, categoryFor, QUESTION_CATEGORIES } from "./question-taxo
 import { aiEnabled, completeAi, getAiConfig } from "./ai-client.js";
 import { coverageGaps } from "./coverage.js";
 import { addJournalEntry, listJournalEntries } from "./journal-store.js";
-import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, reviewQuestionReport, revokeMemberSessions, updateMember } from "./member-store.js";
+import { addQuestionComment, adminOverview, aiUsageForUser, authenticate, changePassword, consumeAiQuota, createOrder, deleteQuestionComment, ensureAdminFromEnv, login, logout, ordersForUser, plans, questionComments, register, resetMemberPassword, reviewOrder, reviewQuestionReport, revokeMemberSessions, updateMember, updateOwnProfile } from "./member-store.js";
 import { cacheAnalysis, readCachedAnalysis } from "./analysis-cache.js";
 import { persistenceHealth } from "./persistence.js";
 
@@ -121,6 +121,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/auth/change-password") {
       if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
       try { const input = await body(req); await changePassword(auth.id, input.currentPassword, input.newPassword); res.setHeader("Set-Cookie", sessionCookie("", true)); return sendJson(res, 200, { ok: true }); }
+      catch (error) { return sendJson(res, 400, { error: error.message }); }
+    }
+    if (req.method === "POST" && url.pathname === "/api/auth/profile") {
+      if (!auth) return sendJson(res, 401, { error: "AUTH_REQUIRED" });
+      try { const input = await body(req); return sendJson(res, 200, { user: await updateOwnProfile(auth.id, input) }); }
       catch (error) { return sendJson(res, 400, { error: error.message }); }
     }
     if (url.pathname.startsWith("/api/")) {

@@ -96,6 +96,13 @@
 .profile-card header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e0e5df; padding-bottom: 18px; }
 .profile-card header h2 { margin: 3px 0 5px; }
 .profile-card header button { width: 40px; height: 40px; border: 0; border-radius: 50%; font-size: 24px; cursor: pointer; }
+.profile-card { width: min(620px, 100%); }
+.profile-hero { display:flex; align-items:center; gap:12px; padding:18px 0 14px; }
+.profile-hero > span { width:48px; height:48px; display:grid; place-items:center; border-radius:50%; background:#1c523f; color:#d5f47a; font-weight:800; font-size:18px; }
+.profile-hero > div { display:grid; gap:3px; min-width:0; }.profile-hero small { color:#718078; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }.profile-hero > b { margin-left:auto; padding:6px 9px; border-radius:999px; background:#e5f3e8; color:#205432; font-size:12px; white-space:nowrap; }
+.profile-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:11px; background:#f2f5ef; border-radius:15px; }.profile-stats > div { display:grid; gap:3px; padding:6px 8px; }.profile-stats span { color:#718078; font-size:12px; }.profile-stats strong { color:#163e30; font-size:20px; }
+.profile-tabs { display:flex; gap:7px; padding:18px 0 12px; border-bottom:1px solid #e0e5df; }.profile-tabs button { border:0; background:transparent; color:#738178; padding:7px 10px; font:inherit; font-weight:750; cursor:pointer; border-radius:8px; }.profile-tabs button.active { background:#eaf2e9; color:#1d513d; }
+.profile-tab { padding-top:16px; }.profile-tab[hidden] { display:none; }.profile-tab h3 { margin:0 0 12px; font-size:15px; }.profile-tab label { display:grid; gap:6px; margin:12px 0; color:#3d5147; font-weight:700; font-size:13px; }.profile-tab input { min-height:42px; padding:9px 11px; border:1px solid #d8dfd8; border-radius:10px; background:#fff; font:inherit; }.profile-tab input[readonly] { color:#758178; background:#f5f7f3; }.profile-tab > form > small { color:#718078; line-height:1.5; font-size:12px; }.profile-learning { margin-top:23px; padding-top:18px; border-top:1px solid #e0e5df; }.profile-learning p { margin:0; color:#718078; }.profile-learning-summary { display:grid; gap:8px; }.profile-learning-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px dashed #e0e5df; color:#617168; }.profile-learning-row strong { color:#204b3b; }.profile-security-note { margin-top:20px; padding:14px; border-radius:12px; background:#f4f6f1; color:#53635b; }.profile-security-note p { margin:6px 0 0; font-size:13px; line-height:1.55; }.profile-logout { margin-top:20px; width:100%; color:#8b4035; border-color:#ebd2cd; }
 #password-form { display: grid; gap: 14px; padding-top: 18px; }
 #password-form h3 { margin: 0; }
 #password-form > small { color: #718078; line-height: 1.5; }
@@ -122,6 +129,7 @@
   .admin-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .account-gate { padding: 0; align-items: end; }
   .membership-card { width: 100%; max-height: 96dvh; padding: 22px 18px calc(18px + env(safe-area-inset-bottom)); border-radius: 24px 24px 0 0; }
+  .profile-card { width:100%; max-height:96dvh; overflow:auto; padding:22px 18px calc(18px + env(safe-area-inset-bottom)); border-radius:24px 24px 0 0; }
   .payment-heading { gap: 12px; }
   .payment-safe { display: none; }
   .membership-card .plan-list { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; }

@@ -10,6 +10,9 @@ test("member orders cannot be duplicated and admin approval grants access", asyn
   const store = await import(`../server/member-store.js?test=${Date.now()}`);
   const member = await store.register({ name: "学员", email: "learner@example.com", password: "secure-pass-2026", acceptedTerms: true });
   assert.equal(member.hasAccess, false);
+  const renamed = await store.updateOwnProfile(member.id, { name: "Lumi 学员" });
+  assert.equal(renamed.name, "Lumi 学员");
+  await assert.rejects(() => store.updateOwnProfile(member.id, { name: "A" }), /至少需要/);
   const order = await store.createOrder(member.id, { planId: "month", paymentNote: "尾号1234", purchaseAccepted: true });
   await assert.rejects(() => store.createOrder(member.id, { planId: "quarter", paymentNote: "尾号5678", purchaseAccepted: true }), /已有待审核订单/);
   const reviewed = await store.reviewOrder("admin-id", order.id, "confirm");
@@ -21,7 +24,7 @@ test("member orders cannot be duplicated and admin approval grants access", asyn
   const comment = await store.addQuestionComment(member.id, "question-1", "我认为这里应先判断介词。 ");
   await assert.rejects(() => store.addQuestionComment(member.id, "question-1", "我认为这里应先判断介词。"), /相同评论/);
   const comments = await store.questionComments("question-1", member);
-  assert.equal(comments.length, 1); assert.equal(comments[0].canDelete, true); assert.equal(comments[0].author.name, "学员");
+  assert.equal(comments.length, 1); assert.equal(comments[0].canDelete, true); assert.equal(comments[0].author.name, "Lumi 学员");
   const report = await store.addQuestionComment(member.id, "question-2", "第二个选项疑似存在答案标注错误。", "report");
   const reportComments = await store.questionComments("question-2", member);
   assert.equal(reportComments[0].kind, "report"); assert.equal(reportComments[0].reportStatus, "pending");
