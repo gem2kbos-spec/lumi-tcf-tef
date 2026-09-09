@@ -300,66 +300,6 @@
     }
   },
   {
-    "id": "auth-grammar-011",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 11,
-    "order": 11,
-    "category": "verb-tenses",
-    "topic": "一、时态与语式（直陈式、条件式、虚拟式、命令式）",
-    "prompt": "La piscine _ le lundi.",
-    "options": [
-      "ferme",
-      "est fermée",
-      "fermera",
-      "a fermé"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：“le lundi”表示每周一，是习惯性动作，应用现在时。ferme为现在时主动态，主语为piscine（第三人称单数），变位正确。est fermée是被动语态表示状态，但句子结构及语义更强调动作；fermera为将来时，a fermé为复合过去时，均不适应习惯性频率。故选择ouverte的主动态现在时。\n\nExplication française : « Le lundi » exprime une habitude (chaque lundi). Le présent de l'indicatif est donc de mise : « ferme ». « Est fermée » (passif) indique un état, « fermera » (futur) et « a fermé » (passé composé) ne conviennent pas ici.",
-    "skill": "verb_tenses",
-    "level": "A2",
-    "levelEstimated": false,
-    "difficulty": 3,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-012",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 12,
-    "order": 12,
-    "category": "verb-tenses",
-    "topic": "一、时态与语式（直陈式、条件式、虚拟式、命令式）",
-    "prompt": "Je vais _ l'examen de français la semaine prochaine.",
-    "options": [
-      "passer",
-      "rater",
-      "réussir",
-      "avoir"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：结构“aller + infinitif”构成最近将来时，其后接动词原形。passer un examen是固定搭配。rater（失败）和réussir（成功）虽然语法可行，但语义不匹配；avoir虽有“avoir un examen”的用法，但不如passer典型。\n\nExplication française : La périphrase « aller + infinitif » exprime un futur proche. « Passer un examen » est la collocation correcte. « Rater » et « réussir » sont possibles mais moins naturels dans ce contexte ; « avoir » n'est pas l'expression la plus courante.",
-    "skill": "verb_tenses",
-    "level": "A2",
-    "levelEstimated": false,
-    "difficulty": 2,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "medium",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-013",
     "type": "grammar",
     "exam": "shared",
@@ -458,7 +398,7 @@
     "order": 17,
     "category": "verb-tenses",
     "topic": "一、时态与语式（直陈式、条件式、虚拟式、命令式）",
-    "prompt": "Tu es parti, il _ d'arriver.",
+    "prompt": "Tu es parti juste après son arrivée : il _ d'arriver.",
     "options": [
       "venait",
       "vient",
@@ -975,7 +915,7 @@
       "en",
       "pour"
     ],
-    "answer": 2,
+    "answer": 1,
     "answerVerified": true,
     "explanation": "中文解析：动词 faire 表示完成，用 en 强调在十钟内完成。dans 表示将来的时间；pendant 表示持续时长，但不强调完成；pour 表示目的或预计时长，此处不适用。\n\nExplication française : Avec un passé composé et une durée, 'en' indique le temps nécessaire pour accomplir l'action. 'dans' futur, 'pendant' durée, 'pour' durée prévue.",
     "skill": "verb_tenses",
@@ -2910,36 +2850,6 @@
     }
   },
   {
-    "id": "auth-grammar-100",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 13,
-    "order": 100,
-    "category": "connectors",
-    "topic": "二、连词与逻辑连接词",
-    "prompt": "_ il est parti de la réunion, l'ambiance est devenue plus détendue.",
-    "options": [
-      "Dès que",
-      "Depuis que",
-      "Pendant que",
-      "Alors que"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：句意：自从他离开会议，气氛变得更轻松。主句用现在时或过去时，但表示从过去某时点持续到现在的状态，用depuis que。Dès que表示一……就，强调瞬间；此处不是瞬间动作，而是持续状态。\n\nExplication française : L'ambiance est devenue plus détendue depuis son départ : 'Depuis que' indique le point de départ d'une durée. 'Dès que' exprime une action immédiate, non une durée.",
-    "skill": "connectors",
-    "level": "B2",
-    "levelEstimated": false,
-    "difficulty": 4,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-101",
     "type": "grammar",
     "exam": "shared",
@@ -3630,66 +3540,6 @@
     }
   },
   {
-    "id": "auth-grammar-124",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 17,
-    "order": 124,
-    "category": "prepositions",
-    "topic": "三、介词与介词短语",
-    "prompt": "Cette fête a lieu tous les quatre ans, _ quatre ans. (题干可能不完整，但根据笔记选 sur)",
-    "options": [
-      "sur",
-      "en",
-      "pendant",
-      "pour"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：“tous les quatre ans”和“sur quatre ans”都表示“每四年/在四年期间”，这里用“sur”表达周期性。\n\nExplication française : L'expression « sur quatre ans » est utilisée pour indiquer une périodicité ou une répartition sur une durée. Elle correspond à « tous les quatre ans ».",
-    "skill": "prepositions",
-    "level": "B1",
-    "levelEstimated": false,
-    "difficulty": 4,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "medium",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-125",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 18,
-    "order": 125,
-    "category": "prepositions",
-    "topic": "三、介词与介词短语",
-    "prompt": "Je voudrais un peu de pain _ des croissants.",
-    "options": [
-      "ou",
-      "et",
-      "avec",
-      "puis"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：从语义看，顾客可能想要面包或羊角面包，用“ou”表示选择；“et”表示同时要，但常见点餐时用“ou”更符合选择语境。\n\nExplication française : Dans ce contexte de commande, « ou » exprime une alternative. « Et » serait possible mais ici la phrase suggère un choix. L'option « ou » est la plus naturelle.",
-    "skill": "prepositions",
-    "level": "A1",
-    "levelEstimated": false,
-    "difficulty": 1,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "medium",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-126",
     "type": "grammar",
     "exam": "shared",
@@ -3712,36 +3562,6 @@
     "level": "A1",
     "levelEstimated": false,
     "difficulty": 1,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-127",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 20,
-    "order": 127,
-    "category": "prepositions",
-    "topic": "三、介词与介词短语",
-    "prompt": "Il prend son café _ 9 heures chaque matin.",
-    "options": [
-      "vers",
-      "à",
-      "sur",
-      "en"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：“vers 9 heures”表示“大约9点”，符合日常口语中不确定精确时间的表达；若用“à”则需确定具体时间。\n\nExplication française : « Vers 9 heures » signifie « à environ 9 heures », ce qui est courant pour une routine. « À » serait possible avec une heure précise, mais ici l'option « vers » est plus naturelle.",
-    "skill": "prepositions",
-    "level": "A2",
-    "levelEstimated": false,
-    "difficulty": 2,
     "refinement": {
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
@@ -3948,36 +3768,6 @@
     "answer": 0,
     "answerVerified": true,
     "explanation": "中文解析：téléphoner à quelqu'un，间接宾语用lui（第三人称单数）。le/la是直接宾语，leur是复数。\n\nExplication française : 'téléphoner à' : COI, donc 'lui' pour singulier. 'le/la' COD, 'leur' pluriel.",
-    "skill": "pronouns",
-    "level": "A2",
-    "levelEstimated": false,
-    "difficulty": 2,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-135",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 8,
-    "order": 135,
-    "category": "pronouns",
-    "topic": "四、代词（人称、指示、主有、关系）",
-    "prompt": "Cette robe plaît beaucoup _ .",
-    "options": [
-      "à Marie",
-      "lui",
-      "la",
-      "en"
-    ],
-    "answer": 1,
-    "answerVerified": true,
-    "explanation": "中文解析：plaire à quelqu'un，需要用间接宾语代词lui（代替à Marie）。直接放名词à Marie也可，但选项有lui，且答案标注为1，所以选lui。la/en不对。\n\nExplication française : Le verbe 'plaire' se construit avec COI : 'plaire à'. On utilise le pronom COI 'lui' pour éviter de répéter 'à Marie'. 'la' et 'en' incorrects.",
     "skill": "pronouns",
     "level": "A2",
     "levelEstimated": false,
@@ -5310,36 +5100,6 @@
     }
   },
   {
-    "id": "auth-grammar-181",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 11,
-    "order": 181,
-    "category": "determiners",
-    "topic": "五、冠词与限定词（含数量、tout）",
-    "prompt": "Cette maison a _ de pièces qu'on se croirait dans un château.",
-    "options": [
-      "tellement",
-      "autant",
-      "tant",
-      "si"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：句型tellement de + nom + que... 表示“如此多的…以至于”。autant de...que 用于同级比较，tant de...que也可表示数量多但多用于正式语体，si修饰形容词或副词，不接de+名词。此处强调程度，tellement最适合。\n\nExplication française : La structure « tellement de + nom + que » exprime une telle quantité que. « autant de... que » sert à la comparaison d'égalité, « tant de... que » est plus formel, « si » modifie un adjectif ou un adverbe, pas un nom. Ici, « tellement de pièces » est le plus naturel.",
-    "skill": "determiners",
-    "level": "B2",
-    "levelEstimated": false,
-    "difficulty": 5,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "medium",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-182",
     "type": "grammar",
     "exam": "shared",
@@ -5448,36 +5208,6 @@
     "answer": 0,
     "answerVerified": true,
     "explanation": "中文解析：比较级 meilleur 前用 bien 加强，表示“好得多”。très 不用于比较级前，plus 会构成新的比较级，beaucoup 可修饰比较级但通常置于比较级前或后，此处需要副词 bien。\n\nExplication française : Pour renforcer le comparatif 'meilleur', on utilise l'adverbe 'bien' : 'bien meilleur' signifie 'much better'. 'très' ne s'emploie pas avec un comparatif, 'plus' formerait un nouveau comparatif, et 'beaucoup' s'utilise plutôt après le comparatif (ex: meilleur beaucoup, moins courant) ou avec 'plus'. Ici, 'bien' est correct.",
-    "skill": "determiners",
-    "level": "B1",
-    "levelEstimated": false,
-    "difficulty": 3,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-186",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 16,
-    "order": 186,
-    "category": "determiners",
-    "topic": "五、冠词与限定词（含数量、tout）",
-    "prompt": "J'ai vu un nouveau film, il est _ magnifique.",
-    "options": [
-      "vraiment",
-      "très",
-      "bien",
-      "assez"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：形容词 magnifique 本身已是“极好的”，不能用 très 或 bien 修饰，应使用 vraiment 表示“确实、真正”。assez 表示“相当”，语义不匹配。\n\nExplication française : L'adjectif 'magnifique' est déjà un superlatif, on ne peut pas le moduler avec 'très' ou 'bien'. On utilise 'vraiment' pour insister : 'vraiment magnifique' = 'truly magnificent'. 'assez' serait possible mais moins naturel ici.",
     "skill": "determiners",
     "level": "B1",
     "levelEstimated": false,
@@ -6090,36 +5820,6 @@
     }
   },
   {
-    "id": "auth-grammar-207",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 4,
-    "order": 207,
-    "category": "adjectives-adverbs",
-    "topic": "七、形容词与副词（含比较级、tout 副词用法）",
-    "prompt": "Il est vraiment _, tout le monde refuse de l'inviter.",
-    "options": [
-      "insupportable",
-      "impatient",
-      "ennuyeux",
-      "désagréable"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：insupportable 意为“令人无法忍受的”，语气较强，符合“所有人都拒绝邀请他”的语境。impatient 是缺乏耐心，ennuyeux 是令人厌烦（但程度不如 insupportable），désagréable 是不令人愉快，但根据语境最贴切的是 insupportable。\n\nExplication française : « Insupportable » signifie qu'on ne peut pas le supporter. Les autres adjectifs sont moins forts ou moins adaptés.",
-    "skill": "adjectives_adverbs",
-    "level": "B1",
-    "levelEstimated": false,
-    "difficulty": 4,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-208",
     "type": "grammar",
     "exam": "shared",
@@ -6180,36 +5880,6 @@
     }
   },
   {
-    "id": "auth-grammar-210",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 7,
-    "order": 210,
-    "category": "adjectives-adverbs",
-    "topic": "七、形容词与副词（含比较级、tout 副词用法）",
-    "prompt": "Cette valise est trop _, je n'arrive pas à y mettre tous mes vêtements.",
-    "options": [
-      "petite",
-      "lourde",
-      "étroite",
-      "pleine"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：句子说放不下所有衣服，原因是箱子太小（petite）。lourde是重，étroite是窄，pleine是满，均不符合语境。\n\nExplication française : On ne peut pas mettre tous ses vêtements car la valise est trop petite. 'Lourde' concerne le poids, 'étroite' la largeur, 'pleine' signifie déjà remplie.",
-    "skill": "adjectives_adverbs",
-    "level": "A2",
-    "levelEstimated": false,
-    "difficulty": 1,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
     "id": "auth-grammar-211",
     "type": "grammar",
     "exam": "shared",
@@ -6262,66 +5932,6 @@
     "level": "B2",
     "levelEstimated": false,
     "difficulty": 4,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "medium",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-213",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 10,
-    "order": 213,
-    "category": "adjectives-adverbs",
-    "topic": "七、形容词与副词（含比较级、tout 副词用法）",
-    "prompt": "L'enfant a été transporté à l'hôpital, son état est _.",
-    "options": [
-      "critique",
-      "grave",
-      "dangereux",
-      "sérieux"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：‘état critique’是固定说法，指病情危急。grave也可指严重，但critique更常用于医学语境。dangereux和sérieux不搭配‘état’。\n\nExplication française : On dit 'état critique' pour un patient gravement malade. 'Grave' est possible mais moins idiomatique dans ce contexte médical. 'Dangereux' et 'sérieux' ne collent pas avec 'état'.",
-    "skill": "adjectives_adverbs",
-    "level": "B1",
-    "levelEstimated": false,
-    "difficulty": 3,
-    "refinement": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "confidence": "high",
-      "sourceIssue": ""
-    }
-  },
-  {
-    "id": "auth-grammar-214",
-    "type": "grammar",
-    "exam": "shared",
-    "sourceDocument": "TCF TEF语法.docx",
-    "sourceNumber": 11,
-    "order": 214,
-    "category": "adjectives-adverbs",
-    "topic": "七、形容词与副词（含比较级、tout 副词用法）",
-    "prompt": "Elle n'a pas l'air en forme. Elle a beaucoup _.",
-    "options": [
-      "maigri",
-      "vieilli",
-      "changé",
-      "grossi"
-    ],
-    "answer": 0,
-    "answerVerified": true,
-    "explanation": "中文解析：‘avoir l’air en forme’表示气色好，后文说‘beaucoup’做程度副词，通常说‘maigri’（瘦了）表示健康不佳。其他选项也可用，但结合前半句，maigri更直接。不过原题答案为0，且从常见搭配看，‘avoir beaucoup maigri’是典型表达。\n\nExplication française : 'Elle n'a pas l'air en forme' suggère un problème de santé, et 'avoir beaucoup maigri' est une raison fréquente. 'Vieilli' pourrait être aussi, mais moins lié à la forme. 'Changé' est vague, 'grossi' est l'inverse.",
-    "skill": "adjectives_adverbs",
-    "level": "B1",
-    "levelEstimated": false,
-    "difficulty": 3,
     "refinement": {
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
@@ -7057,9 +6667,9 @@
     "sourceDocument": "TCF词汇题.docx",
     "order": 9,
     "topic": "词汇真题",
-    "answer": 2,
+    "answer": 1,
     "answerVerified": true,
-    "explanation": "中文解析：正确搭配是“se ranger à un choix”，意为“同意、接受某个选择”。句子意为“我对贵校没有意见，完全听从您的选择”。“classe”（分类）、“range”（排列，但“se ranger”常与“à”搭配表示“归入，接受”）、“mets”（放置）均不能构成此固定搭配。实际上，“se ranger à”是固定词组，表示“同意、服从”，而“se mettre à”表示“开始”，不符合语境。\n\nExplication française : La locution correcte est « se ranger à un choix », signifiant se conformer ou accepter. Le verbe « ranger » avec le pronominal « se » et la préposition « à » forme une expression figée. Les autres verbes ne sont pas utilisés dans cette expression.",
+    "explanation": "中文解析：固定结构是 se ranger à l'avis / au choix de quelqu'un，表示“接受、赞同或服从某人的意见”。题干已有 me 和 à，因此应填 range，组成 je me range à votre choix。mets 会构成 se mettre à，表示“开始做”，不符合语义。\n\nExplication française : L'expression « se ranger à » signifie accepter un avis ou s'y conformer. Avec « je me », il faut donc la forme « range ». « Se mettre à » signifie commencer à faire quelque chose et ne convient pas ici.",
     "level": "B1",
     "levelEstimated": false,
     "difficulty": 4,
@@ -7117,46 +6727,6 @@
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
       "reason": "常见介词短语，但需理解语境。"
-    }
-  },
-  {
-    "sourceNumber": 11,
-    "prompt": "Je ressens une profonde tristesse, comme si _ m'envahissait.",
-    "options": [
-      "bonheur",
-      "chagrin",
-      "plaisir",
-      "élan"
-    ],
-    "passage": "",
-    "skill": "collocation",
-    "category": "collocations",
-    "id": "auth-vocab-011",
-    "type": "vocabulary",
-    "exam": "shared",
-    "sourceDocument": "TCF词汇题.docx",
-    "order": 11,
-    "topic": "词汇真题",
-    "answer": 1,
-    "answerVerified": true,
-    "explanation": "中文解析：句意是“我感到深深的悲伤，仿佛悲伤侵袭了我”。‘chagrin’意为悲伤，与‘tristesse’相呼应。‘bonheur’（幸福）和‘plaisir’（愉快）与悲伤相反，‘élan’（冲动，热情）不搭配。\n\nExplication française : Le contexte de tristesse profonde appelle le mot 'chagrin', qui signifie tristesse. Les autres options sont positives ou inappropriées.",
-    "level": "A1",
-    "levelEstimated": false,
-    "difficulty": 1,
-    "calibration": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reviewed": true,
-      "firstAnswer": 1,
-      "reviewAnswer": 1,
-      "arbitrated": false,
-      "confidence": "high",
-      "ambiguity": ""
-    },
-    "levelAssessment": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reason": "基础情感词汇，直白易懂。"
     }
   },
   {
@@ -8317,46 +7887,6 @@
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
       "reason": "日常生活词汇'prise'插座，语境明确，干扰项为相关词但匹配度低。"
-    }
-  },
-  {
-    "sourceNumber": 41,
-    "prompt": "Il est de passage à Paris, dans trois jours, il _ en Italie.",
-    "options": [
-      "quittera",
-      "s'en ira",
-      "se rendra",
-      "se barrera"
-    ],
-    "passage": "",
-    "skill": "collocation",
-    "category": "collocations",
-    "id": "auth-vocab-041",
-    "type": "vocabulary",
-    "exam": "shared",
-    "sourceDocument": "TCF词汇题.docx",
-    "order": 41,
-    "topic": "词汇真题",
-    "answer": 1,
-    "answerVerified": true,
-    "explanation": "中文解析：句子意为“他在巴黎逗留，三天后将去意大利”。表示“出发去某国”应用s'en aller，后接介词en+阴性国名（l'Italie）。选项1（s'en ira）是s'en aller的简单将来时，符合。quitter（选项0）是及物动词，后直接接宾语，不能接en Italie；se rendre à（选项2）表示去某地，但介词用à，不用en；se barrera（选项3）是俚语，且用法不当。\n\nExplication française : La phrase indique qu'il partira pour l'Italie dans trois jours. Pour exprimer le départ vers un pays, on utilise 's'en aller' suivi de 'en' + pays (l'Italie). L'option 1 ('s'en ira') est le futur simple de 's'en aller'. 'Quitter' est transitif et ne peut pas être suivi de 'en Italie'. 'Se rendre' exigerait la préposition 'à', et 'se barrer' est familier et inapproprié ici.",
-    "level": "B2",
-    "levelEstimated": false,
-    "difficulty": 5,
-    "calibration": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reviewed": true,
-      "firstAnswer": 1,
-      "reviewAnswer": 1,
-      "arbitrated": false,
-      "confidence": "high",
-      "ambiguity": ""
-    },
-    "levelAssessment": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reason": "时态与动词辨析，'se rendre'正式，'s'en ira'方向性，需理解语境。"
     }
   },
   {
@@ -14041,7 +13571,7 @@
   },
   {
     "sourceNumber": 193,
-    "prompt": "J'ai lu les dossiers que vous m'avez soumis, et j'enverrai demain_ propositions pour la réunion prochaine.",
+    "prompt": "J'ai lu les dossiers que vous m'avez soumis, et j'enverrai demain _ propositions pour la prochaine réunion.",
     "options": [
       "à nouveau",
       "autrement",
@@ -14677,86 +14207,6 @@
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
       "reason": "考查domaine的搭配，语义清晰，但需辨别champ和contexte的细微差别。"
-    }
-  },
-  {
-    "sourceNumber": "完形填空 5（关于Pointe-à-Pitre市政团队）-1",
-    "prompt": "选择最合适的词完成第 1 个空。",
-    "options": [
-      "animé",
-      "certain",
-      "conscient",
-      "émoustillé"
-    ],
-    "passage": "Pointoises, Pointois, Chers administrés,",
-    "skill": "collocation",
-    "category": "collocations",
-    "id": "auth-vocab-224",
-    "type": "vocabulary",
-    "exam": "shared",
-    "sourceDocument": "TCF词汇题.docx",
-    "order": 224,
-    "topic": "词汇真题",
-    "answer": 2,
-    "answerVerified": true,
-    "explanation": "中文解析：此处为信件开头，市长可能表达“我深知”或“我意识到”居民的期望，因此“conscient”（意识到）符合语境，且常见搭配“être conscient de”。其他选项：animé（有活力的）、certain（某个）、émoustillé（兴奋的）均不符合语境。\n\nExplication française : Le terme « conscient » s'accorde avec l'idée de prendre en compte les attentes des administrés, souvent suivi de « de » et d'un nom. Les autres adjectifs n'ont pas de sens logique dans cette phrase d'introduction.",
-    "level": "C1",
-    "levelEstimated": false,
-    "difficulty": 8,
-    "calibration": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reviewed": true,
-      "firstAnswer": 2,
-      "reviewAnswer": 2,
-      "arbitrated": false,
-      "confidence": "high",
-      "ambiguity": ""
-    },
-    "levelAssessment": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reason": "需理解致辞语境，选择'conscient'，涉及抽象形容词，文本片段不完整，推断难度高。"
-    }
-  },
-  {
-    "sourceNumber": "完形填空 5（关于Pointe-à-Pitre市政团队）-2",
-    "prompt": "选择最合适的词完成第 2 个空。",
-    "options": [
-      "me pèse",
-      "m'acquitte",
-      "m'incombe",
-      "me regarde"
-    ],
-    "passage": "Pointoises, Pointois, Chers administrés,",
-    "skill": "collocation",
-    "category": "collocations",
-    "id": "auth-vocab-225",
-    "type": "vocabulary",
-    "exam": "shared",
-    "sourceDocument": "TCF词汇题.docx",
-    "order": 225,
-    "topic": "词汇真题",
-    "answer": 1,
-    "answerVerified": true,
-    "explanation": "中文解析：空前的语境是市长在讲话中表示‘履行我的市长使命’。's'acquitter de' 是固定搭配，意为‘履行、完成’（职责、义务等），且与介词 'de' 搭配。'me pèse' 意为‘使我沉重’，'m'incombe' 意为‘由我承担’但通常与 'à' 搭配，'me regarde' 意为‘与我有关’，均不符合。\n\nExplication française : Le verbe pronominal 's'acquitter de' signifie 'accomplir' une tâche, un devoir. Il se construit avec 'de' et correspond exactement au sens de 'remplir sa mission'. Les autres verbes ('me pèse', 'm'incombe', 'me regarde') n'ont pas cette construction ni ce sens.",
-    "level": "C1",
-    "levelEstimated": false,
-    "difficulty": 9,
-    "calibration": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reviewed": true,
-      "firstAnswer": 1,
-      "reviewAnswer": 1,
-      "arbitrated": false,
-      "confidence": "high",
-      "ambiguity": ""
-    },
-    "levelAssessment": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reason": "考查s'acquitter de（履行），语域正式，动词短语较生僻，语法结构复杂。"
     }
   },
   {
@@ -15437,46 +14887,6 @@
       "provider": "deepseek",
       "model": "deepseek-v4-flash",
       "reason": "动词'constituer'在语料中意义抽象，需结合上下文理解释义，干扰项有迷惑性。"
-    }
-  },
-  {
-    "sourceNumber": "完形填空 10（Les Québécois et l'eau）",
-    "prompt": "Dans ce texte, quel est le synonyme le plus proche de « moindre » ?",
-    "options": [
-      "Soldé",
-      "Attractif",
-      "Décroissant",
-      "Concurrentiel"
-    ],
-    "passage": "Les Québécois se préoccupent de ce qu'ils boivent. De plus en plus méfiants à l'égard de l'eau du robinet, ils se tournent vers les eaux en bouteilles.",
-    "skill": "synonymes",
-    "category": "lexical-relations",
-    "id": "auth-vocab-243",
-    "type": "vocabulary",
-    "exam": "shared",
-    "sourceDocument": "TCF词汇题.docx",
-    "order": 243,
-    "topic": "词汇真题",
-    "answer": 2,
-    "answerVerified": true,
-    "explanation": "中文解析：“moindre”意为“更小的，最低的”，这里指价格最低或数量最少，最接近“décroissant”（递减的）。“soldé”（打折的）、“attractif”（有吸引力的）、“concurrentiel”（有竞争力的）不直接对应。\n\nExplication française : « Moindre » signifie « plus petit, le plus bas », d'où « décroissant » est le plus proche. Les autres options ne correspondent pas au sens de 'moindre'.",
-    "level": "B2",
-    "levelEstimated": false,
-    "difficulty": 6,
-    "calibration": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reviewed": true,
-      "firstAnswer": 2,
-      "reviewAnswer": 2,
-      "arbitrated": false,
-      "confidence": "high",
-      "ambiguity": ""
-    },
-    "levelAssessment": {
-      "provider": "deepseek",
-      "model": "deepseek-v4-flash",
-      "reason": "'moindre'为比较级特殊形式，词义推断依赖语篇逻辑，选项需辨析。"
     }
   },
   {
@@ -16484,7 +15894,7 @@
     "prompt": "Qu'est-ce que Maryse organise ?",
     "options": [
       "A Un concours de cuisine entre amis.",
-      "B Cuisiner entre anciens élèves.",
+      "B Un repas entre anciens élèves.",
       "C Un repas avec toute sa famille.",
       "D Une fête de fin d'année scolaire."
     ],

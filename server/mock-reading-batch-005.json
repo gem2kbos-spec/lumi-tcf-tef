@@ -509,12 +509,12 @@
     "prompt": "Que faut-il faire pour participer à l'atelier d'écriture ?",
     "options": [
       "Avoir déjà écrit un livre",
-      "Être âgé de 12 ans minimum",
+      "S'inscrire à l'accueil avant le 15 juin",
       "Payer un droit d'inscription",
       "S'inscrire le jour même"
     ],
     "answer": 1,
-    "explanation": "Le document précise que l'atelier s'adresse aux jeunes de 12 à 16 ans. Il ne demande aucune expérience, ne mentionne pas de coût, et précise que l'inscription se fait avant le 15 juin à l'accueil, donc pas le jour même.",
+    "explanation": "Le document demande explicitement de s'inscrire auprès de l'accueil avant le 15 juin. Aucune expérience ni aucun paiement ne sont exigés, et une inscription le jour même serait trop tardive.",
     "topic": "atelier d'écriture",
     "skill": "comprendre une consigne",
     "id": "mock-reading-222",

@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-27T01:38:07.850Z",
+  "generatedAt": "2026-09-09T10:59:34.324Z",
   "before": 700,
-  "after": 593,
-  "removed": 107,
+  "after": 575,
+  "removed": 125,
   "byReason": {
     "duplicate": 26,
     "incomplete": 69,
-    "unreliable": 12
+    "unreliable": 30
   },
   "remainingByType": {
-    "grammar": 224,
-    "vocabulary": 220,
+    "grammar": 211,
+    "vocabulary": 215,
     "reading": 149,
     "listening": 0
   },
@@ -656,6 +656,114 @@
       "type": "reading",
       "reason": "duplicate",
       "detail": "与 auth-reading-170 重复"
+    },
+    {
+      "id": "auth-grammar-011",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "ferme 和 est fermée 均可描述每周一闭馆，答案不唯一"
+    },
+    {
+      "id": "auth-grammar-100",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "Dès que 和 Depuis que 在现有时态与语境中均可成立"
+    },
+    {
+      "id": "auth-grammar-124",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "题干含整理者备注且句子残缺，无法形成自然法语"
+    },
+    {
+      "id": "auth-grammar-135",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "à Marie 和 lui 均能补成正确句子，答案不唯一"
+    },
+    {
+      "id": "auth-grammar-186",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "vraiment、très 和 assez 均可修饰 magnifique，答案不唯一"
+    },
+    {
+      "id": "auth-grammar-207",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "多个形容词均能解释拒绝邀请的结果，语境不足"
+    },
+    {
+      "id": "auth-grammar-210",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "petite、étroite和pleine均可能导致衣物放不下"
+    },
+    {
+      "id": "auth-vocab-011",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "tristesse 与 chagrin 语义重复，句子不自然且考点价值低"
+    },
+    {
+      "id": "auth-vocab-041",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "s'en ira en Italie 和 se rendra en Italie 均为标准法语"
+    },
+    {
+      "id": "auth-vocab-224",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "只保留称呼，缺少第一个空所在的原文"
+    },
+    {
+      "id": "auth-vocab-225",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "只保留称呼，缺少第二个空所在的原文"
+    },
+    {
+      "id": "auth-vocab-243",
+      "type": "vocabulary",
+      "reason": "unreliable",
+      "detail": "moindre 与 décroissant 并非同义词，且原文语境缺失"
+    },
+    {
+      "id": "auth-grammar-012",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "passer、rater、réussir均能与examen构成自然句子"
+    },
+    {
+      "id": "auth-grammar-125",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "ou 和 et 均能构成自然点餐表达，缺少唯一语境"
+    },
+    {
+      "id": "auth-grammar-127",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "vers 9 heures 和 à 9 heures 均能描述日常时间"
+    },
+    {
+      "id": "auth-grammar-181",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "tellement de 和 tant de 在该结果从句中均可成立"
+    },
+    {
+      "id": "auth-grammar-213",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "état critique 和 état grave 均为标准医疗搭配"
+    },
+    {
+      "id": "auth-grammar-214",
+      "type": "grammar",
+      "reason": "unreliable",
+      "detail": "maigri、vieilli、changé和grossi均可能解释气色不佳"
     }
   ]
 }

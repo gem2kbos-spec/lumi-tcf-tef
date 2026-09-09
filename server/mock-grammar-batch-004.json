@@ -154,7 +154,7 @@
       "un"
     ],
     "answer": 2,
-    "explanation": "'Fruits' est un nom pluriel, on utilise donc l'article partitif 'des' après un verbe comme 'acheter' pour indiquer une quantité indéterminée. 'Du' est pour le masculin singulier, 'de la' pour le féminin singulier, et 'un' est un article indéfini singulier.",
+    "explanation": "« Fruits » est un nom pluriel comptable : on emploie l'article indéfini pluriel « des » pour une quantité non précisée. « Du » et « de la » sont singuliers, et « un » ne convient pas avec le pluriel.",
     "topic": "grammaire",
     "skill": "articles",
     "id": "mock-msl-157",
@@ -177,7 +177,7 @@
       "dans",
       "à"
     ],
-    "answer": 3,
+    "answer": 0,
     "explanation": "Avec des noms de lieux comme 'école', on utilise 'à' pour exprimer le lieu où l'on va. 'À l'école' est correct. 'En' s'utilise avec des pays féminins ou des moyens de transport, 'au' avec des lieux géographiques masculins (mais on dit 'à l'école', pas 'au école'), et 'dans' indique un intérieur avec plus de précision.",
     "topic": "grammaire",
     "skill": "prépositions",
@@ -844,13 +844,13 @@
     "audioText": "",
     "prompt": "Complétez la phrase : Il faut que tu ______ tes devoirs avant de sortir.",
     "options": [
-      "finisses",
+      "finis",
       "finirais",
       "finir",
-      "finis"
+      "finisses"
     ],
     "answer": 3,
-    "explanation": "Après 'il faut que', on utilise le subjonctif présent. Pour le verbe 'finir' (2e groupe), la terminaison au subjonctif est '-isses' pour 'tu'. La forme correcte est 'finisses'. Ainsi, la phrase correcte est : 'Il faut que tu finisses tes devoirs avant de sortir.'",
+    "explanation": "Après « il faut que », on utilise le subjonctif présent. À la deuxième personne du singulier, « finir » donne « que tu finisses » ; les autres formes ne sont pas un subjonctif correctement conjugué.",
     "topic": "grammar",
     "skill": "subjonctif fréquent",
     "id": "mock-msl-186",
@@ -873,7 +873,7 @@
       "le",
       "lui"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Le pronom 'en' remplace un nom introduit par 'du', 'de la', 'des' ou une quantité. Ici, 'du thé' est remplacé par 'en'. La phrase correcte est : 'Oui, j'en ai pris deux tasses.'",
     "topic": "grammar",
     "skill": "pronoms y et en",
@@ -1066,7 +1066,7 @@
       "soit venue"
     ],
     "answer": 0,
-    "explanation": "On utilise le futur après 'si' quand il s'agit d'une hypothèse réelle concernant l'avenir. 'Si elle viendra' est correct.",
+    "explanation": "Ici, « si » introduit une interrogation indirecte après « je ne sais pas » et non une condition. Le futur simple est donc possible : « Je ne sais pas si elle viendra demain. » Dans une véritable condition, on éviterait en revanche le futur après « si ».",
     "topic": "grammar",
     "skill": "hypothèse avec si",
     "id": "mock-msl-195",

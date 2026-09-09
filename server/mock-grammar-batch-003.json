@@ -965,12 +965,12 @@
     "prompt": "Bien que la situation ____ difficile, il a su garder son sang-froid.",
     "options": [
       "fût",
-      "soit",
+      "fut",
       "était",
-      "ait été"
+      "sera"
     ],
     "answer": 0,
-    "explanation": "Après 'bien que', on utilise le subjonctif. Pour exprimer une concession, le plus-que-parfait du subjonctif ('fût') est utilisé dans un registre soutenu pour marquer l'antériorité par rapport à la principale.",
+    "explanation": "Après « bien que », le verbe doit être au subjonctif. Parmi les choix proposés, seul « fût » est une forme du subjonctif ; « fut » et « était » sont à l'indicatif, « sera » au futur.",
     "topic": "Concession avec subjonctif plus-que-parfait",
     "skill": "Subjonctif passé",
     "id": "mock-msl-141",
@@ -1109,12 +1109,12 @@
     "prompt": "Quoiqu'il ____ très occupé, il a accepté de nous aider.",
     "options": [
       "fût",
-      "soit",
+      "fut",
       "était",
-      "ait été"
+      "sera"
     ],
     "answer": 0,
-    "explanation": "Quoique suivi du subjonctif. Dans un registre soutenu, pour une hypothèse ou une concession, on peut employer le subjonctif imparfait (ici 'fût'), mais ici l'action est simultanée, donc 'soit' serait plus courant. Cependant, le test vise le subjonctif imparfait, donc 'fût' est correct dans un style littéraire.",
+    "explanation": "« Quoique » exige ici le subjonctif. Dans ce registre soutenu au passé, « fût » est la seule forme proposée au subjonctif ; « fut » et « était » sont à l'indicatif, « sera » au futur.",
     "topic": "Subjonctif imparfait avec quoique",
     "skill": "Subjonctif",
     "id": "mock-msl-147",
@@ -1130,15 +1130,15 @@
   {
     "passage": "",
     "audioText": "",
-    "prompt": "Il est parti sans que personne ____ s'en aperçoive.",
+    "prompt": "Il est parti sans que personne ____ s'en apercevoir.",
     "options": [
-      "ait",
-      "ait eu",
-      "eût",
-      "aurait"
+      "puisse",
+      "pouvait",
+      "pourrait",
+      "peut"
     ],
-    "answer": 2,
-    "explanation": "Après 'sans que', le subjonctif est requis. Le ne explétif n'est pas présent ici, mais la concordance des temps dans un contexte passé (imparfait 'était parti') demande l'imparfait du subjonctif, ici 'eût'.",
+    "answer": 0,
+    "explanation": "« Sans que » exige le subjonctif. « Puisse » est le subjonctif présent de « pouvoir » et se construit avec l'infinitif « s'en apercevoir » ; les autres choix sont à l'indicatif ou au conditionnel.",
     "topic": "Subjonctif après 'sans que'",
     "skill": "grammaire",
     "id": "mock-msl-148",

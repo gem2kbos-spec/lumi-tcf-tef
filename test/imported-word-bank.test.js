@@ -6,17 +6,17 @@ const questions = JSON.parse(await readFile(new URL("../server/imports/questions
 const report = JSON.parse(await readFile(new URL("../server/imports/import-report.json", import.meta.url), "utf8"));
 
 test("cleaned import preserves every reliable question with unique IDs", () => {
-  assert.equal(questions.length, 593);
+  assert.equal(questions.length, 575);
   assert.equal(new Set(questions.map((question) => question.id)).size, questions.length);
-  assert.equal(questions.filter((question) => question.type === "grammar").length, 224);
-  assert.equal(questions.filter((question) => question.type === "vocabulary").length, 220);
+  assert.equal(questions.filter((question) => question.type === "grammar").length, 211);
+  assert.equal(questions.filter((question) => question.type === "vocabulary").length, 215);
   assert.equal(questions.filter((question) => question.type === "reading").length, 149);
 });
 
 test("all cleaned imported questions have calibrated answers", () => {
   assert.equal(questions.filter((question) => question.answerVerified).length, questions.length);
   assert.equal(questions.filter((question) => !question.answerVerified).length, 0);
-  assert.equal(questions.filter((question) => question.calibration).length, 369);
+  assert.equal(questions.filter((question) => question.calibration).length, 364);
   assert.ok(questions.filter((question) => question.calibration).every((question) => question.explanation.includes("中文解析：") && question.explanation.includes("Explication française")));
   assert.ok(questions.every((question) => question.options.length >= 2 && question.options.length <= 5));
   assert.deepEqual(report.sourceAudit["TCFTEF阅读.docx"].incompleteSourceGroups, [64, 76, 77, 78]);
