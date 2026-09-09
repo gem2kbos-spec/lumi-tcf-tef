@@ -191,7 +191,7 @@ function selectModule(type) {
   else {
     $("#production").hidden = true; $("#quiz").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false;
     $("#welcome h2").textContent = catalogs[state.exam].modules.find((item) => item[0] === type)[1];
-    $("#welcome p").textContent = "设置等级和题数，然后开始专项训练。";
+    $("#welcome p").textContent = "选择等级后即可开始专项训练。";
   }
   openPracticeHub();
   revealPractice();
