@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="AI 驱动的 TCF 与 TEF 法语训练器" />
-  <title>Lumi TCF · TEF Trainer</title>
+  <meta name="description" content="面向预签证考生的 TCF 法语训练器" />
+  <title>Lumi TCF Trainer</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/advanced.css" />
   <link rel="stylesheet" href="/notebook.css" />
@@ -60,16 +60,16 @@
   <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><div id="admin-insights" class="admin-insights"></div><div class="admin-toolbar"><button id="export-admin-data" type="button">导出用户与订单</button></div><h3>待审核付款 <small>优先显示等待最久的订单</small></h3><div id="admin-orders"></div><div class="admin-user-heading"><div><h3>全部用户 <small id="admin-result-count"></small></h3><div id="admin-status-filters" class="admin-status-filters"><button class="active" data-member-filter="all">全部</button><button data-member-filter="active">有效</button><button data-member-filter="pending">待开通</button><button data-member-filter="expired">已到期</button></div></div><input id="admin-search" type="search" placeholder="搜索称呼或邮箱" /></div><div id="admin-users"></div></div></section>
   <main class="app-shell">
     <aside class="app-sidebar">
-      <div class="sidebar-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF · TEF 学习工作台</small></div></div>
+      <div class="sidebar-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF 学习工作台</small></div></div>
       <nav class="quick-nav workspace-nav" aria-label="功能入口">
-      <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>练习</strong><small>TCF / TEF 专项</small></a>
+      <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>练习</strong><small>TCF 专项</small></a>
       <a href="#bank-center" data-workspace-view="bank-center"><strong>机经</strong><small>查找和做题</small></a>
       <a href="#activity-center" data-workspace-view="activity-center"><strong>记录</strong><small>进度和历史</small></a>
       </nav>
       <div class="sidebar-footer"><div id="ai-status" class="status">正在连接…</div><button id="open-admin" class="account-header-button" hidden>管理后台</button><button id="account-profile" class="account-header-button">账号与权限</button></div>
     </aside>
     <div class="app-content">
-      <header class="content-header"><div><span id="content-section-label">练习</span><strong id="content-section-title">TCF / TEF 专项训练</strong></div><div class="content-actions"><button id="open-ai-shortcut" class="quiet-action" type="button">AI专项</button><button id="open-practice-hub" type="button">开始刷题 <b>→</b></button></div></header>
+      <header class="content-header"><div><span id="content-section-label">练习</span><strong id="content-section-title">TCF 专项训练</strong></div><div class="content-actions"><button id="open-ai-shortcut" class="quiet-action" type="button">AI专项</button><button id="open-practice-hub" type="button">开始刷题 <b>→</b></button></div></header>
       <aside id="membership-reminder" class="membership-reminder" hidden><div><strong>训练权限即将到期</strong><span id="membership-reminder-text"></span></div><button id="dismiss-membership-reminder" type="button" aria-label="关闭提醒">×</button></aside>
     <section class="today-dashboard">
       <div class="today-primary"><span id="today-focus-label">今日训练</span><strong id="daily-recommendation">建议 10 题</strong><button id="today-start" type="button">开始</button><div class="today-goal"><i><b id="today-goal-bar"></b></i><small id="today-goal-text">今天已完成 0 / 10</small></div><p id="today-next-reason">完成几道题后，这里会给出下一步。</p></div>
@@ -83,11 +83,7 @@
       </div>
     </section>
     <section id="exam-center" class="exam-hub workspace-panel active">
-      <div class="exam-tabs" role="group" aria-label="选择考试">
-        <button class="active" data-exam="tcf"><strong>TCF</strong><span>预签证 / DAP</span></button>
-        <button data-exam="tef"><strong>TEF</strong><span>全题型训练</span></button>
-      </div>
-      <div><div class="hub-heading"><div><p class="label">选择专项</p><h2 id="exam-title">TCF / TEF 重点训练</h2></div><p id="exam-note">语言结构 · 词汇 · 阅读理解</p></div><div id="module-grid" class="module-grid"></div></div>
+      <div><div class="hub-heading"><div><p class="label">TCF 预签证 / DAP</p><h2 id="exam-title">TCF 重点训练</h2></div><p id="exam-note">语言结构 · 词汇 · 阅读理解</p></div><div id="module-grid" class="module-grid"></div></div>
     </section>
     <section id="activity-center" class="activity-panel workspace-panel">
       <div class="activity-heading"><div><p class="label">训练记录</p><h2>机经完成进度</h2></div><div class="activity-actions"><div><span>最近训练</span><strong id="last-activity">暂无记录</strong></div><button id="open-history">查看做题历史 →</button></div></div>
@@ -100,7 +96,7 @@
       <div class="today-summary"><span>今日总作答 <b id="today-total">0题</b></span><span>今日正确率 <b id="today-accuracy">0%</b></span><span>机经库总量 <b id="authentic-total">0题</b></span></div>
     </section>
     <section id="ai-center" class="ai-lab workspace-panel">
-      <div class="section-heading"><div><p class="label">AI专项</p><h2>生成补充练习</h2></div><span class="ai-badge">TCF / TEF 范围</span></div>
+      <div class="section-heading"><div><p class="label">AI专项</p><h2>生成补充练习</h2></div><span class="ai-badge">TCF 范围</span></div>
       <div class="ai-lab-grid">
         <label>生成策略<select id="ai-mode"><option value="gap">机经缺口补充</option><option value="weak">重点考点强化</option></select></label>
         <label>题型<select id="ai-type"><option value="grammar">语言结构</option><option value="vocabulary">词汇</option><option value="reading">阅读</option></select></label>
@@ -239,7 +235,7 @@
     <header><div><p class="label">知识点教室 · 可持续追问</p><h2 id="lesson-title"></h2><p id="lesson-meta"></p></div><button id="close-knowledge" aria-label="关闭知识点教室">×</button></header>
     <nav id="knowledge-topics" aria-label="知识点列表"></nav>
     <div id="lesson-content" class="lesson-content"></div>
-    <section class="knowledge-practice-card"><div><strong>马上检验是否真正掌握</strong><p>按当前考点生成一题符合 TCF / TEF 方式的四选一题。</p></div><label>难度<select id="knowledge-level"><option>B1</option><option>A2</option></select></label><button id="knowledge-practice">生成考点题 ✦</button></section>
+    <section class="knowledge-practice-card"><div><strong>马上检验是否真正掌握</strong><p>按当前考点生成一题符合 TCF 方式的四选一题。</p></div><label>难度<select id="knowledge-level"><option>B1</option><option>A2</option></select></label><button id="knowledge-practice">生成考点题 ✦</button></section>
     <section class="knowledge-chat"><div><p class="label">哪里没懂就继续问</p><h3>我会保留当前知识点和这轮对话</h3></div><div id="knowledge-messages" class="knowledge-messages"><p class="chat-hint">例如：为什么 penser à quelqu'un 不能用 y？请再用时间轴解释一遍。</p></div><form id="knowledge-form"><textarea id="knowledge-question" rows="2" maxlength="600" placeholder="输入你的疑问，直到彻底弄懂……"></textarea><button>追问老师 →</button></form></section>
   </aside>
   <nav class="study-tools" aria-label="学习工具">

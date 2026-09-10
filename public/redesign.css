@@ -89,11 +89,7 @@ main.app-shell {
 .knowledge-preview strong { max-width:850px; font-size:clamp(24px, 2.65vw, 37px) !important; letter-spacing:-.04em; line-height:1.12; }
 
 .app-content .workspace-panel { min-height:min(500px, calc(100vh - 140px)); margin:18px 0 0; border:1px solid var(--studio-line); border-radius:22px; background:var(--studio-panel); box-shadow:0 12px 36px #26372f0a; }
-.app-content .exam-hub { grid-template-columns: 190px minmax(0, 1fr); gap: 28px; padding: 30px; background: var(--studio-panel); color: var(--studio-ink); }
-.exam-tabs { display: flex; flex-direction: column; gap: 10px; }
-.exam-tabs button { min-height: 108px; padding: 18px; border-color: var(--studio-line); background: #f2f4ed; color: var(--studio-muted); }
-.exam-tabs button.active { background: var(--studio-green); color: white; border-color: var(--studio-green); }
-.exam-tabs button.active span { color: #bed1c8; }
+.app-content .exam-hub { display:block; padding:30px; background:var(--studio-panel); color:var(--studio-ink); }
 .hub-heading { padding: 4px 2px 22px; }
 .hub-heading h2 { font-size:clamp(26px, 2.5vw, 35px); letter-spacing:-.04em; }
 .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -153,9 +149,6 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 @media (max-width: 980px) {
   main.app-shell { grid-template-columns: 198px minmax(0, 1fr); }
   .app-content { padding-left:22px; padding-right:22px; }
-  .app-content .exam-hub { grid-template-columns: 1fr; }
-  .exam-tabs { display: grid; grid-template-columns: 1fr 1fr; }
-  .exam-tabs button { min-height: 84px; }
   .module-grid { grid-template-columns: 1fr 1fr; }
   .ai-lab-grid { grid-template-columns: 1fr 1fr; }
   .ai-request-label, .ai-lab-grid button { grid-column: 1/-1; }
@@ -193,7 +186,6 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .knowledge-preview strong { font-size:25px !important; }
   .app-content .workspace-panel { min-height: 0; margin-top: 10px; border-radius: 18px; }
   .app-content .exam-hub, .app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: 16px; }
-  .exam-tabs { grid-template-columns: 1fr 1fr; }
   .module-grid { display: grid; grid-template-columns: 1fr; overflow: visible; }
   .module-card, .module-card:last-child { min-height: 120px; }
   .activity-metrics { grid-template-columns: 1fr 1fr; }

@@ -17,11 +17,11 @@ function savePracticeSession() {
   try { localStorage.setItem(userStorageKey("practice"), JSON.stringify({ savedAt: Date.now(), exam: state.exam, type: state.type, mode: state.mode, continuousNumber: state.continuousNumber, activeCategory: state.activeCategory, sequence: state.sequence, question })); } catch {}
 }
 function clearPracticeSession() { try { localStorage.removeItem(userStorageKey("practice")); } catch {} refreshPracticeLaunch(); }
-function readPracticeSession() { try { const saved = JSON.parse(localStorage.getItem(userStorageKey("practice")) || "null"); return saved?.question && Date.now() - saved.savedAt < 30 * 86400000 ? saved : null; } catch { return null; } }
+function readPracticeSession() { try { const saved = JSON.parse(localStorage.getItem(userStorageKey("practice")) || "null"); return saved?.question && ["grammar", "vocabulary", "reading"].includes(saved.type) && Date.now() - saved.savedAt < 30 * 86400000 ? saved : null; } catch { return null; } }
 function restorePreferences() {
   try {
     const saved = JSON.parse(localStorage.getItem(userStorageKey("preferences")) || "null"); if (!saved) return;
-    if (saved.exam && catalogs[saved.exam]) state.exam = saved.exam;
+    state.exam = "tcf";
     if (["grammar", "vocabulary", "reading"].includes(saved.type)) state.type = saved.type;
     if (saved.level && [...$("#level").options].some((option) => option.value === saved.level)) $("#level").value = saved.level;
     if (saved.bankType) $("#bank-type").value = saved.bankType;
@@ -38,7 +38,7 @@ function refreshPracticeLaunch(saved = readPracticeSession()) {
   if (dashboardStats && dashboardActivity) updateTodayPlan();
 }
 function resumePractice(saved) {
-  Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
+  Object.assign(state, { exam: "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
   openPracticeHub(); $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
 }
 function prepareResume() { refreshPracticeLaunch(); }
@@ -110,7 +110,7 @@ function updateTodayPlan() {
 
 function activateWorkspace(viewId, { updateHash = true } = {}) {
   const target = workspacePanelIds.includes(viewId) ? viewId : "exam-center";
-  const headings = { "exam-center": ["练习", "TCF / TEF 专项训练"], "bank-center": ["机经", "查找和做题"], "ai-center": ["AI专项", "生成补充练习"], "activity-center": ["记录", "进度和历史"] };
+  const headings = { "exam-center": ["练习", "TCF 专项训练"], "bank-center": ["机经", "查找和做题"], "ai-center": ["AI专项", "生成补充练习"], "activity-center": ["记录", "进度和历史"] };
   document.body.classList.add("workspace-navigation-ready");
   document.body.dataset.workspaceView = target;
   const [section, title] = headings[target]; $("#content-section-label").textContent = section; $("#content-section-title").textContent = title;
@@ -126,14 +126,8 @@ const catalogs = {
     title: "TCF 重点训练", note: "语言结构、词汇与阅读理解",
     modules: [
       ["grammar", "语言结构", "18题 · 15分钟", "语法、词汇与语域", "MSL"],
+      ["vocabulary", "词汇", "20题 · 15分钟", "同义、语境与常用表达", "VOC"],
       ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"]
-    ]
-  },
-  tef: {
-    title: "TEF 重点训练", note: "阅读理解与词汇结构",
-    modules: [
-      ["reading", "阅读理解", "40题 · 60分钟", "四选一，可自由导航", "CE"],
-      ["mixed", "词汇与结构", "40题 · 30分钟", "TEF Études 等版本使用", "LS"]
     ]
   }
 };
@@ -204,12 +198,6 @@ function selectModule(type) {
   revealPractice();
 }
 
-document.querySelectorAll("[data-exam]").forEach((button) => button.addEventListener("click", () => {
-  state.exam = button.dataset.exam;
-  savePreferences();
-  document.querySelectorAll("[data-exam]").forEach((item) => item.classList.toggle("active", item === button));
-  selectModule(state.exam === "tcf" ? "grammar" : "mixed");
-}));
 document.querySelectorAll("[data-type]").forEach((button) => button.addEventListener("click", () => selectModule(button.dataset.type)));
 
 async function api(path, options) {
