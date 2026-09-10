@@ -1,4 +1,4 @@
-const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], productionType: null, continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
+const state = { exam: "tcf", type: "grammar", questions: [], index: 0, score: 0, mode: "bank", answered: false, submitting: false, mistakes: [], continuousNumber: 1, recentIds: [], activeCategory: null, sequence: null };
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value).replace(/[&<>'"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 const richInline = (value) => escapeHtml(value).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`(.+?)`/g, "<code>$1</code>");
@@ -39,7 +39,7 @@ function refreshPracticeLaunch(saved = readPracticeSession()) {
 }
 function resumePractice(saved) {
   Object.assign(state, { exam: "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
-  openPracticeHub(); $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
+  openPracticeHub(); $("#welcome").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); renderCatalog(); render();
 }
 function prepareResume() { refreshPracticeLaunch(); }
 
@@ -132,31 +132,6 @@ const catalogs = {
   }
 };
 
-const productionTasks = {
-  tcf: {
-    writing: [
-      ["Tâche 1 · message", "Vous avez emprunté un objet à un ami et vous l'avez abîmé. Écrivez-lui pour expliquer la situation et proposer une solution.", "60–120 mots · 描述、解释并提出解决办法。"],
-      ["Tâche 2 · récit", "Vous avez participé à une activité organisée dans votre quartier. Racontez cette expérience sur un site communautaire et donnez votre opinion.", "120–150 mots · 叙述经历并作出评价。"],
-      ["Tâche 3 · points de vue", "Le télétravail améliore-t-il vraiment la qualité de vie ? Comparez les avantages et les limites, puis donnez votre opinion.", "120–180 mots · 比较两种观点并论证自己的立场。"]
-    ],
-    speaking: [
-      ["Tâche 1 · entretien", "Présentez-vous et parlez de vos études, de votre travail, de vos loisirs et de vos projets.", "约 2 分钟 · 连贯回答考官的个人问题。"],
-      ["Tâche 2 · interaction", "Vous téléphonez à une association pour obtenir des renseignements sur un cours de cuisine. Posez des questions sur les horaires, le prix, le matériel et l'inscription.", "2 分钟准备 + 3分30秒互动 · 主动获取信息。"],
-      ["Tâche 3 · opinion", "Pensez-vous qu'il faut limiter l'usage du téléphone portable à l'école ?", "约 4分30秒 · 清楚表达观点、理由、例子与结论。"]
-    ]
-  },
-  tef: {
-    writing: [
-      ["Section A · fait divers", "Un train est resté bloqué plusieurs heures en pleine campagne. Continuez cet article en racontant ce qui s'est passé.", "25 分钟 · 至少 80 词 · 续写一则事件报道。"],
-      ["Section B · opinion", "Écrivez au journal pour réagir à l'affirmation : « Les centres-villes devraient être interdits aux voitures. »", "35 分钟 · 至少 200 词 · 表明并论证立场。"]
-    ],
-    speaking: [
-      ["Section A · renseignements", "Vous avez vu une annonce pour louer un appartement. Téléphonez pour obtenir le plus de renseignements possible.", "5 分钟 · 针对广告主动询问信息。"],
-      ["Section B · convaincre", "Votre ami hésite à participer à un séjour de bénévolat. Présentez-lui le projet et convainquez-le de s'inscrire.", "10 分钟 · 介绍方案、回应反对意见并说服对方。"]
-    ]
-  }
-};
-
 function renderCatalog() {
   const catalog = catalogs[state.exam];
   $("#exam-title").textContent = catalog.title;
@@ -184,16 +159,12 @@ function selectModule(type) {
   state.type = type;
   $("#practice-hub").classList.remove("is-answering", "show-settings");
   state.activeCategory = null;
-  state.productionType = ["writing", "speaking"].includes(type) ? type : null;
   savePreferences();
   document.querySelectorAll("[data-type]").forEach((item) => item.classList.toggle("active", item.dataset.type === type));
   renderCatalog();
-  if (state.productionType) showProduction();
-  else {
-    $("#production").hidden = true; $("#quiz").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false;
-    $("#welcome h2").textContent = catalogs[state.exam].modules.find((item) => item[0] === type)[1];
-    $("#welcome p").textContent = "选择等级后即可开始专项训练。";
-  }
+  $("#quiz").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false;
+  $("#welcome h2").textContent = catalogs[state.exam].modules.find((item) => item[0] === type)[1];
+  $("#welcome p").textContent = "选择等级后即可开始专项训练。";
   openPracticeHub();
   revealPractice();
 }
@@ -228,7 +199,7 @@ async function refreshStats() {
 }
 
 function practiceWeakPoint(item) {
-  state.type = item.type; state.activeCategory = item.category || null; state.productionType = null;
+  state.type = item.type; state.activeCategory = item.category || null;
   document.querySelectorAll("[data-type]").forEach((button) => button.classList.toggle("active", button.dataset.type === item.type));
   renderCatalog(); openPracticeHub(); start(item.type);
 }
@@ -445,7 +416,7 @@ function openPracticeHub() {
   closeNotebook(); closeJournal(); closeMistakes(); closeTutor(); closeHistory();
   if (!state.questions[state.index] || state.answered) {
     $("#practice-hub").classList.remove("is-answering", "show-settings");
-    $("#quiz").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false; $("#practice").classList.add("empty");
+    $("#quiz").hidden = true; $("#finished").hidden = true; $("#welcome").hidden = false; $("#practice").classList.add("empty");
   }
   $("#practice-hub").hidden = false;
 }
@@ -504,7 +475,7 @@ function openBankQuestion(question) {
   openPracticeHub();
   state.type = question.type; state.activeCategory = question.category || null; state.questions = [question]; state.index = 0; state.mode = question.source === "user_imported" ? "authentic" : "bank"; state.continuousNumber = 1;
   if ([...$("#level").options].some((option) => option.value === question.level)) $("#level").value = question.level;
-  $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
+  $("#welcome").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
 }
 
 async function smartGenerate() {
@@ -520,7 +491,6 @@ async function smartGenerate() {
 
 async function start(typeOverride, preserveSequence = false) {
   const requestedType = typeof typeOverride === "string" ? typeOverride : state.type;
-  if (["writing", "speaking"].includes(requestedType)) return showProduction();
   $("#start").disabled = true; $("#review").disabled = true; $("#start").firstChild.textContent = "正在准备… ";
   try {
     const payload = await api("/api/questions", { method: "POST", body: JSON.stringify({ exam: state.exam, type: requestedType, level: $("#level").value, count: 1, excludeIds: state.recentIds, category: state.activeCategory || "all", useAI: false }) });
@@ -529,7 +499,7 @@ async function start(typeOverride, preserveSequence = false) {
     Object.assign(state, { questions: payload.questions, index: 0, mode: payload.mode, answered: false, sequence: payload.sequence });
     state.recentIds = [...state.recentIds, ...payload.questions.map((question) => question.id)].slice(-12);
     $("#notice").hidden = !payload.notice; $("#notice").textContent = payload.notice;
-    $("#welcome").hidden = true; $("#production").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
+    $("#welcome").hidden = true; $("#finished").hidden = true; $("#quiz").hidden = false; $("#practice").classList.remove("empty"); render();
   } catch (error) { showToast(`暂时无法载入题目：${error.message}`, "error"); }
   finally { $("#start").disabled = false; $("#review").disabled = false; $("#start").firstChild.textContent = "开始练习 "; }
 }
@@ -667,15 +637,6 @@ async function next() {
   finally { button.disabled = false; if (!loaded && button.isConnected && !button.hidden) button.innerHTML = previous; }
 }
 
-function showProduction() {
-  $("#practice-hub").classList.remove("is-answering", "show-settings");
-  const tasks = productionTasks[state.exam][state.productionType]; const task = tasks[Math.floor(Math.random() * tasks.length)];
-  $("#welcome").hidden = true; $("#quiz").hidden = true; $("#finished").hidden = true; $("#production").hidden = false; $("#practice").classList.remove("empty");
-  $("#production-exam").textContent = `${state.exam.toUpperCase()} · ${state.productionType === "writing" ? "表达写作" : "口语表达"}`; $("#production-format").textContent = task[0];
-  $("#production-topic").textContent = $("#level").value; $("#production-prompt").textContent = task[1]; $("#production-guidance").textContent = task[2];
-  $("#production-answer").hidden = state.productionType === "speaking"; $("#production-answer").value = ""; $("#word-count").textContent = state.productionType === "writing" ? "0 mots" : "请计时录音练习";
-}
-
 function openTutor() { $("#tutor-drawer").hidden = false; $("#open-tutor").hidden = true; $("#tutor-question").focus(); }
 function closeTutor() { $("#tutor-drawer").hidden = true; $("#open-tutor").hidden = false; }
 function askLiliAboutAttempt(selectedIndex, result, analysis) {
@@ -691,8 +652,7 @@ async function askTutor(question) {
   finally { clearInterval(timer); button.disabled = false; button.textContent = "发送 →"; $("#tutor-question").focus(); }
 }
 
-$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation); $("#new-production").addEventListener("click", showProduction);
-$("#production-answer").addEventListener("input", (event) => { const words = event.target.value.trim().split(/\s+/).filter(Boolean).length; $("#word-count").textContent = `${words} mots`; });
+$("#start").addEventListener("click", () => start()); $("#review").addEventListener("click", () => start("review")); $("#again").addEventListener("click", () => start()); $("#next").addEventListener("click", next); $("#variation").addEventListener("click", variation);
 $("#toggle-practice-settings").addEventListener("click", () => { const hub = $("#practice-hub"); hub.classList.toggle("show-settings"); $("#toggle-practice-settings").textContent = hub.classList.contains("show-settings") ? "收起训练设置" : "调整训练设置"; });
 $("#toggle-question-tools").addEventListener("click", () => { const tools = $("#question-tools"); tools.hidden = !tools.hidden; $("#toggle-question-tools").setAttribute("aria-expanded", String(!tools.hidden)); $("#toggle-question-tools b").textContent = tools.hidden ? "⌄" : "⌃"; });
 $("#level").addEventListener("change", savePreferences);
