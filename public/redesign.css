@@ -49,7 +49,7 @@ main.app-shell {
 .sidebar-footer .account-header-button { width: 100%; min-height: 42px; color: white; background: #ffffff0c; border-color: #ffffff24; border-radius: 11px; text-align: left; }
 .sidebar-footer .account-header-button:hover { background: #ffffff17; }
 
-.app-content { min-width: 0; padding: 22px clamp(24px, 4vw, 58px) 70px; }
+.app-content { width:100%; max-width:1680px; min-width:0; margin-inline:auto; padding:22px clamp(24px, 4vw, 58px) 70px; }
 .content-header { display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 0 0 18px; border-bottom: 1px solid var(--studio-line); }
 .content-header div { display: grid; gap: 2px; }
 .content-header span { color: var(--studio-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
@@ -83,18 +83,18 @@ main.app-shell {
 .ability-overview > div > strong { text-align: right; font-size: 11px; }
 .workspace-navigation-ready:not([data-workspace-view="exam-center"]) .today-dashboard { display: none; }
 
-.app-content .hero { padding: 22px 0 16px; }
-.app-content .knowledge-summary { min-height: 164px; padding: 28px 30px; border: 0; border-radius: 22px; background: linear-gradient(120deg, #e9f2d5, #f5f6e8); box-shadow: inset 0 0 0 1px #dbe4c7; }
-.knowledge-preview strong { max-width: 850px; font-size: clamp(28px, 3.1vw, 45px) !important; letter-spacing: -.045em; line-height: 1.08; }
+.app-content .hero { padding:18px 0 12px; }
+.app-content .knowledge-summary { min-height:142px; padding:24px 28px; border:0; border-radius:20px; background:linear-gradient(120deg, #e9f2d5, #f5f6e8); box-shadow:inset 0 0 0 1px #dbe4c7; }
+.knowledge-preview strong { max-width:850px; font-size:clamp(24px, 2.65vw, 37px) !important; letter-spacing:-.04em; line-height:1.12; }
 
-.app-content .workspace-panel { min-height: min(620px, calc(100vh - 112px)); margin: 22px 0 0; border: 1px solid var(--studio-line); border-radius: 24px; background: var(--studio-panel); box-shadow: 0 14px 44px #26372f0b; }
+.app-content .workspace-panel { min-height:min(500px, calc(100vh - 140px)); margin:18px 0 0; border:1px solid var(--studio-line); border-radius:22px; background:var(--studio-panel); box-shadow:0 12px 36px #26372f0a; }
 .app-content .exam-hub { grid-template-columns: 190px minmax(0, 1fr); gap: 28px; padding: 30px; background: var(--studio-panel); color: var(--studio-ink); }
 .exam-tabs { display: flex; flex-direction: column; gap: 10px; }
 .exam-tabs button { min-height: 108px; padding: 18px; border-color: var(--studio-line); background: #f2f4ed; color: var(--studio-muted); }
 .exam-tabs button.active { background: var(--studio-green); color: white; border-color: var(--studio-green); }
 .exam-tabs button.active span { color: #bed1c8; }
 .hub-heading { padding: 4px 2px 22px; }
-.hub-heading h2 { font-size: clamp(28px, 3vw, 40px); letter-spacing: -.04em; }
+.hub-heading h2 { font-size:clamp(26px, 2.5vw, 35px); letter-spacing:-.04em; }
 .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .module-card, .module-card:last-child { min-height: 156px; padding: 20px; border: 1px solid var(--studio-line); border-radius: 18px; background: #f8f8f3; color: var(--studio-ink); }
 .module-card:hover { border-color: #8ba596; background: white; transform: translateY(-2px); }
@@ -103,7 +103,7 @@ main.app-shell {
 .module-card p, .module-card small { color: var(--studio-muted); }
 
 .app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: clamp(24px, 3vw, 38px); }
-.activity-heading h2, .section-heading h2 { font-size: clamp(28px, 3vw, 40px); letter-spacing: -.04em; }
+.activity-heading h2, .section-heading h2 { font-size:clamp(26px, 2.5vw, 35px); letter-spacing:-.04em; }
 .activity-metrics { gap: 12px; }
 .activity-metrics article { min-height: 150px; padding: 20px; background: #f4f5ef; border: 0; border-radius: 18px; }
 .activity-metrics strong { font-size: 31px; }
@@ -145,9 +145,13 @@ main.app-shell {
 .study-tools { right: 18px; }
 .tool-ball { box-shadow: 0 9px 25px #14372a38; }
 
+/* Keep the interface calm on wide displays and make keyboard navigation obvious. */
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline:3px solid #8ab35b; outline-offset:3px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; transition-duration:.01ms !important; } }
+
 @media (max-width: 980px) {
   main.app-shell { grid-template-columns: 198px minmax(0, 1fr); }
-  .app-content { padding-left: 22px; padding-right: 22px; }
+  .app-content { padding-left:22px; padding-right:22px; }
   .app-content .exam-hub { grid-template-columns: 1fr; }
   .exam-tabs { display: grid; grid-template-columns: 1fr 1fr; }
   .exam-tabs button { min-height: 84px; }
@@ -179,13 +183,13 @@ main.app-shell {
   .content-header div span { display: none; }
   .content-header div strong { font-size: 14px; }
   .content-header button { min-height: 38px; padding: 0 12px; font-size: 12px; }
-  .app-content .hero { padding: 10px 0; }
+  .app-content .hero { padding:10px 0; }
   .today-dashboard { grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
   .ability-overview { grid-column: auto; }
   .today-numbers { min-height: 78px; }
   .ability-overview { padding: 12px 14px; }
-  .app-content .knowledge-summary { min-height: 0; padding: 18px; border-radius: 17px; }
-  .knowledge-preview strong { font-size: 25px !important; }
+  .app-content .knowledge-summary { min-height:0; padding:18px; border-radius:17px; }
+  .knowledge-preview strong { font-size:25px !important; }
   .app-content .workspace-panel { min-height: 0; margin-top: 10px; border-radius: 18px; }
   .app-content .exam-hub, .app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: 16px; }
   .exam-tabs { grid-template-columns: 1fr 1fr; }
