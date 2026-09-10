@@ -615,7 +615,13 @@ async function answer(selected, selectedButton) {
       if (window.matchMedia("(max-width: 700px)").matches) $("#feedback").scrollIntoView({ behavior: "smooth", block: "start" });
       $("#next").focus({ preventScroll: true });
     });
-    const savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) });
+    let savedAttempt = null;
+    try { savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) }); }
+    catch (error) {
+      const pending = $("#analysis-pending");
+      pending.className = "analysis-pending analysis-error";
+      pending.innerHTML = `<p>答案已核对，但学习记录暂未保存：${escapeHtml(error.message)}</p><button type="button" class="retry-save-attempt">重新保存并获取解析</button>`;
+    }
     const loadDetailedAnalysis = async () => {
       const pending = $("#analysis-pending");
       if (!pending || state.questions[state.index]?.id !== answeredQuestionId || !state.answered) return;
@@ -637,8 +643,10 @@ async function answer(selected, selectedButton) {
         current.querySelector(".retry-analysis").addEventListener("click", loadDetailedAnalysis, { once: true });
       }
     };
+    const retrySave = $("#analysis-pending .retry-save-attempt");
+    if (retrySave) retrySave.addEventListener("click", async () => { retrySave.disabled = true; retrySave.textContent = "正在保存…"; try { savedAttempt = await api("/api/attempts", { method: "POST", body: JSON.stringify({ questionId: answeredQuestionId, selected, exam: state.exam }) }); loadDetailedAnalysis(); } catch (error) { retrySave.disabled = false; retrySave.textContent = `重试失败：${error.message}`; } });
     Promise.all([refreshStats(), loadActivity(), loadInsights(), loadBank(), loadCategories()]).catch(() => {});
-    loadDetailedAnalysis();
+    if (savedAttempt) loadDetailedAnalysis();
   } catch (error) {
     selectedButton.classList.remove("checking"); $("#feedback").hidden = true; buttons.forEach((button) => button.disabled = false); showToast(`提交失败，请重试：${error.message}`, "error");
   } finally { state.submitting = false; $("#options").removeAttribute("aria-busy"); }
