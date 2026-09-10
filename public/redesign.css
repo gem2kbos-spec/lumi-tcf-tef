@@ -98,6 +98,7 @@ main.app-shell {
 .module-card.active { border-color: var(--studio-green); background: var(--studio-soft); color: var(--studio-green); }
 .module-card span { color: #7b9a3b; }
 .module-card p, .module-card small { color: var(--studio-muted); }
+.module-card i { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:13px; border-top:1px solid #e2e7df; color:#28533f; font-size:12px; font-style:normal; font-weight:800; }.module-card i b { color:#78a439; font-size:17px; }.module-card.active i { border-color:#c7dcb7; }
 
 .app-content .activity-panel, .app-content .ai-lab, .app-content .bank-browser { padding: clamp(24px, 3vw, 38px); }
 .activity-heading h2, .section-heading h2 { font-size:clamp(26px, 2.5vw, 35px); letter-spacing:-.04em; }

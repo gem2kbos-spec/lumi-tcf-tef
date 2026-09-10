@@ -125,9 +125,9 @@ const catalogs = {
   tcf: {
     title: "TCF 重点训练", note: "语言结构、词汇与阅读理解",
     modules: [
-      ["grammar", "语言结构", "18题 · 15分钟", "语法、词汇与语域", "MSL"],
-      ["vocabulary", "词汇", "20题 · 15分钟", "同义、语境与常用表达", "VOC"],
-      ["reading", "阅读理解", "29题 · 45分钟", "日常文本到观点文章", "CE"]
+      ["grammar", "语言结构", "四选一 · 即时解析", "动词、代词、连接词与句法结构", "MSL"],
+      ["vocabulary", "词汇", "语境词汇 · 即时解析", "同义辨析、固定表达与常用搭配", "VOC"],
+      ["reading", "阅读理解", "文本理解 · 即时解析", "信息定位、推断、主旨与词义判断", "CE"]
     ]
   }
 };
@@ -140,7 +140,7 @@ function renderCatalog() {
     const button = document.createElement("button");
     button.className = `module-card${state.type === type ? " active" : ""}`;
     button.dataset.module = type;
-    button.innerHTML = `<span>${code}</span><strong>${title}</strong><small>${format}</small><p>${description}</p>`;
+    button.innerHTML = `<span>${code}</span><strong>${title}</strong><small>${format}</small><p>${description}</p><i>开始此专项 <b>→</b></i>`;
     button.addEventListener("click", () => selectModule(type));
     return button;
   }));
