@@ -92,7 +92,7 @@ main.app-shell {
 .app-content .exam-hub { display:block; padding:30px; background:var(--studio-panel); color:var(--studio-ink); }
 .hub-heading { padding: 4px 2px 22px; }
 .hub-heading h2 { font-size:clamp(26px, 2.5vw, 35px); letter-spacing:-.04em; }
-.module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.module-grid { grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; }
 .module-card, .module-card:last-child { min-height: 156px; padding: 20px; border: 1px solid var(--studio-line); border-radius: 18px; background: #f8f8f3; color: var(--studio-ink); }
 .module-card:hover { border-color: #8ba596; background: white; transform: translateY(-2px); }
 .module-card.active { border-color: var(--studio-green); background: var(--studio-soft); color: var(--studio-green); }
