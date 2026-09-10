@@ -21,6 +21,7 @@ import { persistenceHealth } from "./persistence.js";
 
 const port = Number(process.env.PORT || 3000);
 const publicDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public");
+const practiceTypes = new Set(["grammar", "vocabulary", "reading"]);
 const sessions = new Map();
 const loginAttempts = new Map();
 const cookieToken = (req) => String(req.headers.cookie || "").split(";").map((item) => item.trim()).find((item) => item.startsWith("lumi_session="))?.slice("lumi_session=".length) || "";
@@ -262,7 +263,7 @@ const server = http.createServer(async (req, res) => {
       const question = typeof input.question === "string" ? input.question.trim().slice(0, 600) : "";
       if (!topic || !question) return sendJson(res, 400, { error: "Topic and question required" });
       const history = Array.isArray(input.history) ? input.history.slice(-8).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1000) })) : [];
-      const answer = await completeAi({ instructions: `你是一位严格、耐心的 TCF/TEF 法语教师。当前知识点为：${JSON.stringify(topic)}。必须用中文讲解，法语结构和例句保留法语。只讲与当前问题和该知识点有关的内容；先直接回答，再给对比例句，最后给一道不揭晓答案的快速检查题。如果学习者仍不理解，要换一种角度继续解释，而不是重复原话。`, input: question, history, maxTokens: 2500 });
+      const answer = await completeAi({ instructions: `你是一位严格、耐心的 TCF 法语教师。当前知识点为：${JSON.stringify(topic)}。必须用中文讲解，法语结构和例句保留法语。只讲与当前问题和该知识点有关的内容；先直接回答，再给对比例句，最后给一道不揭晓答案的快速检查题。如果学习者仍不理解，要换一种角度继续解释，而不是重复原话。`, input: question, history, maxTokens: 2500 });
       await addJournalEntry({ kind: "question", title: topic.title, question, content: answer, skill: topic.skill }, storageKey);
       return sendJson(res, 200, { answer });
     }
@@ -271,7 +272,7 @@ const server = http.createServer(async (req, res) => {
       const input = await body(req); const topic = getKnowledgeTopic(input.topicId);
       if (!topic) return sendJson(res, 404, { error: "Knowledge topic not found" });
       const level = ["A2", "B1"].includes(input.level) ? input.level : (topic.level.includes("B1") ? "B1" : "A2");
-      const generated = await generateQuestions({ type: topic.type, level, count: 1, weakSkills: [topic.skill], variationRequest: `Évalue exclusivement le point « ${topic.title} » (${topic.skill}). La question doit être probable et fidèle au mode d'évaluation TCF/TEF.` });
+      const generated = await generateQuestions({ type: topic.type, level, count: 1, weakSkills: [topic.skill], variationRequest: `Évalue exclusivement le point « ${topic.title} » (${topic.skill}). La question doit être probable et fidèle au mode d'évaluation TCF.` });
       const question = { ...generated[0], source: "ai_knowledge", knowledgeTopicId: topic.id };
       rememberQuestion(question);
       return sendJson(res, 201, { question: publicQuestion(question) });
@@ -286,7 +287,7 @@ const server = http.createServer(async (req, res) => {
       const imported = await loadImportedQuestions(); const current = recalledQuestion(input.questionId) || [...questionBank, ...imported].find((item) => item.id === input.questionId);
       const history = Array.isArray(input.history) ? input.history.slice(-10).map((item) => ({ role: item.role === "assistant" ? "assistant" : "user", content: String(item.content || "").slice(0, 1200) })) : [];
       const context = current ? `当前练习题：${JSON.stringify({ type: current.type, level: current.level, passage: current.passage || "", prompt: current.prompt, options: current.options, correctAnswer: current.options[current.answer], explanation: current.explanation })}` : "当前没有打开练习题。";
-      const answer = await completeAi({ instructions: `你是 lili老师，专门辅导 TCF/TEF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。用户要求速查表、对比表或整理表时，必须输出标准 Markdown 表格，表头简短、单元格内容完整，不要用纯文本模拟表格。${context}`, input: question, history, maxTokens: 2500 });
+      const answer = await completeAi({ instructions: `你是 lili老师，专门辅导 TCF。用中文清楚解释，法语结构和例句保留法语。优先直接回答，再解释原因；涉及当前题时逐项说明，不要泄漏任何与问题无关的题库答案。用户要求速查表、对比表或整理表时，必须输出标准 Markdown 表格，表头简短、单元格内容完整，不要用纯文本模拟表格。${context}`, input: question, history, maxTokens: 2500 });
       await addJournalEntry({ kind: "question", title: tutorJournalTitle(question, current), question, content: answer, skill: current?.skill, questionId: current?.id, meta: current ? { type: current.type, level: current.level, source: current.source, category: categoryLabelFor(current) } : null }, storageKey);
       return sendJson(res, 200, { answer, mode: "ai", provider: getAiConfig().provider });
     }
@@ -310,8 +311,9 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/api/questions") {
       const input = await body(req);
-      const type = ["vocabulary", "grammar", "mixed", "reading", "review"].includes(input.type) ? input.type : "grammar";
-      const exam = ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf";
+      const requestedType = input.type || "grammar";
+      if (!practiceTypes.has(requestedType) && requestedType !== "review") return sendJson(res, 400, { error: "仅支持语言结构、词汇、阅读和错题复习" });
+      const type = requestedType;
       const level = ["all", "A1", "A2", "B1", "B2", "C1", "C2"].includes(input.level) ? input.level : "all";
       const count = Math.min(Math.max(Number(input.count) || 5, 1), 10);
       const excludeIds = new Set(Array.isArray(input.excludeIds) ? input.excludeIds.slice(-20) : []);
@@ -329,17 +331,17 @@ const server = http.createServer(async (req, res) => {
         mode = "review";
       } else if (input.useAI !== false && aiEnabled() && ["A2", "B1"].includes(level)) {
         try {
-          questions = await generateQuestions({ type: type === "mixed" ? "grammar" : type, level, count, weakSkills });
+          questions = await generateQuestions({ type, level, count, weakSkills });
           mode = "ai";
         } catch (error) {
           console.error("AI generation failed, using question bank:", error.message);
-          const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
+          const matching = mergedBank.filter((item) => item.answerVerified && item.type === type && (level === "all" || item.level === level) && (category === "all" || item.category === category));
           const unseen = matching.filter((item) => !excludeIds.has(item.id));
           questions = sample(unseen.length ? unseen : matching, count);
           notice = "AI 暂时不可用，已自动切换到精选题库。";
         }
       } else {
-        const matching = mergedBank.filter((item) => item.answerVerified && (type === "mixed" ? ["grammar", "vocabulary"].includes(item.type) : item.type === type) && (level === "all" || item.level === level) && (category === "all" || item.category === category));
+        const matching = mergedBank.filter((item) => item.answerVerified && item.type === type && (level === "all" || item.level === level) && (category === "all" || item.category === category));
         matching.sort((a, b) => a.difficulty - b.difficulty || a.order - b.order);
         const completedIds = new Set(progress.attempts.map((attempt) => attempt.questionId));
         const nextInBank = matching.filter((item) => !completedIds.has(item.id));
@@ -396,7 +398,7 @@ const server = http.createServer(async (req, res) => {
       const correct = input.selected === question.answer;
       const attempt = {
         id: crypto.randomUUID(), questionId: question.id, type: question.type,
-        exam: ["tcf", "tef"].includes(input.exam) ? input.exam : "tcf",
+        exam: "tcf",
         skill: question.skill, selected: input.selected, correct, createdAt: new Date().toISOString(),
         question, analysis: null, analysisVersion: 2
       };
@@ -416,9 +418,13 @@ const server = http.createServer(async (req, res) => {
       }
       return sendJson(res, 200, { analysis, cached: Boolean((await readCachedAnalysis(attempt.questionId, attempt.selected))?.analysis) });
     }
+    if (!["GET", "HEAD"].includes(req.method)) return sendJson(res, 405, { error: "Method not allowed" });
     const requested = url.pathname === "/" ? "/index.html" : url.pathname;
-    const filePath = path.join(publicDir, requested);
-    if (!filePath.startsWith(publicDir)) return sendJson(res, 403, { error: "Forbidden" });
+    let decodedPath;
+    try { decodedPath = decodeURIComponent(requested); }
+    catch { return sendJson(res, 400, { error: "Invalid path" }); }
+    const filePath = path.resolve(publicDir, `.${decodedPath}`);
+    if (filePath !== publicDir && !filePath.startsWith(`${publicDir}${path.sep}`)) return sendJson(res, 403, { error: "Forbidden" });
     const content = await readFile(filePath);
     const contentType = filePath.endsWith(".css") ? "text/css"
       : filePath.endsWith(".js") ? "text/javascript"

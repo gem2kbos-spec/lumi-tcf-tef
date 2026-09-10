@@ -89,6 +89,6 @@ export function localLookup(word) { return lexicon[word.toLocaleLowerCase("fr").
 export async function aiLookup(word, context = "") {
   if (!aiEnabled()) return null;
   const schema = { type: "object", additionalProperties: false, required: ["meaningZh", "partOfSpeech", "usageFr", "usageZh", "examples", "collocations"], properties: { meaningZh: { type: "string" }, partOfSpeech: { type: "string" }, usageFr: { type: "string" }, usageZh: { type: "string" }, examples: { type: "array", minItems: 2, maxItems: 3, items: { type: "string" } }, collocations: { type: "array", minItems: 2, maxItems: 5, items: { type: "string" } } } };
-  const output = await completeAi({ instructions: "Tu es un lexicographe français-chinois précis. Explique le mot dans son contexte, au niveau A2-B1. Les exemples doivent être naturels, courts et utiles pour le TCF/TEF.", input: `Mot ou expression : ${word}\nContexte : ${context || "non fourni"}\nRéponds uniquement en JSON.`, schema, schemaName: "vocabulary_usage" });
+  const output = await completeAi({ instructions: "Tu es un lexicographe français-chinois précis. Explique le mot dans son contexte, au niveau A2-B1. Les exemples doivent être naturels, courts et utiles pour le TCF.", input: `Mot ou expression : ${word}\nContexte : ${context || "non fourni"}\nRéponds uniquement en JSON.`, schema, schemaName: "vocabulary_usage" });
   return output ? JSON.parse(output) : null;
 }

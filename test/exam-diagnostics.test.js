@@ -2,9 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { examDiagnostic } from "../server/exam-diagnostics.js";
 
-test("maps sentence vocabulary to the official TCF and TEF ability layers", () => {
+test("maps sentence vocabulary to the official TCF ability layer", () => {
   const result = examDiagnostic({ type: "vocabulary", skill: "collocation", question: { prompt: "Il faut ___ une décision.", options: ["prendre", "faire"], answer: 0 } });
-  assert.match(result.examAbility, /TCF/); assert.match(result.examAbility, /TEF · 句子词汇/); assert.match(result.title, /prendre/);
+  assert.match(result.examAbility, /TCF/); assert.doesNotMatch(result.examAbility, /TEF/); assert.match(result.title, /prendre/);
 });
 
 test("reading inference gets an evidence-based remediation", () => {
