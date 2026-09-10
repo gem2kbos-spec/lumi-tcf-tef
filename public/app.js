@@ -95,8 +95,8 @@ function updateTodayPlan() {
     $("#today-start").dataset.action = "resume";
   } else if (reviewCount) {
     $("#today-focus-label").textContent = "建议先做";
-    $("#daily-recommendation").textContent = `${reviewCount} 道错题待复习`;
-    $("#today-next-reason").textContent = "复习后答对的题会自动离开待复习列表。";
+    $("#daily-recommendation").textContent = `${reviewCount} 道错题`;
+    $("#today-next-reason").textContent = "待复习 · 答对后会自动离开复习列表。";
     $("#today-start").textContent = "去复习";
     $("#today-start").dataset.action = "review";
   } else {

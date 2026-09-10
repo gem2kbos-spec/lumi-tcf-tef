@@ -57,13 +57,14 @@ main.app-shell {
 .content-header button { display: flex; align-items: center; gap: 18px; min-height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--studio-green); color: white; font-weight: 800; cursor: pointer; }
 .content-header button b { color: var(--studio-lime); font-size: 18px; }
 .content-actions { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 8px !important; }
-.content-header .quiet-action { background: transparent; color: var(--studio-green); border: 1px solid var(--studio-line); }
+.content-header .quiet-action { flex:0 0 auto; min-width:76px; justify-content:center; background:transparent; color:var(--studio-green); border:1px solid var(--studio-line); }
+.content-header #open-practice-hub { flex:1 1 auto; justify-content:space-between; }
 .today-dashboard { display: grid; grid-template-columns: 210px 260px minmax(320px, 1fr); gap: 12px; margin-top: 22px; }
 .today-primary, .today-numbers, .ability-overview { border: 1px solid var(--studio-line); border-radius: 18px; background: var(--studio-panel); }
-.today-primary { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 7px 10px; padding: 18px; background: #eaf0f8; border-color: #d8e1ed; }
+.today-primary { display:grid; grid-template-columns:minmax(0, 1fr) auto; align-items:center; gap:7px 10px; padding:18px; background:#eaf0f8; border-color:#d8e1ed; }
 .today-primary > span { grid-column: 1/-1; color: #65758a; font-size: 10px; }
-.today-primary > strong { font-size: 20px; color: #1c3d65; }
-.today-primary button { border: 0; border-radius: 10px; background: #244f7d; color: white; padding: 9px 13px; font-weight: 800; cursor: pointer; }
+.today-primary > strong { min-width:0; color:#1c3d65; font-size:clamp(17px, 1.45vw, 20px); line-height:1.18; letter-spacing:-.025em; }
+.today-primary button { min-width:84px; border:0; border-radius:10px; background:#244f7d; color:white; padding:10px 13px; font-weight:800; cursor:pointer; }
 .today-goal { grid-column: 1/-1; display: grid; gap: 5px; margin-top: 3px; }
 .today-goal i { display: block; height: 5px; overflow: hidden; border-radius: 10px; background: #d7e0ea; }
 .today-goal i b { display: block; width: 0; height: 100%; border-radius: inherit; background: #315f8e; transition: width .25s ease; }
@@ -197,8 +198,19 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   .module-card, .module-card:last-child { min-height: 120px; }
   .activity-metrics { grid-template-columns: 1fr 1fr; }
   .activity-metrics article { min-height: 126px; }
-  .content-actions { gap: 5px !important; }
-  .content-header .quiet-action { padding: 0 10px; }
+  .content-actions { flex:1 1 auto; gap:6px !important; }
+  .content-header .quiet-action { flex:0 0 74px; min-width:74px; padding:0 8px; }
+  .content-header #open-practice-hub { min-width:0; padding:0 12px; gap:8px; }
+  #open-practice-hub.has-resume { min-height:38px; text-align:center; }
+  #open-practice-hub.has-resume > span { display:block; font-size:0; }
+  #open-practice-hub.has-resume > span small { display:none; }
+  #open-practice-hub.has-resume > span::after { content:"继续训练"; font-size:12px; }
+  #open-practice-hub.has-resume > b { font-size:0; }
+  #open-practice-hub.has-resume > b::after { content:"→"; color:var(--studio-lime); font-size:18px; }
+  .today-primary { padding:16px; gap:6px 9px; }
+  .today-primary > strong { font-size:clamp(16px, 5vw, 19px); white-space:nowrap; }
+  .today-primary button { min-width:78px; padding:10px 12px; }
+  .today-primary > p { font-size:11px; }
   .bank-list { max-height: none; grid-template-columns: 1fr; }
   .study-tools { left: 8px; right: 8px; }
   .practice-hub:not(.is-answering) { display: grid; padding: calc(58px + env(safe-area-inset-top)) 12px 20px; }
