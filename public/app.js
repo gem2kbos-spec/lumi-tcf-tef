@@ -14,7 +14,6 @@ function savePreferences() {
 }
 function savePracticeSession() {
   const question = state.questions[state.index]; if (!question || state.answered) return;
-  if (String(question.source || "").startsWith("ai")) return;
   try { localStorage.setItem(userStorageKey("practice"), JSON.stringify({ savedAt: Date.now(), exam: state.exam, type: state.type, mode: state.mode, continuousNumber: state.continuousNumber, activeCategory: state.activeCategory, sequence: state.sequence, question })); } catch {}
 }
 function clearPracticeSession() { try { localStorage.removeItem(userStorageKey("practice")); } catch {} refreshPracticeLaunch(); }
@@ -33,9 +32,10 @@ function restorePreferences() {
 }
 function refreshPracticeLaunch(saved = readPracticeSession()) {
   const button = $("#open-practice-hub"); if (!button) return;
-  if (!saved) { button.classList.remove("has-resume"); button.innerHTML = "开始刷题 <b>→</b>"; return; }
+  if (!saved) { button.classList.remove("has-resume"); button.innerHTML = "开始刷题 <b>→</b>"; if (dashboardStats && dashboardActivity) updateTodayPlan(); return; }
   const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读" };
   button.classList.add("has-resume"); button.innerHTML = `<span><small>继续上次训练</small>${labels[saved.type] || "机经"} · ${escapeHtml(saved.question.level || "综合")} · 第 ${saved.continuousNumber || 1} 题</span><b>继续 →</b>`;
+  if (dashboardStats && dashboardActivity) updateTodayPlan();
 }
 function resumePractice(saved) {
   Object.assign(state, { exam: saved.exam || "tcf", type: saved.type, mode: saved.mode || "bank", continuousNumber: saved.continuousNumber || 1, activeCategory: saved.activeCategory || null, sequence: saved.sequence || null, questions: [saved.question], index: 0 });
@@ -83,9 +83,17 @@ function updateTodayPlan() {
   const goal = dashboardGoal || 10;
   const reviewCount = dashboardStats.pendingReview || 0;
   const remaining = Math.max(0, goal - done);
+  const saved = readPracticeSession();
   $("#today-goal-bar").style.width = `${Math.min(100, Math.round(done / goal * 100))}%`;
   $("#today-goal-text").textContent = remaining ? `今天已完成 ${done} / ${goal}` : `今日目标已完成 · 共 ${done} 题`;
-  if (reviewCount) {
+  if (saved) {
+    const labels = { grammar: "语法", vocabulary: "词汇", reading: "阅读" };
+    $("#today-focus-label").textContent = "继续训练";
+    $("#daily-recommendation").textContent = `${labels[saved.type] || "机经"} · 第 ${saved.continuousNumber || 1} 题`;
+    $("#today-next-reason").textContent = "上次未完成的题目已保存在本机，点击后会回到原题。";
+    $("#today-start").textContent = "继续做题";
+    $("#today-start").dataset.action = "resume";
+  } else if (reviewCount) {
     $("#today-focus-label").textContent = "建议先做";
     $("#daily-recommendation").textContent = `${reviewCount} 道错题待复习`;
     $("#today-next-reason").textContent = "复习后答对的题会自动离开待复习列表。";
@@ -707,7 +715,7 @@ $("#open-mistakes").addEventListener("click", openMistakes); $("#close-mistakes"
 $("#open-history").addEventListener("click", openHistory); $("#close-history").addEventListener("click", closeHistory);
 $("#open-practice-hub").addEventListener("click", () => { const saved = readPracticeSession(); if (saved) resumePractice(saved); else openPracticeHub(); }); $("#close-practice-hub").addEventListener("click", closePracticeHub);
 $("#open-ai-shortcut").addEventListener("click", () => activateWorkspace("ai-center"));
-$("#today-start").addEventListener("click", () => { openPracticeHub(); start($("#today-start").dataset.action === "review" ? "review" : undefined); });
+$("#today-start").addEventListener("click", () => { const action = $("#today-start").dataset.action; const saved = readPracticeSession(); if (action === "resume" && saved) { resumePractice(saved); return; } openPracticeHub(); start(action === "review" ? "review" : undefined); });
 document.querySelectorAll("[data-workspace-view]").forEach((item) => item.addEventListener("click", (event) => { event.preventDefault(); activateWorkspace(item.dataset.workspaceView); }));
 window.addEventListener("hashchange", () => activateWorkspace(location.hash.slice(1), { updateHash: false }));
 for (const selector of ["#history-type", "#history-result", "#history-source", "#history-level"]) $(selector).addEventListener("change", loadHistory);
