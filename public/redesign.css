@@ -24,7 +24,7 @@ main.app-shell {
   background: #123d2f; color: white; border: 0; border-radius: 0;
 }
 .sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 28px; }
-.sidebar-brand > span { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: var(--studio-lime); color: var(--studio-green); font-weight: 900; }
+.sidebar-brand > .brand-mark { width: 42px; height: 42px; flex: 0 0 42px; }
 .sidebar-brand strong, .sidebar-brand small { display: block; }
 .sidebar-brand strong { font-size: 18px; letter-spacing: -.02em; }
 .sidebar-brand small { margin-top: 3px; color: #afc7bd; font-size: 9px; letter-spacing: .04em; }
@@ -162,7 +162,7 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
   main.app-shell { display: block; min-height: 100dvh; }
   .app-sidebar { position: sticky; top: 0; z-index: 900; display: grid; grid-template-columns: 1fr auto; height: auto; padding: calc(10px + env(safe-area-inset-top)) 10px 8px; box-shadow: 0 6px 22px #10271e26; }
   .sidebar-brand { padding: 0 4px 10px; }
-  .sidebar-brand > span { width: 34px; height: 34px; border-radius: 10px; }
+  .sidebar-brand > .brand-mark { width: 34px; height: 34px; flex-basis: 34px; }
   .sidebar-brand strong { font-size: 16px; }
   .sidebar-brand small { display: none; }
   .sidebar-footer { display: flex; align-items: center; gap: 5px; margin: 0; padding: 0 0 10px; border: 0; }

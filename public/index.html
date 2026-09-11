@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="description" content="面向预签证考生的 TCF 法语训练器" />
   <title>Lumi TCF Trainer</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/lumi-mark.svg" />
+  <link rel="apple-touch-icon" href="/assets/lumi-mark.svg" />
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/advanced.css" />
   <link rel="stylesheet" href="/notebook.css" />
@@ -31,7 +33,7 @@
   <div id="network-status" class="network-status" hidden role="status">网络已断开，当前题目仍会保留；恢复后可继续提交。</div>
   <section id="account-gate" class="account-gate" hidden>
     <div class="account-card">
-      <div class="account-brand"><span>lu</span><div><strong>Lumi Français</strong><small id="account-subtitle">登录后继续上次训练</small></div></div>
+      <div class="account-brand"><img class="brand-mark" src="/assets/lumi-mark.svg" alt="Lumi Français" /><div><strong>Lumi Français</strong><small id="account-subtitle">登录后继续上次训练</small></div></div>
       <div class="account-tabs"><button id="show-login" class="active">登录</button><button id="show-register">注册</button></div>
       <form id="account-form">
         <label id="name-field" hidden>称呼<input id="account-name" autocomplete="name" /></label>
@@ -60,7 +62,7 @@
   <section id="admin-panel" class="admin-panel" hidden><div class="admin-shell"><header><div><p>运营后台</p><h2>用户权限与付款审核</h2></div><button id="close-admin">×</button></header><div id="admin-summary" class="admin-summary"></div><div id="admin-insights" class="admin-insights"></div><div class="admin-toolbar"><button id="export-admin-data" type="button">导出用户与订单</button></div><h3>待审核付款 <small>优先显示等待最久的订单</small></h3><div id="admin-orders"></div><div class="admin-user-heading"><div><h3>全部用户 <small id="admin-result-count"></small></h3><div id="admin-status-filters" class="admin-status-filters"><button class="active" data-member-filter="all">全部</button><button data-member-filter="active">有效</button><button data-member-filter="pending">待开通</button><button data-member-filter="expired">已到期</button></div></div><input id="admin-search" type="search" placeholder="搜索称呼或邮箱" /></div><div id="admin-users"></div></div></section>
   <main class="app-shell">
     <aside class="app-sidebar">
-      <div class="sidebar-brand"><span>lu</span><div><strong>Lumi Français</strong><small>TCF 学习工作台</small></div></div>
+      <div class="sidebar-brand"><img class="brand-mark" src="/assets/lumi-mark.svg" alt="Lumi Français" /><div><strong>Lumi Français</strong><small>TCF 学习工作台</small></div></div>
       <nav class="quick-nav workspace-nav" aria-label="功能入口">
       <a href="#exam-center" data-workspace-view="exam-center" class="active"><strong>练习</strong><small>TCF 专项</small></a>
       <a href="#bank-center" data-workspace-view="bank-center"><strong>机经</strong><small>查找和做题</small></a>

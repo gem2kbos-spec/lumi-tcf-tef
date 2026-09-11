@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Lumi Français</title>
+  <desc id="desc">A lime green L shaped learning path in a deep French green rounded square.</desc>
+  <rect width="128" height="128" rx="34" fill="#143F35"/>
+  <path d="M39 28v53c0 12 8 20 20 20h30" fill="none" stroke="#D8F55D" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="91" cy="39" r="9" fill="#F6F4EB"/>
+  <path d="M84 39h14" stroke="#143F35" stroke-width="3" stroke-linecap="round"/>
+  <path d="M92 31l-4 7" stroke="#143F35" stroke-width="3" stroke-linecap="round"/>
+</svg>
